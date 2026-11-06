@@ -1,0 +1,39 @@
+{
+  "name": "@payops/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PayOps AI (PayPal Sentinel) — Shared Zod Entity Schemas (E-01..E-10), API Contracts (API-01..API-14), APIMatic Validators (F-09) & Cosmos.AI Policy DSL Engine (F-02)",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./policy-dsl": {
+      "types": "./dist/policy-dsl.d.ts",
+      "import": "./dist/policy-dsl.js"
+    },
+    "./apimatic-validators": {
+      "types": "./dist/apimatic-validators.d.ts",
+      "import": "./dist/apimatic-validators.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint src --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "eslint": "^9.14.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

@@ -1,0 +1,1041 @@
+openapi: 3.1.0
+info:
+  title: PayOps AI (PayPal Sentinel) — Autonomous Agentic CFO & Dispute-Defense Control Plane API
+  version: 1.0.0
+  summary: Canonical OpenAPI 3.1.0 specification for PS-01 PayOps AI (API-01 through API-14 and E-01 through E-10).
+  description: |
+    Complete, contract-tested OpenAPI 3.1.0 specification for **PayOps AI (`PayPal Sentinel`)**, orchestrating all 35 tools in `@paypal/agent-toolkit` and the **PayPal MCP Server** behind a deterministic `Cosmos.AI`-style Decision DSL Policy Firewall (`F-02`), `JunoDB`-patterned idempotent state ledger (`F-06`), `APIMatic` SDK schema validator (`F-09`), and `M-04` Multi-Hop GNN Friendly-Fraud Scorer (`F-10`).
+  contact:
+    name: PayOps AI Architecture Team
+    url: https://payops-ai-sentinel.onrender.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://payops-ai-sentinel.onrender.com
+    description: Production & Live Hackathon Demo Deployment on Render (ADR-0004)
+  - url: http://localhost:4000
+    description: Local Fastify 5 Development Server
+
+tags:
+  - name: AgentOrchestrator
+    description: F-01 & F-02 PayPal MCP Orchestrator & Cosmos.AI Policy Firewall (API-01, API-02, API-03)
+  - name: SmartInvoicing
+    description: F-03 & F-08 Autonomous PayPal Invoicing v2, QR Codes & Bryntum Dunning (API-04, API-05, API-06)
+  - name: OrdersCheckout
+    description: F-05 & F-06 Idempotent PayPal Orders v2, Fastlane, Tracking & Refunds (API-07, API-08, API-09)
+  - name: DisputeDefense
+    description: F-04 & F-10 Autonomous Dispute Defense & Multi-Hop GNN Fraud Scorer (API-10, API-11)
+  - name: Subscriptions
+    description: F-01 & F-08 PayPal Catalog & Subscription Plan Management (API-12)
+  - name: WebhooksAndInsights
+    description: API-13 Cryptographic PayPal Webhook Ingress & API-14 Merchant Insights (F-07, F-12)
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/v1/agent/execute:
+    post:
+      operationId: executeAgentTask_API_01
+      x-canonical-api-id: API-01
+      tags: [AgentOrchestrator]
+      summary: "API-01: Execute natural-language or structured financial task via PayPal MCP Orchestrator"
+      description: Orchestrates M-02 injection screening, M-01 tool planning across all 35 `@paypal/agent-toolkit` tools, F-09 APIMatic validation, F-02 Cosmos.AI DSL policy evaluation, and F-06 JunoDB idempotency locking.
+      parameters:
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspace_id, prompt]
+              properties:
+                workspace_id:
+                  type: string
+                  format: uuid
+                prompt:
+                  type: string
+                  minLength: 3
+                  maxLength: 4000
+                dry_run:
+                  type: boolean
+                  default: false
+                stream_sse:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: Agent task executed (or simulated in dry_run mode) within policy guardrails.
+          headers:
+            PayPal-Request-Id:
+              schema:
+                type: string
+            X-Idempotent-Replayed:
+              schema:
+                type: boolean
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E04_AgentToolExecution'
+        '202':
+          description: Execution held by Cosmos.AI Policy Firewall (HOLD_APPROVAL) awaiting FINANCE_ADMIN signature via API-02.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E04_AgentToolExecution'
+        '409':
+          $ref: '#/components/responses/ProblemConflict'
+
+  /api/v1/agent/approve/{executionId}:
+    post:
+      operationId: approveHeldExecution_API_02
+      x-canonical-api-id: API-02
+      tags: [AgentOrchestrator]
+      summary: "API-02: Approve or reject a policy-held human-in-the-loop PayPal tool execution"
+      description: Verifies operator RBAC role (FINANCE_ADMIN or OWNER) and cryptographic signature, executes the held MCP tool with the original PayPal-Request-Id, and appends to E-10 ImmutableAuditLog.
+      parameters:
+        - name: executionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-PayOps-Signature
+          in: header
+          required: true
+          description: Ed25519 or HMAC-SHA256 hex signature over (executionId || paypal_request_id || decision).
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, expected_version]
+              properties:
+                decision:
+                  type: string
+                  enum: [APPROVE, REJECT]
+                operator_reason:
+                  type: string
+                expected_version:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Held execution approved or rejected and committed to ImmutableAuditLog (E-10).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E04_AgentToolExecution'
+        '409':
+          $ref: '#/components/responses/ProblemConflict'
+
+  /api/v1/policies:
+    get:
+      operationId: listPolicies_API_03
+      x-canonical-api-id: API-03
+      tags: [AgentOrchestrator]
+      summary: "API-03 (GET): List deterministic Cosmos.AI DSL spend and risk guardrail rules"
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of PolicyRule (E-05) objects for the workspace.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/E05_PolicyRule'
+
+  /api/v1/policies/{policyId}:
+    put:
+      operationId: updatePolicyRule_API_03
+      x-canonical-api-id: API-03
+      tags: [AgentOrchestrator]
+      summary: "API-03 (PUT): Update and compile a deterministic Cosmos.AI DSL spend & risk guardrail rule"
+      parameters:
+        - name: policyId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/E05_PolicyRule'
+      responses:
+        '200':
+          description: PolicyRule (E-05) AST compiled and updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E05_PolicyRule'
+
+  /api/v1/invoices/autonomous:
+    post:
+      operationId: createAutonomousInvoice_API_04
+      x-canonical-api-id: API-04
+      tags: [SmartInvoicing]
+      summary: "API-04: Generate, APIMatic-validate, and send smart PayPal Invoice v2 with QR & conditional rules"
+      parameters:
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspace_id, recipient_email, currency_code, due_date, items]
+              properties:
+                workspace_id:
+                  type: string
+                  format: uuid
+                recipient_email:
+                  type: string
+                  format: email
+                currency_code:
+                  type: string
+                  enum: [USD, EUR, GBP, INR, JPY, PYUSD]
+                due_date:
+                  type: string
+                  format: date
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [name, quantity, unit_amount_minor]
+                    properties:
+                      name:
+                        type: string
+                      quantity:
+                        type: integer
+                        minimum: 1
+                      unit_amount_minor:
+                        type: integer
+                        minimum: 1
+                conditional_rules:
+                  type: object
+                  properties:
+                    early_payment_discount_pct:
+                      type: number
+                    early_payment_cutoff_days:
+                      type: integer
+                    late_fee_pct:
+                      type: number
+                generate_qr_code:
+                  type: boolean
+                  default: true
+                recurring_cadence:
+                  type: [string, 'null']
+                  enum: [MONTHLY, QUARTERLY, ANNUAL, null]
+      responses:
+        '201':
+          description: Smart PayPal Invoice v2 created, QR generated, and sent.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E07_PayPalInvoiceRecord'
+
+  /api/v1/invoices:
+    get:
+      operationId: listInvoices_API_05
+      x-canonical-api-id: API-05
+      tags: [SmartInvoicing]
+      summary: "API-05: List and filter invoices with live aging & dunning schedule metadata for AG Grid / Bryntum"
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: dunning_state
+          in: query
+          schema:
+            type: string
+        - name: currency
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated list of PayPalInvoiceRecord (E-07) entities.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, total_count]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/E07_PayPalInvoiceRecord'
+                  next_cursor:
+                    type: [string, 'null']
+                  total_count:
+                    type: integer
+
+  /api/v1/invoices/{invoiceId}/remind:
+    post:
+      operationId: triggerInvoiceReminderOrSettlement_API_06
+      x-canonical-api-id: API-06
+      tags: [SmartInvoicing]
+      summary: "API-06: Trigger policy-checked smart reminder, Bryntum schedule update, or PYUSD settlement reconciliation"
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum: [SEND_REMINDER_NOW, UPDATE_BRYNTUM_SCHEDULE, RECORD_PYUSD_SETTLEMENT]
+                scheduled_reminder_at:
+                  type: string
+                  format: date-time
+                pyusd_settlement:
+                  type: object
+                  properties:
+                    solana_tx_signature:
+                      type: string
+                    mint_address:
+                      type: string
+                    memo_verified:
+                      type: string
+                    amount_minor:
+                      type: integer
+      responses:
+        '200':
+          description: Invoice reminder dispatched, schedule updated, or PYUSD payment recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E07_PayPalInvoiceRecord'
+
+  /api/v1/orders:
+    post:
+      operationId: createIdempotentOrder_API_07
+      x-canonical-api-id: API-07
+      tags: [OrdersCheckout]
+      summary: "API-07: Create idempotent PayPal Order v2 (PayPal-Request-Id enforced)"
+      parameters:
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspace_id, currency_code, amount_minor]
+              properties:
+                workspace_id:
+                  type: string
+                  format: uuid
+                intent:
+                  type: string
+                  enum: [CAPTURE, AUTHORIZE]
+                  default: CAPTURE
+                currency_code:
+                  type: string
+                  enum: [USD, EUR, GBP, INR, JPY]
+                amount_minor:
+                  type: integer
+                  minimum: 1
+                fastlane_accelerated:
+                  type: boolean
+                  default: true
+                buyer_email:
+                  type: string
+                  format: email
+      responses:
+        '201':
+          description: Idempotent PayPal Order v2 created and persisted in E-06.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E06_PayPalOrderRecord'
+
+  /api/v1/orders/{orderId}/capture:
+    post:
+      operationId: captureOrderAndAttachTracking_API_08
+      x-canonical-api-id: API-08
+      tags: [OrdersCheckout]
+      summary: "API-08: Capture authorized PayPal Order v2 and attach shipment tracking"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                carrier_code:
+                  type: string
+                  example: DHL
+                tracking_number:
+                  type: string
+                  example: "77819201"
+                shipment_status:
+                  type: string
+                  enum: [SHIPPED, IN_TRANSIT, DELIVERED]
+      responses:
+        '200':
+          description: Order captured via `pay_order` and tracking attached via `create_shipment_tracking`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E06_PayPalOrderRecord'
+
+  /api/v1/orders/{orderId}/refund:
+    post:
+      operationId: refundOrderGuarded_API_09
+      x-canonical-api-id: API-09
+      tags: [OrdersCheckout]
+      summary: "API-09: Execute risk-graph-verified and policy-guarded full or partial refund"
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount_minor, currency_code, reason_note]
+              properties:
+                amount_minor:
+                  type: integer
+                  minimum: 1
+                currency_code:
+                  type: string
+                reason_note:
+                  type: string
+      responses:
+        '200':
+          description: Refund executed within policy threshold.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E04_AgentToolExecution'
+        '202':
+          description: Refund exceeds policy cap ($500) and is held in HOLD_APPROVAL for operator signature.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E04_AgentToolExecution'
+
+  /api/v1/disputes:
+    get:
+      operationId: listEnrichedDisputes_API_10
+      x-canonical-api-id: API-10
+      tags: [DisputeDefense]
+      summary: "API-10: List active PayPal disputes enriched with shipment tracking & GNN fraud scores"
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Enriched list of PayPalDisputeCase (E-08) records.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/E08_PayPalDisputeCase'
+
+  /api/v1/disputes/{disputeId}/resolve:
+    post:
+      operationId: resolveDisputeAutonomously_API_11
+      x-canonical-api-id: API-11
+      tags: [DisputeDefense]
+      summary: "API-11: Autonomously accept claim (low-value/valid) or compile & submit compelling evidence"
+      parameters:
+        - name: disputeId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolution_strategy]
+              properties:
+                resolution_strategy:
+                  type: string
+                  enum: [AUTO_POLICY_DECIDE, ACCEPT_CLAIM, CONTEST_WITH_EVIDENCE]
+                additional_merchant_note:
+                  type: string
+      responses:
+        '200':
+          description: Dispute resolved or Compelling Evidence 3.0 bundle compiled and submitted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E08_PayPalDisputeCase'
+
+  /api/v1/subscriptions/plans:
+    post:
+      operationId: createSubscriptionPlan_API_12
+      x-canonical-api-id: API-12
+      tags: [Subscriptions]
+      summary: "API-12: Create and manage PayPal Subscription plans and billing cycles"
+      parameters:
+        - $ref: '#/components/parameters/PayPalRequestIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspace_id, product_name, plan_name, billing_cycle_cadence, recurring_amount_minor, currency_code]
+              properties:
+                workspace_id:
+                  type: string
+                  format: uuid
+                product_name:
+                  type: string
+                plan_name:
+                  type: string
+                billing_cycle_cadence:
+                  type: string
+                  enum: [MONTHLY, QUARTERLY, ANNUAL]
+                recurring_amount_minor:
+                  type: integer
+                  minimum: 1
+                currency_code:
+                  type: string
+      responses:
+        '201':
+          description: PayPal Catalog Product & Subscription Plan created and stored in E-09.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/E09_SubscriptionPlanRecord'
+
+  /api/v1/webhooks/paypal:
+    post:
+      operationId: receivePayPalWebhook_API_13
+      x-canonical-api-id: API-13
+      tags: [WebhooksAndInsights]
+      summary: "API-13: Receive and HMAC/certificate-verify PayPal Sandbox webhook events"
+      security: []
+      parameters:
+        - name: PAYPAL-TRANSMISSION-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: PAYPAL-TRANSMISSION-TIME
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: PAYPAL-TRANSMISSION-SIG
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: PAYPAL-CERT-URL
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: PAYPAL-AUTH-ALGO
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, event_type, resource]
+              properties:
+                id:
+                  type: string
+                event_type:
+                  type: string
+                  example: CUSTOMER.DISPUTE.CREATED
+                resource:
+                  type: object
+      responses:
+        '202':
+          description: Webhook cryptographically verified and enqueued for autonomous processing.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [webhook_event_id, signature_verified, event_type]
+                properties:
+                  webhook_event_id:
+                    type: string
+                  signature_verified:
+                    type: boolean
+                  event_type:
+                    type: string
+                  triggered_workflow:
+                    type: string
+        '401':
+          $ref: '#/components/responses/ProblemUnauthorized'
+
+  /api/v1/analytics/insights:
+    get:
+      operationId: getMerchantInsights_API_14
+      x-canonical-api-id: API-14
+      tags: [WebhooksAndInsights]
+      summary: "API-14: Retrieve aggregated merchant TPV, dispute win rate, DSO reduction, and agent ROI metrics"
+      parameters:
+        - name: workspace_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Aggregated North-Star ANMPR and PayPal merchant insights payload.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - workspace_id
+                  - north_star_anmpr_usd
+                  - dso_days_current
+                  - dispute_win_rate_pct
+                  - policy_firewall_compliance_pct
+                properties:
+                  workspace_id:
+                    type: string
+                    format: uuid
+                  north_star_anmpr_usd:
+                    type: number
+                  north_star_anmpr_inr:
+                    type: number
+                  dso_days_current:
+                    type: number
+                  dso_days_baseline:
+                    type: number
+                  dispute_win_rate_pct:
+                    type: number
+                  policy_firewall_compliance_pct:
+                    type: number
+                  duplicate_mutation_rate_pct:
+                    type: number
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PayPalRequestIdHeader:
+      name: PayPal-Request-Id
+      in: header
+      required: false
+      description: Deterministic UUIDv5 idempotency key enforced by the JunoDB-patterned state store (F-06).
+      schema:
+        type: string
+
+  responses:
+    ProblemConflict:
+      description: RFC 7807 Problem Details — Policy Hold or Optimistic Concurrency Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    ProblemUnauthorized:
+      description: RFC 7807 Problem Details — Invalid Webhook Signature or Missing Auth
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+  schemas:
+    E01_MerchantWorkspace:
+      x-canonical-entity-id: E-01
+      description: "E-01: MerchantWorkspace — merchant profile, PayPal Sandbox client config, risk tier, base currency, policy limits."
+      type: object
+      required: [workspace_id, merchant_name, paypal_merchant_id, base_currency, risk_tier, daily_autonomous_cap_minor]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        merchant_name:
+          type: string
+        paypal_merchant_id:
+          type: string
+        base_currency:
+          type: string
+          enum: [USD, EUR, GBP, INR, JPY, PYUSD]
+        risk_tier:
+          type: string
+          enum: [LOW, STANDARD, ELEVATED]
+        daily_autonomous_cap_minor:
+          type: integer
+        settings_json:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    E02_OperatorUser:
+      x-canonical-entity-id: E-02
+      description: "E-02: OperatorUser — RBAC role (OWNER, FINANCE_ADMIN, AUDITOR, AGENT_SERVICE) and OAuth2/Passkey identity."
+      type: object
+      required: [operator_id, workspace_id, email_hash, display_name, rbac_role, is_active]
+      properties:
+        operator_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        email_hash:
+          type: string
+        display_name:
+          type: string
+        rbac_role:
+          type: string
+          enum: [OWNER, FINANCE_ADMIN, AUDITOR, AGENT_SERVICE]
+        passkey_public_key:
+          type: string
+        is_active:
+          type: boolean
+
+    E03_AgentSession:
+      x-canonical-entity-id: E-03
+      description: "E-03: AgentSession — conversation/workflow state, active agent persona, token budget, and OpenTelemetry trace ID."
+      type: object
+      required: [session_id, workspace_id, operator_id, max_tool_hops, used_tool_hops, token_budget_usd, spent_cost_usd, trace_id]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        operator_id:
+          type: string
+          format: uuid
+        active_persona:
+          type: string
+        max_tool_hops:
+          type: integer
+        used_tool_hops:
+          type: integer
+        token_budget_usd:
+          type: number
+        spent_cost_usd:
+          type: number
+        trace_id:
+          type: string
+
+    E04_AgentToolExecution:
+      x-canonical-entity-id: E-04
+      description: "E-04: AgentToolExecution — idempotency key PayPal-Request-Id, MCP tool name, APIMatic-validated input JSON, policy verdict, PayPal response status, latency."
+      type: object
+      required: [execution_id, session_id, workspace_id, paypal_request_id, mcp_tool_name, validated_input_json, policy_verdict, latency_ms]
+      properties:
+        execution_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        paypal_request_id:
+          type: string
+        mcp_tool_name:
+          type: string
+        validated_input_json:
+          type: object
+        policy_verdict:
+          type: string
+          enum: [ALLOW, HOLD_APPROVAL, DENY, COMPLETED, REJECTED]
+        injection_score:
+          type: number
+        gnn_risk_score:
+          type: number
+        paypal_http_status:
+          type: [integer, 'null']
+        paypal_response_json:
+          type: [object, 'null']
+        latency_ms:
+          type: integer
+        version:
+          type: integer
+
+    E05_PolicyRule:
+      x-canonical-entity-id: E-05
+      description: "E-05: PolicyRule — Cosmos.AI-style DSL expression, max single-tx USD/INR limit, daily velocity cap, required approval role, risk threshold."
+      type: object
+      required: [policy_id, workspace_id, rule_code, dsl_expression, max_single_tx_minor, daily_velocity_cap_minor, required_approval_role, risk_threshold, is_enabled]
+      properties:
+        policy_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        rule_code:
+          type: string
+        rule_name:
+          type: string
+        dsl_expression:
+          type: string
+        max_single_tx_minor:
+          type: integer
+        daily_velocity_cap_minor:
+          type: integer
+        required_approval_role:
+          type: string
+          enum: [FINANCE_ADMIN, OWNER]
+        risk_threshold:
+          type: number
+        is_enabled:
+          type: boolean
+
+    E06_PayPalOrderRecord:
+      x-canonical-entity-id: E-06
+      description: "E-06: PayPalOrderRecord — PayPal Order v2 ID, capture ID, amount, currency, buyer hash, Fastlane flag, shipment tracking status."
+      type: object
+      required: [order_record_id, workspace_id, paypal_order_id, amount_minor, currency_code, buyer_hash, fastlane_accelerated, shipment_tracking_status]
+      properties:
+        order_record_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        paypal_order_id:
+          type: string
+        paypal_capture_id:
+          type: [string, 'null']
+        amount_minor:
+          type: integer
+        currency_code:
+          type: string
+        buyer_hash:
+          type: string
+        fastlane_accelerated:
+          type: boolean
+        carrier_code:
+          type: [string, 'null']
+        tracking_number:
+          type: [string, 'null']
+        shipment_tracking_status:
+          type: string
+          enum: [PENDING, SHIPPED, IN_TRANSIT, DELIVERED, CANCELLED]
+
+    E07_PayPalInvoiceRecord:
+      x-canonical-entity-id: E-07
+      description: "E-07: PayPalInvoiceRecord — PayPal Invoice v2 ID, invoice number, recipient, due date, QR code URI, dunning state, conditional rules, recurring series ID."
+      type: object
+      required: [invoice_record_id, workspace_id, paypal_invoice_id, invoice_number, recipient_hash, amount_minor, currency_code, due_date, dunning_state]
+      properties:
+        invoice_record_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        paypal_invoice_id:
+          type: string
+        invoice_number:
+          type: string
+        recipient_hash:
+          type: string
+        amount_minor:
+          type: integer
+        currency_code:
+          type: string
+        due_date:
+          type: string
+          format: date
+        qr_code_uri:
+          type: [string, 'null']
+        dunning_state:
+          type: string
+          enum: [DRAFT, SENT, REMINDER_1_SENT, REMINDER_2_SENT, PAID, CANCELLED]
+        conditional_rules_json:
+          type: object
+        recurring_series_id:
+          type: [string, 'null']
+        pyusd_tx_signature:
+          type: [string, 'null']
+
+    E08_PayPalDisputeCase:
+      x-canonical-entity-id: E-08
+      description: "E-08: PayPalDisputeCase — PayPal Dispute ID, reason code, disputed amount, response deadline, shipment tracking proof, GNN risk score, agent action."
+      type: object
+      required: [dispute_case_id, workspace_id, paypal_dispute_id, reason_code, disputed_amount_minor, currency_code, response_deadline, gnn_risk_score, agent_action]
+      properties:
+        dispute_case_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        paypal_dispute_id:
+          type: string
+        reason_code:
+          type: string
+        disputed_amount_minor:
+          type: integer
+        currency_code:
+          type: string
+        response_deadline:
+          type: string
+          format: date-time
+        shipment_tracking_proof_json:
+          type: object
+        gnn_risk_score:
+          type: number
+        gnn_reason_codes_json:
+          type: array
+          items:
+            type: string
+        agent_action:
+          type: string
+          enum: [PENDING, AUTO_ACCEPTED, CONTESTED_WITH_EVIDENCE, HELD_FOR_REVIEW, WON, LOST]
+
+    E09_SubscriptionPlanRecord:
+      x-canonical-entity-id: E-09
+      description: "E-09: SubscriptionPlanRecord — PayPal Plan ID, Subscription ID, billing cycle, subscriber status, churn-rescue state."
+      type: object
+      required: [subscription_record_id, workspace_id, paypal_product_id, paypal_plan_id, paypal_subscription_id, billing_cycle_cadence, recurring_amount_minor, currency_code, subscriber_status]
+      properties:
+        subscription_record_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        paypal_product_id:
+          type: string
+        paypal_plan_id:
+          type: string
+        paypal_subscription_id:
+          type: string
+        billing_cycle_cadence:
+          type: string
+          enum: [MONTHLY, QUARTERLY, ANNUAL]
+        recurring_amount_minor:
+          type: integer
+        currency_code:
+          type: string
+        subscriber_status:
+          type: string
+          enum: [APPROVAL_PENDING, ACTIVE, SUSPENDED, CANCELLED, EXPIRED]
+        churn_rescue_state:
+          type: string
+          enum: [HEALTHY, AT_RISK, OFFER_SENT, SAVED]
+
+    E10_ImmutableAuditLog:
+      x-canonical-entity-id: E-10
+      description: "E-10: ImmutableAuditLog — hash-chained append-only compliance record for PCI-DSS / CERT-In / SOC 2 180-day retention."
+      type: object
+      required: [audit_seq, workspace_id, event_type, actor_id, paypal_request_id, redacted_payload_json, prev_hash, entry_hash, recorded_at]
+      properties:
+        audit_seq:
+          type: integer
+        workspace_id:
+          type: string
+          format: uuid
+        execution_id:
+          type: [string, 'null']
+          format: uuid
+        event_type:
+          type: string
+        actor_id:
+          type: string
+        paypal_request_id:
+          type: string
+        redacted_payload_json:
+          type: object
+        prev_hash:
+          type: string
+        entry_hash:
+          type: string
+        recorded_at:
+          type: string
+          format: date-time
+
+    ProblemDetails:
+      description: RFC 7807 Problem Details error response.
+      type: object
+      required: [type, title, status, detail, trace_id]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        trace_id:
+          type: string
+        paypal_request_id:
+          type: string

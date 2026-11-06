@@ -1,0 +1,118 @@
+# Render Cloud Blueprint Infrastructure-as-Code (ADR-0004)
+# Project: PayOps AI (PayPal Sentinel) — Autonomous Agentic CFO & Dispute Defense Control Plane
+# Target Prize: Best Use of Render ($2,250 Render Credits)
+
+services:
+  # 1. Executive Financial Command Center Frontend (Next.js 15 + AG Grid + Bryntum)
+  - type: web
+    name: payops-web
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @payops/shared build && pnpm --filter @payops/web build
+    startCommand: pnpm --filter @payops/web start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_APP_NAME
+        value: "PayOps AI (PayPal Sentinel)"
+      - key: NEXT_PUBLIC_API_BASE_URL
+        fromService:
+          type: web
+          name: payops-api
+          property: host
+      - fromGroup: payops-sandbox-secrets
+
+  # 2. PayPal MCP Orchestrator, Cosmos.AI Policy Firewall & REST API Server (Fastify + @paypal/agent-toolkit)
+  - type: web
+    name: payops-api
+    runtime: node
+    region: oregon
+    plan: standard
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @payops/shared build && pnpm --filter @payops/api build
+    preDeployCommand: pnpm --filter @payops/api db:migrate:deploy
+    startCommand: pnpm --filter @payops/api start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: PAYPAL_ENVIRONMENT
+        value: sandbox
+      - key: DATABASE_URL
+        fromDatabase:
+          name: payops-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: payops-junodb-redis
+          property: connectionString
+      - fromGroup: payops-sandbox-secrets
+
+  # 3. Durable Webhook Ingestion, Dunning & Dispute Evidence Background Worker
+  - type: worker
+    name: payops-policy-worker
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @payops/shared build && pnpm --filter @payops/api build
+    startCommand: pnpm --filter @payops/api worker
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PAYPAL_ENVIRONMENT
+        value: sandbox
+      - key: DATABASE_URL
+        fromDatabase:
+          name: payops-postgres
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: payops-junodb-redis
+          property: connectionString
+      - fromGroup: payops-sandbox-secrets
+
+  # 4. JunoDB-Patterned Idempotent State Store & 2-Hop Mirror Graph Cache (F-06, F-10)
+  - type: redis
+    name: payops-junodb-redis
+    region: oregon
+    plan: starter
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+databases:
+  # 5. Primary Relational Ledger (E-01..E-09) & Hash-Chained Immutable Audit Log (E-10)
+  - name: payops-postgres
+    region: oregon
+    plan: basic-1gb
+    postgresMajorVersion: "16"
+    databaseName: payops_production
+    user: payops_admin
+    ipAllowList: []
+
+envVarGroups:
+  - name: payops-sandbox-secrets
+    envVars:
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ELASTIC_CLOUD_ID
+        sync: false
+      - key: ELASTIC_API_KEY
+        sync: false

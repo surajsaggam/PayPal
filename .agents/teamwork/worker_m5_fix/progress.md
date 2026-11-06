@@ -1,0 +1,12 @@
+# Progress — `worker_m5_fix`
+
+Last visited: 2026-11-05T09:36:30Z
+
+## Completed Steps
+1. Initialized workspace (`DISPATCH.md`, `BRIEFING.md`, `progress.md`) and read `ORIGINAL_REQUEST.md`, `plan.md`, `PROJECT.md`, and all 5 upstream reviewer/challenger/auditor handoffs (`reviewer_1`, `reviewer_2`, `challenger_1`, `challenger_2`, `auditor_1`).
+2. **Task 1 Complete**: Created canonical domain research files `s:\PayPal\research\domains\D1.md`..`D5.md` and war-room files `s:\PayPal\war-room\D1.md`..`D5.md` & `D1-debate.md`..`D5-debate.md` (preserving existing slugged files).
+3. **Task 2 Complete**: Updated `s:\PayPal\MAP.md` ASCII directory tree (`D1.md`..`D5.md`), relative link `[war-room/D1.md](./war-room/D1.md)` on line 169, Node `22.11.0 LTS` on line 217, and canonical persona names (`Maya Lin`, `Arjun Mehta`, `Elena Rostova`, `Marcus Vance`) on lines 58 and 225.
+4. **Task 3 Complete**: Added exact noun `"hallucination"` in `s:\PayPal\docs\04-ai\AI_EVALS.md` (lines 10, 36, 57) and aligned persona names (`Maya Lin`, `Arjun Mehta`), thresholds (`$500.00` standard / `$250.00` strict refund hold, `<= $25.00` standard / `<= $50.00` configurable dispute auto-accept, `max_tool_hops = 6`), and `NODE_VERSION: "22.11.0"` across `MODELS.md`, `PROMPTS.md`, `AI_EVALS.md`, `ai/agents/paypal-mcp-config.json`, `.github/workflows/ci.yml`, and `.github/workflows/deploy.yml`.
+5. **Task 4 Complete**: Expanded all range shorthands in `s:\PayPal\docs\08-project\BACKLOG.md` so 100% of canonical IDs (`F-01..12`, `US-01..16`, `E-01..10`, `API-01..14`, `M-01..05`, `R-01..12`, `ADR-0000..0005`) appear as explicit literal strings.
+6. **Task 5 Complete**: Updated `s:\PayPal\biblehackathon.md` (line 147 tool count clarification, line 530 `**STEVE JOBS:**` `[S#]` citation, line 532 `**ALEX KARP:**` speaker turn with `[S#]` citation) and `s:\PayPal\ideas.md` (Domain D1 Round 5 `**SETH GODIN & GARY VAYNERCHUK:**` and `**TIM COOK:**` speaker turns, Domain D3 Round 2 `**DR. R.S. SHARMA:**` `[S11, S16]` citation), and re-rendered both `s:\PayPal\biblehackathon.pdf` (1,690,214 B) and `s:\PayPal\ideas.pdf` (3,684,904 B).
+7. **Task 6 Complete**: Ran `python "s:\PayPal\tests\verify_deliverables.py"` (`162/162` checks passed, exit code `0`) and white-box Python checks (`423/423` relative links resolved, `0` placeholders across 116 deliverable files, 100% Core 17 speaker headers & `[S#]` citations in `biblehackathon.md` and `ideas.md`, 100% explicit canonical IDs in `BACKLOG.md`).
