@@ -87,6 +87,7 @@ python "C:\Users\suraj\.gemini\config\skills\war-room-council\scripts\md2pdf.py"
 ## 6. Key Documentation Links
 
 - **Navigation Map**: [`MAP.md`](./MAP.md)
+- **2-Member Zero-Conflict Implementation Plan**: [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 - **Single Source of Truth**: [`docs/00-overview/PROJECT_BRIEF.md`](./docs/00-overview/PROJECT_BRIEF.md)
 - **Architecture & Data Model**: [`docs/03-engineering/ARCHITECTURE.md`](./docs/03-engineering/ARCHITECTURE.md) · [`docs/03-engineering/DATA_MODEL.md`](./docs/03-engineering/DATA_MODEL.md)
 - **API & OpenAPI 3.1**: [`docs/03-engineering/API_SPEC.md`](./docs/03-engineering/API_SPEC.md) · [`api/openapi.yaml`](./api/openapi.yaml)

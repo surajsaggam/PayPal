@@ -1,0 +1,22 @@
+# Enforce consistent LF line endings across Windows (CRLF) and macOS/Linux (LF)
+# Prevents whole-file Git merge conflicts between Dev 1 and Dev 2 (Rule 2 in IMPLEMENTATION_PLAN.md)
+* text=auto eol=lf
+
+# Explicitly mark source, config, and documentation files as LF text
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.sql text eol=lf
+*.css text eol=lf
+
+# Binary assets must not undergo line-ending conversion
+*.pdf binary
+*.onnx binary
+*.png binary
+*.jpg binary
+*.woff2 binary

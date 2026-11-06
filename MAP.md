@@ -1,6 +1,6 @@
 # Master Project Navigation Map (`MAP.md`)
 > Project: PayOps AI (PayPal Sentinel) · Owner: Principal Architect & War-Room Council · Status: Approved v1.0 · Last updated: 2026-11-05
-> Related: [README](./README.md) · [CLAUDE.md](./CLAUDE.md) · [Hackathon Bible](./biblehackathon.md) · [Ranked Ideas (`PS-01`..`PS-25`)](./ideas.md) · [Project Brief](./docs/00-overview/PROJECT_BRIEF.md)
+> Related: [README](./README.md) · [2-Member Implementation Plan](./IMPLEMENTATION_PLAN.md) · [CLAUDE.md](./CLAUDE.md) · [Hackathon Bible](./biblehackathon.md) · [Ranked Ideas (`PS-01`..`PS-25`)](./ideas.md) · [Project Brief](./docs/00-overview/PROJECT_BRIEF.md)
 
 ## 1. Complete Annotated Repository Directory Tree (`s:\PayPal`)
 
@@ -9,6 +9,7 @@ Every file in `s:\PayPal` is listed below with its one-line purpose:
 ```text
 s:\PayPal\
 ├── PROJECT.md                                      # Master project architecture, feature inventory & canonical interface contracts
+├── IMPLEMENTATION_PLAN.md                          # 2-Member Zero-Merge-Conflict Parallel Implementation Plan (H01–H48, F-01..F-12, TKT-001..036)
 ├── MAP.md                                          # Master navigation index, lookup table, dependency graph & 4 reading paths
 ├── README.md                                       # Executive front door, MIT license, quick start & feature summary (F-01..F-12)
 ├── CLAUDE.md                                       # AI coding agent instructions, commands, 10-line architecture & security rules
@@ -16,6 +17,11 @@ s:\PayPal\
 ├── SECURITY.md                                     # Vulnerability disclosure policy, response SLAs & Zero-PAN security guarantees
 ├── CHANGELOG.md                                    # Keep a Changelog release history (Unreleased, v1.0.0, v0.1.0)
 ├── CODE_OF_CONDUCT.md                              # Contributor Covenant v2.1 community standards
+├── LICENSE                                         # Root MIT License required by Devpost Hackathon Rule R-12
+├── package.json                                    # Root workspace manifest & scripts (dev, build, lint, typecheck, test, eval:ci)
+├── pnpm-workspace.yaml                             # pnpm monorepo workspace linking apps/*, services/*, and packages/*
+├── .gitattributes                                  # Enforces LF line endings across Windows/macOS to prevent whole-file merge conflicts
+├── .gitignore                                      # Prevents committing .env secrets, node_modules, and build artifacts (R-07)
 ├── .env.example                                    # Documented environment variable template grouped by service (zero real secrets)
 │
 ├── biblehackathon.md                               # Stage 1 Deliverable: 6-Part PayPal AI Hackathon & Company Forensic Bible + Sources
@@ -144,7 +150,15 @@ s:\PayPal\
 │       └── package.json                            # Fastify + @paypal/agent-toolkit + @paypal/paypal-server-sdk + ONNX backend manifest
 ├── packages\
 │   └── shared\
-│       └── package.json                            # Shared Zod schemas (E-01..E-10), APIMatic validators (F-09) & Cosmos.AI Policy DSL (F-02)
+│       ├── package.json                            # Shared package manifest exporting entities, api-contracts, policy-dsl, apimatic-validators, mock-fixtures
+│       ├── tsconfig.json                           # Shared TypeScript compiler configuration
+│       └── src\
+│           ├── index.ts                            # Phase-0 frozen barrel export file
+│           ├── entities.ts                         # Phase-0 frozen canonical entity interfaces (E-01..E-10)
+│           ├── api-contracts.ts                    # Phase-0 frozen REST & SSE contract types (API-01..API-14 + SSE-01)
+│           ├── policy-dsl.ts                       # Dev 1 owned Cosmos.AI Policy Firewall evaluator (F-02)
+│           ├── apimatic-validators.ts              # Dev 1 owned APIMatic 2-decimal monetary payload validator (F-09)
+│           └── mock-fixtures.ts                    # Dev 2 owned deterministic UI mock & replay fixtures
 ├── ai\
 │   └── agents\
 │       └── paypal-mcp-config.json                  # Declarative 35-tool @paypal/agent-toolkit & PayPal MCP Server configuration
@@ -177,6 +191,7 @@ s:\PayPal\
 | **How do we comply with PCI-DSS v4.0 SAQ-A, FinCEN MTLs, India RBI PA-CB, CERT-In 180-day logs, and DPDP Act 2023?** | [`docs/06-security-compliance/COMPLIANCE.md`](./docs/06-security-compliance/COMPLIANCE.md) · [`docs/06-security-compliance/PRIVACY.md`](./docs/06-security-compliance/PRIVACY.md) | [`docs/06-security-compliance/SECURITY_ARCHITECTURE.md`](./docs/06-security-compliance/SECURITY_ARCHITECTURE.md) · [`docs/06-security-compliance/REGULATORY_SANDBOX.md`](./docs/06-security-compliance/REGULATORY_SANDBOX.md) |
 | **What are the monthly cloud & AI token costs at 100 / 10k / 1M users and the 3-year financial projections in `$` and `₹`?** | [`docs/05-ops/COST.md`](./docs/05-ops/COST.md) · [`docs/07-business/FINANCIALS.md`](./docs/07-business/FINANCIALS.md) | [`docs/07-business/BUSINESS_MODEL.md`](./docs/07-business/BUSINESS_MODEL.md) · [`docs/07-business/GTM.md`](./docs/07-business/GTM.md) |
 | **How do we deploy to Render (`render.yaml`) or recover if PayPal Sandbox rate-limits (`HTTP 429`) during live judging?** | [`docs/05-ops/DEPLOYMENT.md`](./docs/05-ops/DEPLOYMENT.md) · [`docs/05-ops/RUNBOOK.md`](./docs/05-ops/RUNBOOK.md) | [`infra/render.yaml`](./infra/render.yaml) · [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml) |
+| **How does a 2-member team (`Dev 1` + `Dev 2`) build `PS-01: PayOps AI` in parallel with zero Git merge conflicts?** | [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md) | [`docs/00-overview/HACKATHON_PLAN.md`](./docs/00-overview/HACKATHON_PLAN.md) · [`docs/08-project/BACKLOG.md`](./docs/08-project/BACKLOG.md) |
 
 ---
 

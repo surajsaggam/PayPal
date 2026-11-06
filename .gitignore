@@ -1,0 +1,35 @@
+# Dependencies & Lockfile Artifacts
+node_modules/
+.pnp
+.pnp.js
+
+# Build & TypeScript Outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Environment Variables & Secrets (R-07 Zero-Secret Guarantee)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing, Coverage & Caches
+coverage/
+playwright-report/
+test-results/
+.pytest_cache/
+__pycache__/
+*.pyc
+.turbo/
+.vercel/
+
+# OS & Editor Metadata
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+pnpm-debug.log*

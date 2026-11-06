@@ -14,49 +14,14 @@ import {
   computeAuditChainHash,
   computeDeterministicIdempotencyKey,
 } from "../../scripts/seed-sandbox";
+import {
+  evaluateCosmosPolicyFirewall,
+  type CosmosPolicyConfig,
+} from "../../packages/shared/src/policy-dsl";
+import { validatePayPalMonetaryPayload } from "../../packages/shared/src/apimatic-validators";
+import { MOCK_DISPUTES, MOCK_INVOICES, MOCK_WORKSPACES } from "../../packages/shared/src/mock-fixtures";
 
-interface PolicyRuleConfig {
-  maxSingleAutoRefundUsd: number;
-  maxDailyRefundVelocityUsd: number;
-  maxGnnRiskScoreForAutoRefund: number;
-}
-
-function evaluateCosmosPolicyFirewall(
-  toolName: string,
-  amountUsd: number,
-  cumulative24hRefundUsd: number,
-  gnnRiskScore: number,
-  untrustedTextContainsInjection: boolean,
-  policy: PolicyRuleConfig
-): { verdict: "APPROVED_L3_AUTO" | "HELD_FOR_L2_PASSKEY" | "BLOCKED_SECURITY_INJECTION"; reasonCode: string } {
-  if (untrustedTextContainsInjection) {
-    return {
-      verdict: "BLOCKED_SECURITY_INJECTION",
-      reasonCode: "RC_00_INDIRECT_PROMPT_INJECTION_DETECTED",
-    };
-  }
-  if (toolName === "create_refund") {
-    if (gnnRiskScore >= policy.maxGnnRiskScoreForAutoRefund) {
-      return {
-        verdict: "HELD_FOR_L2_PASSKEY",
-        reasonCode: "RC_04_GNN_FRIENDLY_FRAUD_RISK_THRESHOLD_EXCEEDED",
-      };
-    }
-    if (amountUsd > policy.maxSingleAutoRefundUsd) {
-      return {
-        verdict: "HELD_FOR_L2_PASSKEY",
-        reasonCode: "RC_02_EXCEEDS_SINGLE_REFUND_CAP_250_USD",
-      };
-    }
-    if (cumulative24hRefundUsd + amountUsd > policy.maxDailyRefundVelocityUsd) {
-      return {
-        verdict: "HELD_FOR_L2_PASSKEY",
-        reasonCode: "RC_03_EXCEEDS_24H_VELOCITY_CAP_500_USD",
-      };
-    }
-  }
-  return { verdict: "APPROVED_L3_AUTO", reasonCode: "RC_OK_POLICY_PASSED" };
-}
+type PolicyRuleConfig = CosmosPolicyConfig;
 
 describe("PayOps AI (PayPal Sentinel) — E2E Checkout, Invoicing & Dispute Defense Suite", () => {
   const defaultPolicy: PolicyRuleConfig = {
@@ -130,5 +95,19 @@ describe("PayOps AI (PayPal Sentinel) — E2E Checkout, Invoicing & Dispute Defe
 
     expect(h2).toHaveLength(64);
     expect(h2).not.toBe(h2FromTampered);
+  });
+
+  it("enforces APIMatic 2-decimal string validation and shared Dev1/Dev2 contract parity (F-09, R-03)", () => {
+    const validPayload = validatePayPalMonetaryPayload("2450.00", "USD");
+    expect(validPayload.valid).toBe(true);
+    expect(validPayload.normalizedAmountValue).toBe("2450.00");
+
+    const invalidFloatPayload = validatePayPalMonetaryPayload(2450, "USD");
+    expect(invalidFloatPayload.valid).toBe(false);
+    expect(invalidFloatPayload.errors[0]).toContain("R-03");
+
+    expect(MOCK_WORKSPACES.length).toBeGreaterThanOrEqual(2);
+    expect(MOCK_INVOICES[0].invoiceId).toBe(SEED_INVOICES[0].invoiceId);
+    expect(MOCK_DISPUTES[0].disputeId).toBe(SEED_DISPUTES[0].disputeId);
   });
 });
