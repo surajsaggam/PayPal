@@ -247,6 +247,9 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
                 <option value="es" className="bg-slate-900">
                   ES
                 </option>
+                <option value="de" className="bg-slate-900">
+                  DE
+                </option>
               </select>
             </div>
 

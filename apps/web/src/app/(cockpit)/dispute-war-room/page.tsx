@@ -17,9 +17,16 @@ import {
   Network,
   CheckCircle2,
   KeyRound,
+  Languages,
+  Clock,
+  Table,
 } from "lucide-react";
 import { resolveDispute } from "../../../lib/api-client";
-import { formatCurrencyAmount } from "../../../lib/formatters";
+import {
+  formatCurrencyAmount,
+  formatDualCurrency,
+  formatSlaCountdown,
+} from "../../../lib/formatters";
 import { useCockpitStore } from "../../../stores/useCockpitStore";
 
 export default function DisputeWarRoomPage() {
@@ -37,6 +44,8 @@ export default function DisputeWarRoomPage() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [submittedIds, setSubmittedIds] = useState<Record<string, boolean>>({});
+  const [showGraphTextSummary, setShowGraphTextSummary] = useState(false);
+  const [showBhashiniOcrInspector, setShowBhashiniOcrInspector] = useState(true);
 
   const activeDispute =
     disputes.find((d) => d.disputeId === selectedDisputeId) ?? disputes[0];
@@ -122,6 +131,12 @@ export default function DisputeWarRoomPage() {
               const isSelected = d.disputeId === activeDispute?.disputeId;
               const isHighFraud = d.gnnRiskScore >= 0.7;
               const isSubmitted = Boolean(submittedIds[d.disputeId]);
+              const sla = formatSlaCountdown(d.responseDueIso);
+              const dualAmt = formatDualCurrency(
+                d.disputedAmountValue,
+                d.currencyCode,
+                activeCurrency === d.currencyCode ? "INR" : activeCurrency
+              );
 
               return (
                 <div
@@ -137,15 +152,26 @@ export default function DisputeWarRoomPage() {
                     <span className="font-bold text-white">
                       [{d.disputeId}] · Order {d.orderId}
                     </span>
-                    <span className="font-bold text-emerald-400 financial-figure">
-                      {formatCurrencyAmount(d.disputedAmountValue, d.currencyCode, activeCurrency)}
-                    </span>
+                    <div className="text-right financial-figure">
+                      <div className="font-bold text-emerald-400">
+                        {formatCurrencyAmount(d.disputedAmountValue, d.currencyCode, activeCurrency)}
+                      </div>
+                      <div className="text-[10px] text-slate-400">{dualAmt.secondary}</div>
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
                     <span className="text-slate-300">{d.reasonCode}</span>
-                    <span className="text-amber-300">
-                      SLA Due: {d.responseDueIso.slice(0, 10)}
+                    <span
+                      title={`SLA Multi-Timezone Deadlines:\n• ${sla.tooltipTimezones.utc}\n• ${sla.tooltipTimezones.ist}\n• ${sla.tooltipTimezones.cst}\n• ${sla.tooltipTimezones.gmt}`}
+                      className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold ${
+                        sla.isUrgent
+                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                          : "bg-slate-800 text-slate-300"
+                      }`}
+                    >
+                      <Clock className="h-3 w-3" />
+                      SLA: {sla.badgeText} ({d.responseDueIso.slice(0, 10)})
                     </span>
                   </div>
 
@@ -183,66 +209,96 @@ export default function DisputeWarRoomPage() {
           >
             {/* 3-Hop Buyer-Seller-Carrier Network Graph Visualizer (M-04, US-08) */}
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Network className="h-4 w-4 text-purple-400" />
                   <h2 className="text-xs font-bold uppercase tracking-wider text-white">
                     M-04 3-Hop Buyer–Device–Carrier Risk Graph (payops-graphsage-lgbm-v1.2.onnx · 9.2ms)
                   </h2>
                 </div>
-                <span className="rounded border border-red-500/50 bg-red-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-red-300 financial-figure">
-                  GNN Risk Score: {activeDispute.gnnRiskScore.toFixed(2)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowGraphTextSummary((v) => !v)}
+                    aria-pressed={showGraphTextSummary}
+                    className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-2 py-0.5 font-mono text-[10px] text-slate-200 hover:border-sky-500 cursor-pointer"
+                  >
+                    <Table className="h-3 w-3 text-sky-400" />
+                    {showGraphTextSummary ? "Show SVG Topology" : "Accessible Summary (WCAG 1.1.1)"}
+                  </button>
+                  <span className="rounded border border-red-500/50 bg-red-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-red-300 financial-figure">
+                    GNN Risk Score: {activeDispute.gnnRiskScore.toFixed(2)}
+                  </span>
+                </div>
               </div>
 
-              {/* SVG 3-Hop Graph Topology */}
-              <svg
-                viewBox="0 0 680 120"
-                className="w-full h-28 rounded-lg bg-slate-900/90 border border-slate-800/80"
-                role="img"
-                aria-label="3-Hop Buyer Device Carrier Fraud Graph"
-              >
-                {/* Edges */}
-                <line x1="125" y1="60" x2="290" y2="60" stroke="#38BDF8" strokeWidth="2" strokeDasharray="4 2" />
-                <line x1="390" y1="60" x2="545" y2="35" stroke="#10B981" strokeWidth="2" />
-                <line x1="390" y1="60" x2="545" y2="88" stroke="#EF4444" strokeWidth="2" />
+              {showGraphTextSummary ? (
+                <div
+                  role="region"
+                  aria-label="Accessible Text Summary of 3-Hop GNN Fraud Graph"
+                  className="rounded-lg border border-slate-800 bg-slate-900 p-3 font-mono text-xs text-slate-200 space-y-1.5"
+                >
+                  <div>
+                    • <strong>Hop 1 (Buyer Identity HMAC):</strong> 9f2a88c1..bc11 linked to Order #{activeDispute.orderId}
+                  </div>
+                  <div>
+                    • <strong>Hop 2 (Carrier Verification):</strong> {activeDispute.carrierCode} #{activeDispute.trackingNumber} status is{" "}
+                    <span className="text-emerald-300 font-bold">{activeDispute.trackingStatus}</span>
+                  </div>
+                  <div>
+                    • <strong>Hop 3 (Cross-Merchant Ring):</strong> Shared Device/IP ASN correlated with 3 prior INR claims in 90 days (GNN Score: {activeDispute.gnnRiskScore.toFixed(2)})
+                  </div>
+                </div>
+              ) : (
+                /* SVG 3-Hop Graph Topology */
+                <svg
+                  viewBox="0 0 680 120"
+                  className="w-full h-28 rounded-lg bg-slate-900/90 border border-slate-800/80"
+                  role="img"
+                  aria-label="3-Hop Buyer Device Carrier Fraud Graph"
+                >
+                  {/* Edges */}
+                  <line x1="125" y1="60" x2="290" y2="60" stroke="#38BDF8" strokeWidth="2" strokeDasharray="4 2" />
+                  <line x1="390" y1="60" x2="545" y2="35" stroke="#10B981" strokeWidth="2" />
+                  <line x1="390" y1="60" x2="545" y2="88" stroke="#EF4444" strokeWidth="2" />
 
-                {/* Hop 1: Buyer Hash Node */}
-                <rect x="15" y="34" width="110" height="52" rx="8" fill="#0F172A" stroke="#38BDF8" strokeWidth="1.5" />
-                <text x="70" y="55" textAnchor="middle" fill="#E2E8F0" fontSize="10" fontFamily="monospace" fontWeight="bold">
-                  Buyer HMAC
-                </text>
-                <text x="70" y="72" textAnchor="middle" fill="#38BDF8" fontSize="9" fontFamily="monospace">
-                  9f2a88c1..bc11
-                </text>
+                  {/* Hop 1: Buyer Hash Node */}
+                  <rect x="15" y="34" width="110" height="52" rx="8" fill="#0F172A" stroke="#38BDF8" strokeWidth="1.5" />
+                  <text x="70" y="55" textAnchor="middle" fill="#E2E8F0" fontSize="10" fontFamily="monospace" fontWeight="bold">
+                    Buyer HMAC
+                  </text>
+                  <text x="70" y="72" textAnchor="middle" fill="#38BDF8" fontSize="9" fontFamily="monospace">
+                    9f2a88c1..bc11
+                  </text>
 
-                {/* Hop 2: Order & Device Fingerprint */}
-                <rect x="275" y="34" width="125" height="52" rx="8" fill="#0F172A" stroke="#A855F7" strokeWidth="1.5" />
-                <text x="337" y="55" textAnchor="middle" fill="#E2E8F0" fontSize="10" fontFamily="monospace" fontWeight="bold">
-                  Order #{activeDispute.orderId}
-                </text>
-                <text x="337" y="72" textAnchor="middle" fill="#C084FC" fontSize="9" fontFamily="monospace">
-                  ${activeDispute.disputedAmountValue} {activeDispute.currencyCode}
-                </text>
+                  {/* Hop 2: Order & Device Fingerprint */}
+                  <rect x="275" y="34" width="125" height="52" rx="8" fill="#0F172A" stroke="#A855F7" strokeWidth="1.5" />
+                  <text x="337" y="55" textAnchor="middle" fill="#E2E8F0" fontSize="10" fontFamily="monospace" fontWeight="bold">
+                    Order #{activeDispute.orderId}
+                  </text>
+                  <text x="337" y="72" textAnchor="middle" fill="#C084FC" fontSize="9" fontFamily="monospace">
+                    ${activeDispute.disputedAmountValue} {activeDispute.currencyCode}
+                  </text>
 
-                {/* Hop 3A: Carrier Signed POD */}
-                <rect x="520" y="12" width="145" height="42" rx="6" fill="#064E3B" stroke="#10B981" strokeWidth="1.5" />
-                <text x="592" y="30" textAnchor="middle" fill="#A7F3D0" fontSize="9.5" fontFamily="monospace" fontWeight="bold">
-                  {activeDispute.carrierCode}: {activeDispute.trackingStatus}
-                </text>
-                <text x="592" y="44" textAnchor="middle" fill="#6EE7B7" fontSize="8.5" fontFamily="monospace">
-                  #{activeDispute.trackingNumber} (Signed)
-                </text>
+                  {/* Hop 3A: Carrier Signed POD */}
+                  <rect x="520" y="12" width="145" height="42" rx="6" fill="#064E3B" stroke="#10B981" strokeWidth="1.5" />
+                  <text x="592" y="30" textAnchor="middle" fill="#A7F3D0" fontSize="9.5" fontFamily="monospace" fontWeight="bold">
+                    {activeDispute.carrierCode}: {activeDispute.trackingStatus}
+                  </text>
+                  <text x="592" y="44" textAnchor="middle" fill="#6EE7B7" fontSize="8.5" fontFamily="monospace">
+                    #{activeDispute.trackingNumber} (Signed)
+                  </text>
 
-                {/* Hop 3B: Cross-Merchant Ring */}
-                <rect x="520" y="66" width="145" height="42" rx="6" fill="#450A0A" stroke="#EF4444" strokeWidth="1.5" />
-                <text x="592" y="84" textAnchor="middle" fill="#FECACA" fontSize="9.5" fontFamily="monospace" fontWeight="bold">
-                  Shared Device / IP Ring
-                </text>
-                <text x="592" y="98" textAnchor="middle" fill="#FCA5A5" fontSize="8.5" fontFamily="monospace">
-                  3 Prior INR Claims (90d)
-                </text>
-              </svg>
+                  {/* Hop 3B: Cross-Merchant Ring */}
+                  <rect x="520" y="66" width="145" height="42" rx="6" fill="#450A0A" stroke="#EF4444" strokeWidth="1.5" />
+                  <text x="592" y="84" textAnchor="middle" fill="#FECACA" fontSize="9.5" fontFamily="monospace" fontWeight="bold">
+                    Shared Device / IP Ring
+                  </text>
+                  <text x="592" y="98" textAnchor="middle" fill="#FCA5A5" fontSize="8.5" fontFamily="monospace">
+                    3 Prior INR Claims (90d)
+                  </text>
+                </svg>
+              )}
 
               {/* TreeSHAP Feature Attribution Bars */}
               <div className="space-y-1.5">
@@ -293,6 +349,45 @@ export default function DisputeWarRoomPage() {
                   Protection Compelling Evidence Clause 4.2 (Signed Carrier POD + IP Geo Match).
                 </li>
               </ul>
+
+              {/* M-03 Bhashini / IndicTrans2 Regional Carrier POD OCR Translation Inspector (LOCALIZATION.md Section 4.2) */}
+              <div className="rounded-lg border border-slate-800 bg-slate-950/90 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold text-sky-300">
+                    <Languages className="h-3.5 w-3.5" />
+                    M-03 Bhashini / IndicTrans2 Regional Carrier POD OCR Normalizer
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowBhashiniOcrInspector((v) => !v)}
+                    className="rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] text-slate-300 hover:text-white cursor-pointer"
+                  >
+                    {showBhashiniOcrInspector ? "Hide Regional POD" : "Inspect Regional POD"}
+                  </button>
+                </div>
+
+                {showBhashiniOcrInspector && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 font-mono text-[11px]">
+                    <div className="rounded border border-slate-800 bg-slate-900/80 p-2.5 text-slate-300">
+                      <div className="text-[10px] uppercase text-amber-300 mb-1">
+                        Raw Carrier Receipt Scan (Hindi / Regional POD)
+                      </div>
+                      <div>वाहक: {activeDispute.carrierCode} · ट्रैकिंग #{activeDispute.trackingNumber}</div>
+                      <div>स्थिति: वितरित (सफल डिलीवरी · हस्ताक्षर सत्यापित)</div>
+                      <div>पिन कोड: 560001 (बेंगलुरु) · दिनांक: 2026-11-08</div>
+                    </div>
+
+                    <div className="rounded border border-emerald-500/30 bg-emerald-950/30 p-2.5 text-emerald-200">
+                      <div className="text-[10px] uppercase text-emerald-400 mb-1">
+                        Normalized PayPal Compelling Evidence 3.0 JSON
+                      </div>
+                      <div>tracking_status: &quot;{activeDispute.trackingStatus}&quot;</div>
+                      <div>recipient_signature_verified: true (F1=96.4%)</div>
+                      <div>delivery_postal_match: &quot;560001 == Order Shipping Address&quot;</div>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Action Buttons (API-11) */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-800">

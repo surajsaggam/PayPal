@@ -132,6 +132,7 @@ export interface CockpitState {
   ) => void;
   recordOrderCheckout: (order: PayPalOrderRecord) => void;
   settleInvoiceWithPyusd: (invoiceId: string, solanaTxSig: string, memo: string) => void;
+  addSubscriptionPlan: (plan: SubscriptionPlanRecord) => void;
 }
 
 const initialApiMode =
@@ -571,6 +572,29 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         executions: [exec, ...state.executions],
         pyusdModalInvoice: null,
         statusBannerMessage: `Settled ${target?.amountValue ?? "650.00"} PYUSD on Solana Token-2022 (Tx: ${solanaTxSig.slice(0, 14)}... · Memo: ${memo}) & reconciled PayPal Invoice ${invoiceId} as PAID.`,
+      };
+    }),
+
+  addSubscriptionPlan: (plan) =>
+    set((state) => {
+      const exec: AgentToolExecution = {
+        executionId: `ex_${Math.floor(9800 + Math.random() * 190)}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: plan.workspaceId,
+        toolName: "create_subscription_plan",
+        paypalRequestId: `idem_${plan.workspaceId}_subplan_${plan.planId}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: "RC_OK_SUBSCRIPTION_PLAN_ACTIVE",
+        gnnRiskScore: 0.01,
+        amountValue: plan.amountValue,
+        currencyCode: plan.currencyCode,
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        subscriptionPlans: [plan, ...state.subscriptionPlans.filter((p) => p.planId !== plan.planId)],
+        executions: [exec, ...state.executions],
+        statusBannerMessage: `PayPal Billing Plan ${plan.planId} (${plan.planName} · ${plan.amountValue} ${plan.currencyCode}/${plan.billingIntervalUnit}) activated via API-12 (create_product -> create_subscription_plan).`,
       };
     }),
 }));

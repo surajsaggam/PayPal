@@ -11,7 +11,10 @@ import dynamic from "next/dynamic";
 import { PlusCircle, QrCode, Sparkles, Coins, Repeat } from "lucide-react";
 import type { CurrencyCode } from "@payops/shared";
 import { DunningHistogram } from "../../../components/bryntum/DunningHistogram";
-import { createAutonomousSmartInvoice } from "../../../lib/api-client";
+import {
+  createAutonomousSmartInvoice,
+  createSubscriptionPlan,
+} from "../../../lib/api-client";
 import { formatCurrencyAmount } from "../../../lib/formatters";
 import { useCockpitStore } from "../../../stores/useCockpitStore";
 
@@ -34,6 +37,7 @@ export default function InvoicingSchedulerPage() {
     activeCurrency,
     invoices,
     createAutonomousInvoice,
+    addSubscriptionPlan,
     openQrModal,
     openPyusdModal,
   } = useCockpitStore();
@@ -46,7 +50,31 @@ export default function InvoicingSchedulerPage() {
   const [enableRecurring, setEnableRecurring] = useState(true);
   const [creating, setCreating] = useState(false);
 
+  // API-12 Recurring Subscription Plan Creator State
+  const [planName, setPlanName] = useState("Kaveri B2B Retainer — Pro Tier");
+  const [planInterval, setPlanInterval] = useState<"MONTH" | "YEAR">("MONTH");
+  const [planAmount, setPlanAmount] = useState("750.00");
+  const [creatingPlan, setCreatingPlan] = useState(false);
+
   const selectedInvoice = invoices[0];
+
+  const handleCreateSubscriptionPlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingPlan(true);
+    try {
+      const res = await createSubscriptionPlan({
+        workspaceId: activeWorkspaceId,
+        productName: "Kaveri Managed Agentic CFO Service",
+        planName,
+        billingIntervalUnit: planInterval,
+        amountValue: planAmount,
+        currencyCode,
+      });
+      addSubscriptionPlan(res.plan);
+    } finally {
+      setCreatingPlan(false);
+    }
+  };
 
   const handleCreateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,6 +290,85 @@ export default function InvoicingSchedulerPage() {
               </div>
             </div>
           )}
+
+          {/* API-12 Recurring Subscription Billing Plan Creator (E-09) */}
+          <form
+            onSubmit={(e) => void handleCreateSubscriptionPlan(e)}
+            className="border-t border-slate-800 pt-4 space-y-2.5 text-xs"
+          >
+            <div className="flex items-center justify-between">
+              <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold uppercase text-purple-300">
+                <Repeat className="h-3 w-3" />
+                API-12 · PayPal Subscriptions v1 Plan Creator
+              </span>
+              <span className="font-mono text-[10px] text-slate-400">MCP #31–#35</span>
+            </div>
+
+            <div>
+              <label
+                htmlFor="sub-plan-name"
+                className="block font-mono text-[10px] uppercase text-slate-400"
+              >
+                Subscription Plan Name
+              </label>
+              <input
+                id="sub-plan-name"
+                type="text"
+                required
+                value={planName}
+                onChange={(e) => setPlanName(e.target.value)}
+                className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label
+                  htmlFor="sub-plan-amount"
+                  className="block font-mono text-[10px] uppercase text-slate-400"
+                >
+                  Cycle Amount ({currencyCode})
+                </label>
+                <input
+                  id="sub-plan-amount"
+                  type="text"
+                  required
+                  value={planAmount}
+                  onChange={(e) => setPlanAmount(e.target.value)}
+                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-purple-200 financial-figure"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="sub-plan-interval"
+                  className="block font-mono text-[10px] uppercase text-slate-400"
+                >
+                  Billing Interval
+                </label>
+                <select
+                  id="sub-plan-interval"
+                  value={planInterval}
+                  onChange={(e) => setPlanInterval(e.target.value as "MONTH" | "YEAR")}
+                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-white"
+                >
+                  <option value="MONTH">MONTH</option>
+                  <option value="YEAR">YEAR</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={creatingPlan}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-purple-500/50 bg-purple-950/60 hover:bg-purple-900/60 py-2 px-3 font-mono text-xs font-semibold text-purple-200 transition cursor-pointer"
+            >
+              <Repeat className="h-3.5 w-3.5" />
+              {creatingPlan
+                ? "Activating PayPal Billing Plan..."
+                : "Create Subscription Plan (API-12)"}
+            </button>
+          </form>
         </aside>
       </div>
     </div>

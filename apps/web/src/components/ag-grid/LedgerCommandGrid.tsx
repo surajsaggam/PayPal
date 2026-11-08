@@ -22,7 +22,7 @@ import {
 import type { AgentToolExecution } from "@payops/shared";
 import { generateHighDensityLedgerRows, MOCK_EXECUTIONS } from "@payops/shared/mock-fixtures";
 import { useSseExecutionStream } from "../../hooks/useSseExecutionStream";
-import { formatCurrencyAmount } from "../../lib/formatters";
+import { formatCurrencyAmount, formatDualCurrency } from "../../lib/formatters";
 import { useCockpitStore } from "../../stores/useCockpitStore";
 import { DisputeDetailRenderer } from "./DisputeDetailRenderer";
 import { GnnRiskSparklineCell } from "./GnnRiskSparklineCell";
@@ -301,7 +301,9 @@ export function LedgerCommandGrid() {
         uiState !== "loading" && (
           <div className="overflow-x-auto max-h-[540px] overflow-y-auto">
             <table
-              role="grid"
+              role="treegrid"
+              aria-rowcount={filteredRows.length}
+              aria-colcount={8}
               aria-label="PayPal Sentinel Agent Tool Executions Ledger"
               className="w-full text-left border-collapse text-xs"
             >
@@ -341,6 +343,7 @@ export function LedgerCommandGrid() {
                         <td className="py-2.5 px-3">
                           <button
                             type="button"
+                            aria-expanded={isExpanded}
                             aria-label={`Toggle Master-Detail for ${row.executionId}`}
                             onClick={() =>
                               setExpandedRowIds((prev) => ({
@@ -366,10 +369,25 @@ export function LedgerCommandGrid() {
                           </span>
                         </td>
                         <td className="py-2.5 px-3 font-mono font-semibold text-white financial-figure">
-                          {formatCurrencyAmount(
-                            row.amountValue,
-                            row.currencyCode ?? "USD",
-                            activeCurrency
+                          <div>
+                            {formatCurrencyAmount(
+                              row.amountValue,
+                              row.currencyCode ?? "USD",
+                              activeCurrency
+                            )}
+                          </div>
+                          {row.amountValue && (
+                            <div className="text-[10px] font-normal text-slate-400">
+                              {
+                                formatDualCurrency(
+                                  row.amountValue,
+                                  row.currencyCode ?? "USD",
+                                  activeCurrency === (row.currencyCode ?? "USD")
+                                    ? "INR"
+                                    : activeCurrency
+                                ).secondary
+                              }
+                            </div>
                           )}
                         </td>
                         <td className="py-2.5 px-3">

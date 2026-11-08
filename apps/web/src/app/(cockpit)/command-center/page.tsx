@@ -6,7 +6,7 @@
  * Write Owner: Dev 2 (100%)
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   TrendingUp,
   Clock,
@@ -14,6 +14,7 @@ import {
   Award,
   BarChart2,
   PieChart,
+  Table,
 } from "lucide-react";
 import { MOCK_MERCHANT_INSIGHTS } from "@payops/shared/mock-fixtures";
 import { LedgerCommandGrid } from "../../../components/ag-grid/LedgerCommandGrid";
@@ -29,6 +30,7 @@ const WATERFALL_BARS = [
 
 export default function CommandCenterPage() {
   const { activeWorkspaceId, activeCurrency, activeLocale, executions } = useCockpitStore();
+  const [showAccessibleChartTable, setShowAccessibleChartTable] = useState(false);
   const strings = LOCALE_DICTIONARY[activeLocale];
   const insights =
     MOCK_MERCHANT_INSIGHTS[activeWorkspaceId] ?? MOCK_MERCHANT_INSIGHTS.ws_99102a;
@@ -109,36 +111,73 @@ export default function CommandCenterPage() {
       >
         {/* Chart 1: 30-Day Cash Inflow Waterfall */}
         <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <BarChart2 className="h-4 w-4 text-sky-400" />
               <h2 className="text-xs font-bold uppercase tracking-wider text-white">
                 AG Charts Enterprise — 30-Day Cash Inflow & DSO Waterfall (F-07)
               </h2>
             </div>
-            <span className="font-mono text-[11px] text-emerald-400">
-              Early-Pay Velocity: +65.1%
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] text-emerald-400">
+                Early-Pay Velocity: +65.1%
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAccessibleChartTable((v) => !v)}
+                aria-pressed={showAccessibleChartTable}
+                className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-2 py-0.5 font-mono text-[10px] text-slate-200 hover:border-sky-500 cursor-pointer"
+              >
+                <Table className="h-3 w-3 text-sky-400" />
+                {showAccessibleChartTable ? "Show Visual Bars" : "Data Table (WCAG 1.1.1)"}
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-2.5 pt-1">
-            {WATERFALL_BARS.map((bar) => (
-              <div key={bar.label} className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-300">{bar.label}</span>
-                  <span className="text-white font-semibold financial-figure">
-                    {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
-                  </span>
+          {showAccessibleChartTable ? (
+            <table
+              aria-label="Accessible Summary Table for 30-Day Cash Inflow Waterfall"
+              className="w-full text-left border-collapse text-xs font-mono"
+            >
+              <thead>
+                <tr className="border-b border-slate-800 text-[10px] uppercase text-slate-400">
+                  <th className="py-1.5">Cashflow Stage</th>
+                  <th className="py-1.5">Amount ({activeCurrency})</th>
+                  <th className="py-1.5">Share of Invoiced</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/70">
+                {WATERFALL_BARS.map((bar) => (
+                  <tr key={bar.label}>
+                    <td className="py-1.5 text-slate-200">{bar.label}</td>
+                    <td className="py-1.5 text-white font-semibold financial-figure">
+                      {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
+                    </td>
+                    <td className="py-1.5 text-emerald-400 financial-figure">{bar.pct}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="space-y-2.5 pt-1">
+              {WATERFALL_BARS.map((bar) => (
+                <div key={bar.label} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="text-slate-300">{bar.label}</span>
+                    <span className="text-white font-semibold financial-figure">
+                      {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
+                    </span>
+                  </div>
+                  <div className="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${bar.color}`}
+                      style={{ width: `${bar.pct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${bar.color}`}
-                    style={{ width: `${bar.pct}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Chart 2: GNN Friendly-Fraud Risk Distribution */}

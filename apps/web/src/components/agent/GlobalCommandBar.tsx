@@ -17,7 +17,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { executeAgentPrompt } from "../../lib/api-client";
-import { LOCALE_DICTIONARY } from "../../lib/formatters";
+import { LOCALE_DICTIONARY, normalizeMultilingualAgentPrompt } from "../../lib/formatters";
 import { useCockpitStore, type McpTraceStep } from "../../stores/useCockpitStore";
 
 const QUICK_PROMPTS = [
@@ -26,6 +26,12 @@ const QUICK_PROMPTS = [
     prompt:
       "Create $1,850.00 USD invoice for Acme Robotics with 2.00% Net-10 early-payment discount & Fastlane QR code",
     domain: "INVOICES (15 tools)",
+  },
+  {
+    label: "Hinglish Invoice (Acme $1,850 + QR)",
+    prompt:
+      "Acme Robotics ko 1850 dollar ka invoice bhejo with 2% early discount aur QR code",
+    domain: "INVOICES · Hinglish (hi-Latn)",
   },
   {
     label: "Contest Delivered INR Dispute ($340)",
@@ -70,7 +76,16 @@ export function GlobalCommandBar() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        const nextDry = !useCockpitStore.getState().dryRun;
+        setDryRun(nextDry);
+        setStatusBanner(
+          nextDry
+            ? "Keyboard Shortcut (Cmd/Ctrl+Shift+D): Dry-Run Counterfactual Mode ENABLED (US-02 · 0 Sandbox Mutations)."
+            : "Keyboard Shortcut (Cmd/Ctrl+Shift+D): Dry-Run Mode DISABLED -> Live PayPal Sandbox Execution active."
+        );
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         inputRef.current?.focus();
       } else if (e.key === "Escape") {
@@ -79,20 +94,22 @@ export function GlobalCommandBar() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setTraceDrawerOpen]);
+  }, [setDryRun, setStatusBanner, setTraceDrawerOpen]);
 
   useEffect(() => {
     const lower = commandPrompt.toLowerCase();
-    if (lower.includes("dispute") || lower.includes("inr") || lower.includes("dhl")) {
-      setDetectedDomain("DISPUTES + TRACKING · 6/35 Tools");
-    } else if (lower.includes("refund") || lower.includes("override") || lower.includes("ignore")) {
-      setDetectedDomain("ORDERS + M-02 INJECTION GUARD");
-    } else if (lower.includes("restock") || lower.includes("order") || lower.includes("sku")) {
-      setDetectedDomain("CATALOG + ORDERS v2 · 7/35 Tools");
+    const norm = normalizeMultilingualAgentPrompt(commandPrompt);
+    const langTag = norm.detectedLanguage !== "en" ? ` [${norm.detectedLanguage}]` : "";
+    if (norm.inferredIntent === "DISPUTE" || lower.includes("dhl")) {
+      setDetectedDomain(`DISPUTES + TRACKING · 6/35 Tools${langTag}`);
+    } else if (norm.inferredIntent === "REFUND" || lower.includes("override") || lower.includes("ignore")) {
+      setDetectedDomain(`ORDERS + M-02 INJECTION GUARD${langTag}`);
+    } else if (norm.inferredIntent === "ORDER" || lower.includes("sku")) {
+      setDetectedDomain(`CATALOG + ORDERS v2 · 7/35 Tools${langTag}`);
     } else if (lower.includes("pyusd") || lower.includes("solana")) {
-      setDetectedDomain("INVOICING + PYUSD BRIDGE · 4/35 Tools");
+      setDetectedDomain(`INVOICING + PYUSD BRIDGE · 4/35 Tools${langTag}`);
     } else {
-      setDetectedDomain("INVOICING v2 · 8/35 Tools");
+      setDetectedDomain(`INVOICING v2 · 8/35 Tools${langTag}`);
     }
   }, [commandPrompt]);
 

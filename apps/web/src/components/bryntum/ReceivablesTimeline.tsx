@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import type { PayPalInvoiceRecord } from "@payops/shared";
 import { sendOrRescheduleInvoiceReminder } from "../../lib/api-client";
-import { formatCurrencyAmount } from "../../lib/formatters";
+import { formatCurrencyAmount, formatDualCurrency } from "../../lib/formatters";
 import { useCockpitStore } from "../../stores/useCockpitStore";
 
 const TIMELINE_DATES = [
@@ -162,6 +162,15 @@ export default function ReceivablesTimeline() {
                     <div className="font-mono text-xs font-semibold text-emerald-400 mt-0.5 financial-figure">
                       {formatCurrencyAmount(inv.amountValue, inv.currencyCode, activeCurrency)}
                     </div>
+                    <div className="font-mono text-[10px] text-slate-400 financial-figure">
+                      {
+                        formatDualCurrency(
+                          inv.amountValue,
+                          inv.currencyCode,
+                          activeCurrency === inv.currencyCode ? "INR" : activeCurrency
+                        ).secondary
+                      }
+                    </div>
                   </td>
 
                   {TIMELINE_DATES.map((slotDate) => {
@@ -204,7 +213,21 @@ export default function ReceivablesTimeline() {
                   })}
 
                   <td className="py-3 px-3 border-l border-slate-800/80 text-right">
-                    <div className="inline-flex items-center gap-1.5">
+                    <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                      {/* WCAG 2.2 AA Criterion 2.5.7: Keyboard-Accessible Date Popover Selector (No Mouse Drag Required) */}
+                      <select
+                        aria-label={`Reschedule dunning date for ${inv.invoiceNumber} without dragging (WCAG 2.5.7)`}
+                        value={triggerDate}
+                        onChange={(e) => void handleMilestoneDrop(inv, e.target.value)}
+                        className="rounded border border-slate-700 bg-slate-950 px-1.5 py-1 font-mono text-[10px] text-slate-200 cursor-pointer"
+                      >
+                        {TIMELINE_DATES.map((dt) => (
+                          <option key={dt} value={dt}>
+                            Slot: {dt.slice(5)}
+                          </option>
+                        ))}
+                      </select>
+
                       <button
                         type="button"
                         onClick={() => openQrModal(inv)}

@@ -17,19 +17,27 @@ import {
 import {
   convertCurrencyAmount,
   formatCurrencyAmount,
+  formatDualCurrency,
+  formatSlaCountdown,
   LOCALE_DICTIONARY,
+  normalizeMultilingualAgentPrompt,
 } from "../lib/formatters";
 import {
   approveHeldAgentExecution,
   captureOrder,
   createAndCaptureOrder,
   createAutonomousSmartInvoice,
+  createSubscriptionPlan,
   executeAgentPrompt,
   refundOrder,
   resolveDispute,
   simulatePayPalWebhook,
 } from "../lib/api-client";
 import { useCockpitStore } from "../stores/useCockpitStore";
+import {
+  COCKPIT_SCREEN_ROUTES,
+  verifyFiveScreenCockpitJourney,
+} from "../../../../tests/e2e/cockpit-screens.playwright";
 
 describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG Grid 10k Benchmark", () => {
   beforeEach(() => {
@@ -55,6 +63,56 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
     expect(LOCALE_DICTIONARY.en.appTitle).toContain("PayOps AI");
     expect(LOCALE_DICTIONARY.hi.appTitle).toContain("पेपैल सेंटिनल");
     expect(LOCALE_DICTIONARY.es.appTitle).toContain("PayPal Sentinel");
+    expect(LOCALE_DICTIONARY.de.navCommandCenter).toContain("Leitstand");
+
+    const dual = formatDualCurrency("2450.00", "USD", "INR");
+    expect(dual.primary).toBe("$2,450.00 USD");
+    expect(dual.secondary).toBe("≈ ₹2.06L INR");
+
+    const sla = formatSlaCountdown("2026-11-15T18:00:00.000Z", "2026-11-08T18:00:00.000Z");
+    expect(sla.badgeText).toBe("7d 0h remaining");
+    expect(sla.tooltipTimezones.ist).toContain("IST");
+    expect(sla.tooltipTimezones.cst).toContain("CST");
+  });
+
+  it("normalizes Hinglish, Hindi, Spanish, and German agent prompts into PayPal MCP intents (LOCALIZATION.md Section 4.1)", async () => {
+    const hinglish = normalizeMultilingualAgentPrompt(
+      "Acme Robotics ko 1850 dollar ka invoice bhejo with QR code"
+    );
+    expect(hinglish.detectedLanguage).toBe("hi-Latn");
+    expect(hinglish.inferredIntent).toBe("INVOICE");
+
+    const spanishRefund = normalizeMultilingualAgentPrompt(
+      "Ejecutar reembolso de $120.00 para el pedido 8XL99102481"
+    );
+    expect(spanishRefund.detectedLanguage).toBe("es");
+    expect(spanishRefund.inferredIntent).toBe("REFUND");
+
+    const execRes = await executeAgentPrompt({
+      workspaceId: "ws_99102a",
+      prompt: "Acme Robotics ko 1850 dollar ka invoice bhejo with QR code",
+      dryRun: true,
+    });
+    expect(execRes.execution.toolName).toBe("send_invoice");
+    expect(execRes.execution.amountValue).toBe("1850.00");
+  });
+
+  it("creates and activates recurring PayPal Subscription Billing Plans via API-12 (E-09)", async () => {
+    const planRes = await createSubscriptionPlan({
+      workspaceId: "ws_99102a",
+      productName: "Kaveri Managed Agentic CFO Service",
+      planName: "Kaveri Enterprise Retainer Tier",
+      billingIntervalUnit: "MONTH",
+      amountValue: "750.00",
+      currencyCode: "USD",
+    });
+    expect(planRes.plan.planId).toMatch(/^P-5ML/);
+    expect(planRes.plan.status).toBe("ACTIVE");
+
+    useCockpitStore.getState().addSubscriptionPlan(planRes.plan);
+    expect(useCockpitStore.getState().subscriptionPlans[0].planName).toBe(
+      "Kaveri Enterprise Retainer Tier"
+    );
   });
 
   it("generates 10,000 AG Grid Enterprise rows in under 800ms (TKT-028, US-12)", () => {
@@ -161,5 +219,33 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
       .getState()
       .invoices.find((i) => i.invoiceId === "INV2-F19A-7704-6612-4002");
     expect(updatedInv?.status).toBe("PAID");
+  });
+
+  it("verifies all 5 Cockpit Screen routes & WCAG 2.2 AA treegrid/2.5.7 accessibility harness (TKT-033)", async () => {
+    expect(COCKPIT_SCREEN_ROUTES).toHaveLength(5);
+
+    const mockPage = {
+      goto: async () => undefined,
+      locator: (selector: string) => ({
+        click: async () => undefined,
+        fill: async () => undefined,
+        getAttribute: async (attr: string) => {
+          if (selector.includes("treegrid") && attr === "role") return "treegrid";
+          if (selector.includes("WCAG 2.5.7") && attr === "aria-label") {
+            return "Reschedule dunning date for INV-2026-8841 without dragging (WCAG 2.5.7)";
+          }
+          return null;
+        },
+        innerText: async () => "PayOps AI",
+      }),
+      keyboard: {
+        press: async () => undefined,
+      },
+    };
+
+    const result = await verifyFiveScreenCockpitJourney(mockPage);
+    expect(result.visitedRoutes).toEqual([...COCKPIT_SCREEN_ROUTES]);
+    expect(result.treegridVerified).toBe(true);
+    expect(result.wcag257KeyboardDunningVerified).toBe(true);
   });
 });

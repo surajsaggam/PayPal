@@ -34,8 +34,8 @@ import {
   MOCK_INVOICES,
   MOCK_MERCHANT_INSIGHTS,
   MOCK_POLICY_RULES,
-  MOCK_SUBSCRIPTION_PLANS,
 } from "@payops/shared/mock-fixtures";
+import { normalizeMultilingualAgentPrompt } from "./formatters";
 import { useCockpitStore } from "../stores/useCockpitStore";
 
 const API_BASE_URL =
@@ -105,9 +105,10 @@ export async function executeAgentPrompt(req: AgentExecuteRequest): Promise<Agen
       const parsedNumber = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, "")) : 1850.0;
       const amountStr = parsedNumber.toFixed(2);
 
-      const isRefund = promptLower.includes("refund");
-      const isDispute = promptLower.includes("dispute") || promptLower.includes("inr");
-      const isOrder = promptLower.includes("order") || promptLower.includes("restock");
+      const normalizedIntent = normalizeMultilingualAgentPrompt(req.prompt);
+      const isRefund = normalizedIntent.inferredIntent === "REFUND";
+      const isDispute = normalizedIntent.inferredIntent === "DISPUTE";
+      const isOrder = normalizedIntent.inferredIntent === "ORDER";
 
       const toolName = isRefund
         ? "create_refund"
@@ -427,19 +428,21 @@ export async function createSubscriptionPlan(
   return fetchWithReplayFallback(
     "/api/v1/subscriptions/plans",
     { method: "POST", body: JSON.stringify(req) },
-    () => ({
-      plan:
-        MOCK_SUBSCRIPTION_PLANS[0] ?? {
-          planId: "P-5ML4271244454362WXNWU5NQ",
+    () => {
+      const randSuffix = Math.floor(100000 + Math.random() * 899999);
+      return {
+        plan: {
+          planId: `P-5ML${randSuffix}WXNWU5NQ`,
           workspaceId: req.workspaceId,
-          productId: "PROD-KAVERI-RET-104",
+          productId: `PROD-KAVERI-${randSuffix.toString().slice(0, 3)}`,
           planName: req.planName,
           billingIntervalUnit: req.billingIntervalUnit,
-          amountValue: req.amountValue,
+          amountValue: parseFloat(req.amountValue || "499").toFixed(2),
           currencyCode: req.currencyCode,
           status: "ACTIVE",
         },
-    })
+      };
+    }
   );
 }
 
