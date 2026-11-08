@@ -28,7 +28,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.54.2",
     "@opentelemetry/sdk-node": "^0.54.2",
     "@payops/shared": "workspace:*",
-    "@paypal/agent-toolkit": "^0.4.0",
+    "@paypal/agent-toolkit": "^1.11.0",
     "@paypal/paypal-server-sdk": "^0.6.1",
     "@simplewebauthn/server": "^11.0.0",
     "@solana/spl-token": "^0.4.9",
