@@ -36,7 +36,9 @@ export default function InvoicingSchedulerPage() {
     activeWorkspaceId,
     activeCurrency,
     invoices,
+    selectedInvoiceId,
     createAutonomousInvoice,
+    createRecurringSeries,
     addSubscriptionPlan,
     openQrModal,
     openPyusdModal,
@@ -56,7 +58,8 @@ export default function InvoicingSchedulerPage() {
   const [planAmount, setPlanAmount] = useState("750.00");
   const [creatingPlan, setCreatingPlan] = useState(false);
 
-  const selectedInvoice = invoices[0];
+  const selectedInvoice =
+    invoices.find((i) => i.invoiceId === selectedInvoiceId) ?? invoices[0];
 
   const handleCreateSubscriptionPlan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,6 +93,25 @@ export default function InvoicingSchedulerPage() {
         enableRecurringSeries: enableRecurring,
       });
       createAutonomousInvoice(created);
+      if (enableRecurring) {
+        createRecurringSeries({
+          seriesId: `RS-${created.invoiceNumber.slice(-4)}`,
+          workspaceId: activeWorkspaceId,
+          seriesName: `Auto-Series for ${recipientEmail} (#${created.invoiceNumber})`,
+          recipientEmail,
+          cadence: "MONTHLY",
+          nextTriggerDate: dueDate,
+          amountValue: created.amountValue,
+          currencyCode: created.currencyCode,
+          status: "ACTIVE",
+          mcpToolsBound: [
+            "create_recurring_series",
+            "activate_recurring_series",
+            "get_recurring_series",
+            "cancel_recurring_series",
+          ],
+        });
+      }
     } finally {
       setCreating(false);
     }

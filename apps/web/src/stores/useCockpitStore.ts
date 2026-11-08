@@ -28,8 +28,10 @@ import {
   MOCK_OPERATORS,
   MOCK_ORDERS,
   MOCK_POLICY_RULES,
+  MOCK_RECURRING_SERIES,
   MOCK_SUBSCRIPTION_PLANS,
   MOCK_WORKSPACES,
+  type RecurringInvoiceSeriesFixture,
 } from "@payops/shared/mock-fixtures";
 import type { SupportedLocale } from "../lib/formatters";
 
@@ -65,7 +67,12 @@ export interface CockpitState {
   policies: PolicyRule[];
   orders: PayPalOrderRecord[];
   subscriptionPlans: SubscriptionPlanRecord[];
+  recurringSeries: RecurringInvoiceSeriesFixture[];
   auditLogs: ImmutableAuditLog[];
+
+  // Phase 3 Bryntum & Dispute War-Room Interactive State
+  selectedInvoiceId: string | null;
+  pendingSyncInvoiceIds: string[];
 
   // Command Bar & Drawers
   commandPrompt: string;
@@ -92,6 +99,7 @@ export interface CockpitState {
   setCommandPrompt: (prompt: string) => void;
   setCommandBarOpen: (open: boolean) => void;
   setTraceDrawerOpen: (open: boolean) => void;
+  setSelectedInvoiceId: (invoiceId: string | null) => void;
   openApimaticDrawer: (execution: AgentToolExecution | null) => void;
   openHitlApproval: (execution: AgentToolExecution | null) => void;
   openQrModal: (invoice: PayPalInvoiceRecord | null) => void;
@@ -125,7 +133,24 @@ export interface CockpitState {
     ok: boolean;
     message: string;
   };
+  resizeInvoiceConditionalRule: (
+    invoiceId: string,
+    newPercentage: string,
+    newTriggerDate?: string,
+    newRuleType?: "EARLY_PAYMENT_DISCOUNT" | "LATE_PAYMENT_FEE"
+  ) => {
+    ok: boolean;
+    message: string;
+  };
+  toggleRecurringSeriesStatus: (seriesId: string) => void;
+  createRecurringSeries: (series: RecurringInvoiceSeriesFixture) => void;
   simulateDisputeWebhook: (variant: "INR_340" | "INJECTION_2400") => PayPalDisputeCase;
+  upsertDisputeAlert: (dispute: PayPalDisputeCase) => void;
+  uploadManualCarrierPodOcr: (
+    disputeId: string,
+    carrierCode: "DHL_EXPRESS" | "FEDEX" | "BLUEDART",
+    trackingNumber: string
+  ) => void;
   resolveDisputeCase: (
     disputeId: string,
     action: "CONTEST_WITH_COMPELLING_EVIDENCE" | "AUTO_ACCEPT_LOW_VALUE_CLAIM"
@@ -159,7 +184,11 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   policies: MOCK_POLICY_RULES,
   orders: MOCK_ORDERS,
   subscriptionPlans: MOCK_SUBSCRIPTION_PLANS,
+  recurringSeries: MOCK_RECURRING_SERIES,
   auditLogs: MOCK_AUDIT_LOGS,
+
+  selectedInvoiceId: MOCK_INVOICES[0]?.invoiceId ?? null,
+  pendingSyncInvoiceIds: [],
 
   commandPrompt: "",
   commandBarOpen: false,
@@ -240,7 +269,16 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
             ? "Connected to Live Fastify Control Plane (:4000) & PayPal Developer Sandbox."
             : "Operating in Deterministic Mock Contract Mode (packages/shared/src/mock-fixtures.ts).",
     }),
-  setUiState: (uiState) => set({ uiState }),
+  setUiState: (uiState) =>
+    set((state) => ({
+      uiState,
+      pendingSyncInvoiceIds:
+        uiState === "success" ? [] : state.pendingSyncInvoiceIds,
+      statusBannerMessage:
+        uiState === "success" && state.pendingSyncInvoiceIds.length > 0
+          ? `Flushed ${state.pendingSyncInvoiceIds.length} queued PENDING_SYNC Bryntum dunning milestone mutation(s) to PayPal Invoicing v2 (API-06).`
+          : state.statusBannerMessage,
+    })),
   setDryRun: (dryRun) => set({ dryRun }),
   toggleTheme: () =>
     set((state) => {
@@ -255,6 +293,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   setCommandPrompt: (commandPrompt) => set({ commandPrompt }),
   setCommandBarOpen: (commandBarOpen) => set({ commandBarOpen }),
   setTraceDrawerOpen: (traceDrawerOpen) => set({ traceDrawerOpen }),
+  setSelectedInvoiceId: (selectedInvoiceId) => set({ selectedInvoiceId }),
   openApimaticDrawer: (apimaticDrawerExecution) => set({ apimaticDrawerExecution }),
   openHitlApproval: (hitlApprovalExecution) => set({ hitlApprovalExecution }),
   openQrModal: (qrModalInvoice) => set({ qrModalInvoice }),
@@ -346,6 +385,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       return {
         invoices: [invoice, ...state.invoices],
         executions: [newEx, ...state.executions],
+        selectedInvoiceId: invoice.invoiceId,
         qrModalInvoice: invoice,
         statusBannerMessage: `Invoice ${invoice.invoiceId} (${invoice.amountValue} ${invoice.currencyCode}) created and sent via PayPal Invoicing v2. 2.0% Net-10 discount rule active; QR code attached. Idempotency key: ${invoice.idempotencyKey}.`,
       };
@@ -363,7 +403,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       const proposedMs = new Date(newTriggerDate).getTime();
       const hoursDiff = Math.abs(proposedMs - lastSentMs) / (1000 * 60 * 60);
       if (hoursDiff < 72) {
-        const msg = `Blocked by Cosmos.AI Rule POL-01 (R-11 FDCPA/RBI Dunning Guard): Minimum 72h required between reminders for ${target.invoiceNumber} (attempted ${hoursDiff.toFixed(1)}h gap).`;
+        const msg = `Blocked by Cosmos.AI Rule POL-01 (R-11 FDCPA/RBI Dunning Guard): Minimum 72h required between reminders for ${target.invoiceNumber} (attempted ${hoursDiff.toFixed(1)}h gap). Snapped back to ${target.conditionalRule?.triggerDate ?? "original date"}.`;
         set({ statusBannerMessage: msg });
         return { ok: false, message: msg };
       }
@@ -390,7 +430,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       workspaceId: state.activeWorkspaceId,
       toolName: "send_invoice_reminder",
       paypalRequestId: `idem_${state.activeWorkspaceId}_remind_${target.invoiceNumber}_${newTriggerDate}`,
-      junodbLeaseStatus: "ACQUIRED",
+      junodbLeaseStatus: state.uiState === "offline" ? "REPLAYED_FROM_JUNODB" : "ACQUIRED",
       policyVerdict: "APPROVED_L3_AUTO",
       reasonCode: "RC_OK_72H_COOLDOWN_VERIFIED",
       gnnRiskScore: 0.02,
@@ -399,14 +439,138 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       executedAt: new Date().toISOString(),
     };
 
-    const msg = `Bryntum Timeline Sync (API-06): Updated PayPal Invoice ${target.invoiceNumber} dunning milestone to ${newTriggerDate} (72h velocity guard PASS).`;
+    const nextPendingSync =
+      state.uiState === "offline"
+        ? Array.from(new Set([...state.pendingSyncInvoiceIds, invoiceId]))
+        : state.pendingSyncInvoiceIds.filter((id) => id !== invoiceId);
+
+    const msg =
+      state.uiState === "offline"
+        ? `Offline Queue (PENDING_SYNC · R-06): Queued Bryntum dunning reschedule for ${target.invoiceNumber} to ${newTriggerDate} in local replay store.`
+        : `Bryntum Timeline Sync (API-06): Updated PayPal Invoice ${target.invoiceNumber} dunning milestone to ${newTriggerDate} (72h velocity guard PASS).`;
     set({
       invoices: updatedInvoices,
       executions: [remindExec, ...state.executions],
+      selectedInvoiceId: invoiceId,
+      pendingSyncInvoiceIds: nextPendingSync,
       statusBannerMessage: msg,
     });
     return { ok: true, message: msg };
   },
+
+  resizeInvoiceConditionalRule: (invoiceId, newPercentage, newTriggerDate, newRuleType) => {
+    const state = get();
+    const target = state.invoices.find((inv) => inv.invoiceId === invoiceId);
+    if (!target) {
+      return { ok: false, message: `Invoice ${invoiceId} not found.` };
+    }
+    const normalizedPct = Number.isFinite(Number(newPercentage))
+      ? Number(newPercentage).toFixed(2)
+      : "2.00";
+    const resolvedDate =
+      newTriggerDate ?? target.conditionalRule?.triggerDate ?? "2026-11-15";
+    const resolvedType =
+      newRuleType ?? target.conditionalRule?.ruleType ?? "EARLY_PAYMENT_DISCOUNT";
+
+    const updatedInvoices = state.invoices.map((inv) =>
+      inv.invoiceId === invoiceId
+        ? {
+            ...inv,
+            conditionalRule: {
+              ruleType: resolvedType,
+              percentage: normalizedPct,
+              triggerDate: resolvedDate,
+            },
+          }
+        : inv
+    );
+
+    const ruleExec: AgentToolExecution = {
+      executionId: `ex_${Math.floor(9300 + Math.random() * 600)}`,
+      sessionId: "ses_20261108_9041",
+      workspaceId: state.activeWorkspaceId,
+      toolName: "create_conditional_rules_for_invoice",
+      paypalRequestId: `idem_${state.activeWorkspaceId}_rules_${target.invoiceNumber}_${normalizedPct}`,
+      junodbLeaseStatus: state.uiState === "offline" ? "REPLAYED_FROM_JUNODB" : "ACQUIRED",
+      policyVerdict: "APPROVED_L3_AUTO",
+      reasonCode: "RC_OK_CONDITIONAL_RULE_RESIZED",
+      gnnRiskScore: 0.02,
+      amountValue: target.amountValue,
+      currencyCode: target.currencyCode,
+      executedAt: new Date().toISOString(),
+    };
+
+    const nextPendingSync =
+      state.uiState === "offline"
+        ? Array.from(new Set([...state.pendingSyncInvoiceIds, invoiceId]))
+        : state.pendingSyncInvoiceIds;
+
+    const msg = `Bryntum onEventResizeEnd (US-05 · US-13): Updated ${target.invoiceNumber} conditional rule to ${normalizedPct}% (${resolvedType}) with cutoff ${resolvedDate}.`;
+    set({
+      invoices: updatedInvoices,
+      executions: [ruleExec, ...state.executions],
+      selectedInvoiceId: invoiceId,
+      pendingSyncInvoiceIds: nextPendingSync,
+      statusBannerMessage: msg,
+    });
+    return { ok: true, message: msg };
+  },
+
+  toggleRecurringSeriesStatus: (seriesId) =>
+    set((state) => {
+      const target = state.recurringSeries.find((s) => s.seriesId === seriesId);
+      if (!target) return {};
+      const nextStatus = target.status === "ACTIVE" ? ("PAUSED" as const) : ("ACTIVE" as const);
+      const toolName =
+        nextStatus === "ACTIVE" ? "activate_recurring_series" : "cancel_recurring_series";
+      const exec: AgentToolExecution = {
+        executionId: `ex_${Math.floor(9350 + Math.random() * 500)}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: state.activeWorkspaceId,
+        toolName,
+        paypalRequestId: `idem_${state.activeWorkspaceId}_series_${seriesId}_${nextStatus}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: "RC_OK_RECURRING_SERIES_UPDATED",
+        gnnRiskScore: 0.01,
+        amountValue: target.amountValue,
+        currencyCode: target.currencyCode,
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        recurringSeries: state.recurringSeries.map((s) =>
+          s.seriesId === seriesId ? { ...s, status: nextStatus } : s
+        ),
+        executions: [exec, ...state.executions],
+        statusBannerMessage: `Recurring Series ${seriesId} (${target.seriesName}) transitioned to ${nextStatus} via PayPal MCP ${toolName} (#17/#19).`,
+      };
+    }),
+
+  createRecurringSeries: (series) =>
+    set((state) => {
+      const exec: AgentToolExecution = {
+        executionId: `ex_${Math.floor(9380 + Math.random() * 400)}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: series.workspaceId,
+        toolName: "create_recurring_series",
+        paypalRequestId: `idem_${series.workspaceId}_create_series_${series.seriesId}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: "RC_OK_RECURRING_SERIES_CREATED",
+        gnnRiskScore: 0.01,
+        amountValue: series.amountValue,
+        currencyCode: series.currencyCode,
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        recurringSeries: [
+          series,
+          ...state.recurringSeries.filter((s) => s.seriesId !== series.seriesId),
+        ],
+        executions: [exec, ...state.executions],
+        statusBannerMessage: `Created & activated PayPal Recurring Invoice Series ${series.seriesId} (${series.amountValue} ${series.currencyCode} / ${series.cadence}) via create_recurring_series (#16).`,
+      };
+    }),
 
   simulateDisputeWebhook: (variant) => {
     const state = get();
@@ -495,6 +659,62 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
     });
     return advDispute;
   },
+
+  upsertDisputeAlert: (dispute) =>
+    set((state) => {
+      const alertExec: AgentToolExecution = {
+        executionId: `ex_sse_${dispute.disputeId.replace(/[^a-zA-Z0-9]/g, "")}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: dispute.workspaceId,
+        toolName: "get_dispute",
+        paypalRequestId: `idem_${dispute.workspaceId}_sse_dispute_${dispute.disputeId}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict:
+          dispute.recommendedAction === "ROUTE_TO_HITL_PASSKEY"
+            ? "HELD_FOR_L2_PASSKEY"
+            : "APPROVED_L3_AUTO",
+        reasonCode: dispute.recommendedAction,
+        gnnRiskScore: dispute.gnnRiskScore,
+        amountValue: dispute.disputedAmountValue,
+        currencyCode: dispute.currencyCode,
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        disputes: [dispute, ...state.disputes.filter((d) => d.disputeId !== dispute.disputeId)],
+        executions: [
+          alertExec,
+          ...state.executions.filter((e) => e.executionId !== alertExec.executionId),
+        ],
+        statusBannerMessage: `Live SSE-01 dispute_alert received: [${dispute.disputeId}] (${dispute.disputedAmountValue} ${dispute.currencyCode}) · M-04 GNN Score ${dispute.gnnRiskScore.toFixed(2)} -> ${dispute.recommendedAction}.`,
+      };
+    }),
+
+  uploadManualCarrierPodOcr: (disputeId, carrierCode, trackingNumber) =>
+    set((state) => {
+      const updatedDisputes = state.disputes.map((d) =>
+        d.disputeId === disputeId
+          ? {
+              ...d,
+              carrierCode,
+              trackingNumber,
+              trackingStatus: "DELIVERED" as const,
+              recommendedAction: "CONTEST_WITH_COMPELLING_EVIDENCE" as const,
+              treeShapReasons: [
+                "CARRIER_DELIVERED_GEO_MATCH (+0.52)",
+                "BUYER_SIGNATURE_VERIFIED_BY_M03_OCR (+0.12)",
+                ...d.treeShapReasons.filter(
+                  (r) => !r.includes("CARRIER_DELIVERED") && !r.includes("M03_OCR")
+                ),
+              ],
+            }
+          : d
+      );
+      return {
+        disputes: updatedDisputes,
+        uiState: "success",
+        statusBannerMessage: `M-03 Gemini 1.5 Pro Vision OCR + Bhashini parsed uploaded ${carrierCode} #${trackingNumber} POD receipt (F1 = 96.4% · DELIVERED). Compelling Evidence 3.0 packet ready.`,
+      };
+    }),
 
   resolveDisputeCase: (disputeId, action) =>
     set((state) => {

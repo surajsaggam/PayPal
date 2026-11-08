@@ -10,10 +10,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
   generateHighDensityLedgerRows,
+  getM04HopTelemetry,
   MOCK_DISPUTES,
   MOCK_EXECUTIONS,
   MOCK_INVOICES,
+  MOCK_RECURRING_SERIES,
+  MOCK_SUBSCRIPTION_PLANS,
 } from "@payops/shared/mock-fixtures";
+import { computeWorkingCapitalBuckets } from "../components/bryntum/DunningHistogram";
+import { dispatchSyntheticSseEvent } from "../hooks/useSseExecutionStream";
 import {
   convertCurrencyAmount,
   formatCurrencyAmount,
@@ -49,6 +54,9 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
       invoices: MOCK_INVOICES,
       disputes: MOCK_DISPUTES,
       executions: MOCK_EXECUTIONS,
+      subscriptionPlans: MOCK_SUBSCRIPTION_PLANS,
+      recurringSeries: MOCK_RECURRING_SERIES,
+      pendingSyncInvoiceIds: [],
     });
   });
 
@@ -234,6 +242,9 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
           if (selector.includes("WCAG 2.5.7") && attr === "aria-label") {
             return "Reschedule dunning date for INV-2026-8841 without dragging (WCAG 2.5.7)";
           }
+          if (selector.includes("3-Hop") && attr === "aria-label") {
+            return "3-Hop Buyer Device Carrier Fraud Graph";
+          }
           return null;
         },
         innerText: async () => "PayOps AI",
@@ -247,5 +258,117 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
     expect(result.visitedRoutes).toEqual([...COCKPIT_SCREEN_ROUTES]);
     expect(result.treegridVerified).toBe(true);
     expect(result.wcag257KeyboardDunningVerified).toBe(true);
+    expect(result.disputeGraphVerified).toBe(true);
+  });
+
+  it("recalculates Bryntum Resource Histogram inflows dynamically on onEventDrop & onEventResizeEnd and queues PENDING_SYNC offline (F-08, TKT-029, US-05, US-13)", () => {
+    const store = useCockpitStore.getState();
+
+    // Baseline check: INV-2026-8841 ($2,450 USD) is initially on 2026-11-10
+    const initialBuckets = computeWorkingCapitalBuckets(
+      store.invoices,
+      store.subscriptionPlans
+    );
+    const nov10Before = initialBuckets.find((b) => b.isoDate === "2026-11-10")!;
+    const nov18Before = initialBuckets.find((b) => b.isoDate === "2026-11-18")!;
+    expect(nov10Before.matchedInvoices).toContain("INV-2026-8841");
+
+    // Drag INV-2026-8841 from 2026-11-10 to 2026-11-18 while in offline mode (UI_SPEC.md Section 4.3)
+    store.setUiState("offline");
+    const dropRes = useCockpitStore
+      .getState()
+      .rescheduleInvoiceReminder("INV2-X89A-4412-9012-7731", "2026-11-18");
+    expect(dropRes.ok).toBe(true);
+    expect(dropRes.message).toContain("PENDING_SYNC");
+    expect(useCockpitStore.getState().pendingSyncInvoiceIds).toContain(
+      "INV2-X89A-4412-9012-7731"
+    );
+
+    // Verify histogram dynamically shifts $2,450 USD from Nov 10 to Nov 18
+    const updatedBuckets = computeWorkingCapitalBuckets(
+      useCockpitStore.getState().invoices,
+      useCockpitStore.getState().subscriptionPlans
+    );
+    const nov10After = updatedBuckets.find((b) => b.isoDate === "2026-11-10")!;
+    const nov18After = updatedBuckets.find((b) => b.isoDate === "2026-11-18")!;
+    expect(nov10After.inflowUsd).toBe(nov10Before.inflowUsd - 2450);
+    expect(nov18After.inflowUsd).toBe(nov18Before.inflowUsd + 2450);
+    expect(nov18After.matchedInvoices).toContain("INV-2026-8841");
+
+    // Verify onEventResizeEnd conditional rule adjustment (US-05)
+    const resizeRes = useCockpitStore
+      .getState()
+      .resizeInvoiceConditionalRule("INV2-X89A-4412-9012-7731", "3.00", "2026-11-18");
+    expect(resizeRes.ok).toBe(true);
+    const resizedInv = useCockpitStore
+      .getState()
+      .invoices.find((i) => i.invoiceId === "INV2-X89A-4412-9012-7731");
+    expect(resizedInv?.conditionalRule?.percentage).toBe("3.00");
+
+    // Verify Recurring Series (#16-#19) toggle & creation
+    useCockpitStore.getState().toggleRecurringSeriesStatus("RS-104-VORTEX");
+    expect(
+      useCockpitStore.getState().recurringSeries.find((s) => s.seriesId === "RS-104-VORTEX")
+        ?.status
+    ).toBe("PAUSED");
+
+    // Verify flushing offline queue when transitioning uiState back to "success"
+    useCockpitStore.getState().setUiState("success");
+    expect(useCockpitStore.getState().pendingSyncInvoiceIds).toHaveLength(0);
+    expect(useCockpitStore.getState().statusBannerMessage).toContain("Flushed");
+  });
+
+  it("inspects 3-Hop M-04 GNN telemetry, recovers carrier POD via M-03 Vision OCR, and streams SSE-01 dispute_alert (F-04, F-10, TKT-026, US-07..US-09)", () => {
+    const dispute = MOCK_DISPUTES[0];
+    const hopMap = getM04HopTelemetry(dispute);
+    expect(hopMap.HOP_1_BUYER.verdictBadge).toBe("ELEVATED_CLAIM_VELOCITY");
+    expect(hopMap.HOP_3A_CARRIER.verdictBadge).toBe("SIGNED_POD_VERIFIED_M03");
+    expect(hopMap.HOP_3B_RING.verdictBadge).toBe("HIGH_FRIENDLY_FRAUD_RING");
+
+    // Simulate Carrier API timeout error recovery via manual POD upload & M-03 OCR (UI_SPEC.md Section 5.3)
+    useCockpitStore.getState().setUiState("error");
+    useCockpitStore
+      .getState()
+      .uploadManualCarrierPodOcr("PP-D-4018", "DHL_EXPRESS", "DHL-OCR-998811");
+    expect(useCockpitStore.getState().uiState).toBe("success");
+    const recoveredDispute = useCockpitStore
+      .getState()
+      .disputes.find((d) => d.disputeId === "PP-D-4018");
+    expect(recoveredDispute?.trackingStatus).toBe("DELIVERED");
+    expect(recoveredDispute?.trackingNumber).toBe("DHL-OCR-998811");
+
+    // Verify SSE-01 dispute_alert event updates both Dispute War-Room queue and AG Grid applyTransactionAsync
+    const appliedGridRows: unknown[] = [];
+    const mockGridApi = {
+      applyTransactionAsync: (tx: { add?: unknown[] }) => {
+        if (tx.add) appliedGridRows.push(...tx.add);
+      },
+    };
+
+    dispatchSyntheticSseEvent(
+      {
+        eventType: "dispute_alert",
+        timestampIso: "2026-11-08T19:00:00.000Z",
+        payload: {
+          disputeId: "PP-D-99801",
+          workspaceId: "ws_99102a",
+          orderId: "7AB99102",
+          reasonCode: "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+          disputedAmountValue: "480.00",
+          currencyCode: "USD",
+          carrierCode: "DHL_EXPRESS",
+          trackingNumber: "JJD99801",
+          trackingStatus: "DELIVERED",
+          gnnRiskScore: 0.91,
+          treeShapReasons: ["CARRIER_DELIVERED_GEO_MATCH (+0.52)"],
+          recommendedAction: "CONTEST_WITH_COMPELLING_EVIDENCE",
+          responseDueIso: "2026-11-19T18:00:00.000Z",
+        },
+      },
+      mockGridApi
+    );
+
+    expect(useCockpitStore.getState().disputes[0].disputeId).toBe("PP-D-99801");
+    expect(appliedGridRows).toHaveLength(1);
   });
 });

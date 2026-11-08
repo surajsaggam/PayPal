@@ -463,6 +463,149 @@ export const MOCK_SUBSCRIPTION_PLANS: SubscriptionPlanRecord[] = [
   },
 ];
 
+export interface RecurringInvoiceSeriesFixture {
+  seriesId: string;
+  workspaceId: string;
+  seriesName: string;
+  recipientEmail: string;
+  cadence: "MONTHLY" | "QUARTERLY";
+  nextTriggerDate: string;
+  amountValue: string;
+  currencyCode: CurrencyCode;
+  status: "ACTIVE" | "PAUSED" | "CANCELLED";
+  mcpToolsBound: string[];
+}
+
+export const MOCK_RECURRING_SERIES: RecurringInvoiceSeriesFixture[] = [
+  {
+    seriesId: "RS-104-VORTEX",
+    workspaceId: "ws_99102a",
+    seriesName: "Vortex SaaS & B2B Textile Retainer (#RS-104)",
+    recipientEmail: "ap@vortex-saas-retainer.example.com",
+    cadence: "MONTHLY",
+    nextTriggerDate: "2026-11-20",
+    amountValue: "2500.00",
+    currencyCode: "USD",
+    status: "ACTIVE",
+    mcpToolsBound: [
+      "create_recurring_series",
+      "activate_recurring_series",
+      "get_recurring_series",
+      "cancel_recurring_series",
+    ],
+  },
+  {
+    seriesId: "RS-209-ACME",
+    workspaceId: "ws_99102a",
+    seriesName: "Acme Robotics Automated Cotton Lot (#RS-209)",
+    recipientEmail: "accounts@acmerobotics.example.io",
+    cadence: "MONTHLY",
+    nextTriggerDate: "2026-11-25",
+    amountValue: "1850.00",
+    currencyCode: "USD",
+    status: "ACTIVE",
+    mcpToolsBound: [
+      "create_recurring_series",
+      "activate_recurring_series",
+      "get_recurring_series",
+      "cancel_recurring_series",
+    ],
+  },
+];
+
+export type M04GraphNodeId =
+  | "HOP_1_BUYER"
+  | "HOP_2_ORDER"
+  | "HOP_3A_CARRIER"
+  | "HOP_3B_RING";
+
+export interface M04HopTelemetryNode {
+  nodeId: M04GraphNodeId;
+  hopLabel: string;
+  title: string;
+  subtitle: string;
+  shapDelta: string;
+  onnxFeatureVector: string;
+  verdictBadge: string;
+  telemetryBullets: string[];
+}
+
+export function getM04HopTelemetry(
+  dispute: PayPalDisputeCase
+): Record<M04GraphNodeId, M04HopTelemetryNode> {
+  const isLowRisk = dispute.gnnRiskScore < 0.35;
+  return {
+    HOP_1_BUYER: {
+      nodeId: "HOP_1_BUYER",
+      hopLabel: "Hop 1 · Buyer Identity Node (Zero-PII HMAC)",
+      title: "Buyer HMAC: 9f2a88c1e4b7..bc11",
+      subtitle: `Dispute ${dispute.disputeId} · Reason: ${dispute.reasonCode}`,
+      shapDelta: isLowRisk ? "-0.38 (VIP Low Risk)" : "+0.14 (Repeat Claim Velocity)",
+      onnxFeatureVector: "f_buyer_tenure_days, f_hmac_claim_ratio_90d, f_protected_stripped=true",
+      verdictBadge: isLowRisk ? "VIP_BUYER_VERIFIED" : "ELEVATED_CLAIM_VELOCITY",
+      telemetryBullets: [
+        "R-07 Zero-PII Compliance: Raw buyer email hashed via HMAC-SHA256 before GNN ingestion.",
+        "R-11 Fair Lending Guard: Protected demographic & zip-redlining attributes stripped from ONNX input.",
+        isLowRisk
+          ? "4-year merchant buyer history with 0 prior chargebacks across 28 completed orders."
+          : "Buyer identity hash linked to 3 Merchandise-Not-Received claims in trailing 90 days.",
+      ],
+    },
+    HOP_2_ORDER: {
+      nodeId: "HOP_2_ORDER",
+      hopLabel: "Hop 2 · PayPal Order v2 & Device Checkout Node",
+      title: `Order #${dispute.orderId} (${dispute.disputedAmountValue} ${dispute.currencyCode})`,
+      subtitle: "Captured via PayPal Orders v2 with JunoDB 2PC Idempotency",
+      shapDelta: isLowRisk ? "-0.19 (Under $50 Threshold)" : "+0.22 (Checkout IP/Device Match)",
+      onnxFeatureVector: "f_order_amount_usd, f_device_asn_match, f_m02_injection_score",
+      verdictBadge:
+        dispute.recommendedAction === "ROUTE_TO_HITL_PASSKEY"
+          ? "M02_INJECTION_QUARANTINED"
+          : "ORDER_CAPTURE_VERIFIED",
+      telemetryBullets: [
+        `PayPal Order #${dispute.orderId} settled with deterministic PayPal-Request-Id lock.`,
+        `Checkout device fingerprint & TLS JA3 signature match buyer's authenticated session IP.`,
+        dispute.recommendedAction === "ROUTE_TO_HITL_PASSKEY"
+          ? "ALERT: Buyer dispute note contains adversarial prompt-injection instructions (blocked by M-02)."
+          : "Zero authorization anomalies detected at checkout capture time.",
+      ],
+    },
+    HOP_3A_CARRIER: {
+      nodeId: "HOP_3A_CARRIER",
+      hopLabel: "Hop 3A · Carrier Proof-of-Delivery & M-03 Vision OCR",
+      title: `${dispute.carrierCode} #${dispute.trackingNumber}`,
+      subtitle: `Carrier Status: ${dispute.trackingStatus} (Synced via get_shipment_tracking #29)`,
+      shapDelta: dispute.trackingStatus === "DELIVERED" ? "+0.52 (Signed POD Match)" : "+0.11 (In Transit)",
+      onnxFeatureVector: "f_carrier_delivered_bool, f_ocr_sig_f1=0.964, f_geo_zip_match=1.0",
+      verdictBadge:
+        dispute.trackingStatus === "DELIVERED"
+          ? "SIGNED_POD_VERIFIED_M03"
+          : "CARRIER_IN_TRANSIT",
+      telemetryBullets: [
+        `PayPal Shipment Tracking v1 (#28-#30): ${dispute.carrierCode} #${dispute.trackingNumber} -> ${dispute.trackingStatus}.`,
+        "M-03 Gemini 1.5 Pro Vision OCR + Bhashini normalizer extracted recipient signature (F1 = 96.4%).",
+        "M-05 Elastic Hybrid RAG matched PayPal Seller Protection Compelling Evidence 3.0 Clause 4.2.",
+      ],
+    },
+    HOP_3B_RING: {
+      nodeId: "HOP_3B_RING",
+      hopLabel: "Hop 3B · Cross-Merchant Device/IP GraphSAGE Neighborhood",
+      title: isLowRisk ? "Isolated Clean Neighborhood (0 Collusion Edges)" : "Shared Device / IP Fraud Ring",
+      subtitle: `M-04 payops-graphsage-lgbm-v1.2.onnx · Inference: 9.2ms (<18ms SLA)`,
+      shapDelta: isLowRisk ? "-0.15 (Clean Graph Cluster)" : "+0.31 (3-Merchant Collusion Cluster)",
+      onnxFeatureVector: "graphsage_2hop_emb[64], lgbm_leaf_score, cosine_sim=0.91",
+      verdictBadge: isLowRisk ? "LOW_COLLUSION_RISK" : "HIGH_FRIENDLY_FRAUD_RING",
+      telemetryBullets: [
+        `M-04 2-Hop Mirror Graph scored in 9.2ms via onnxruntime-node (Composite Score: ${dispute.gnnRiskScore.toFixed(2)}).`,
+        isLowRisk
+          ? "No shared device fingerprints or residential proxy ASNs detected across peer merchants."
+          : "Device fingerprint cluster correlates with 3 concurrent INR disputes across apparel merchants.",
+        `Recommended Autonomous Action: ${dispute.recommendedAction}.`,
+      ],
+    },
+  };
+}
+
 export const MOCK_AGENT_SESSIONS: AgentSession[] = [
   {
     sessionId: "ses_20261108_9041",
@@ -844,6 +987,108 @@ const { result } = await ordersController.ordersCreate({
                 "amount": {"currency_code": "USD", "value": "390.00"},
             }
         ],
+    },
+)`,
+  },
+  send_invoice_reminder: {
+    toolName: "send_invoice_reminder",
+    endpoint: "POST /v2/invoicing/invoices/{invoice_id}/remind",
+    ts: `import { Client, Environment, InvoicingController } from "@paypal/paypal-server-sdk";
+
+// Triggered by Bryntum Scheduler Pro 6.1.2 onEventDrop / onEventResizeEnd (F-08, API-06, R-11 72h Guard)
+const invoicingController = new InvoicingController(client);
+const { result } = await invoicingController.invoicesRemind({
+  invoiceId: "INV2-X89A-4412-9012-7731",
+  paypalRequestId: "idem_ws_99102a_remind_INV-2026-8841_2026-11-15",
+  body: {
+    subject: "Smart Dunning Reminder — 2.00% Early-Payment Discount Window Active",
+    note: "Rescheduled via Bryntum Scheduler Pro 6.1.2 (72h FDCPA/RBI cooldown verified).",
+    sendToRecipient: true,
+  },
+});`,
+    python: `result = client.invoicing.invoices_remind(
+    invoice_id="INV2-X89A-4412-9012-7731",
+    paypal_request_id="idem_ws_99102a_remind_INV-2026-8841_2026-11-15",
+    body={
+        "subject": "Smart Dunning Reminder — 2.00% Early-Payment Discount Window Active",
+        "note": "Rescheduled via Bryntum Scheduler Pro 6.1.2 (72h FDCPA/RBI cooldown verified).",
+        "send_to_recipient": True,
+    },
+)`,
+  },
+  get_shipment_tracking: {
+    toolName: "get_shipment_tracking",
+    endpoint: "GET /v1/shipping/trackers/{id}",
+    ts: `import { Client, Environment, TrackersController } from "@paypal/paypal-server-sdk";
+
+// Correlated with M-04 GNN Risk Scorer (<18ms) & M-03 Vision OCR for Compelling Evidence 3.0 (F-04, F-10)
+const trackersController = new TrackersController(client);
+const { result } = await trackersController.trackersGet({
+  id: "8XY92011-77819201",
+});`,
+    python: `result = client.trackers.trackers_get(
+    id="8XY92011-77819201"
+)`,
+  },
+  accept_dispute_claim: {
+    toolName: "accept_dispute_claim",
+    endpoint: "POST /v1/customer/disputes/{dispute_id}/accept-claim",
+    ts: `import { Client, Environment } from "@paypal/paypal-server-sdk";
+
+// Gated by Cosmos.AI Rule POL-03: Auto-accept low-value VIP claims <= $25.00 USD (F-04, US-09)
+const response = await fetch("https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-90419/accept-claim", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "PayPal-Request-Id": "idem_ws_99102a_dispute_PP_D_90419_accept",
+  },
+  body: JSON.stringify({
+    note: "Autonomous VIP claim resolution via PayOps AI Sentinel (GNN Risk Score 0.12).",
+    accept_claim_reason: "DID_NOT_SHIP_ITEM",
+  }),
+});`,
+    python: `response = requests.post(
+    "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-D-90419/accept-claim",
+    headers={
+        "Content-Type": "application/json",
+        "PayPal-Request-Id": "idem_ws_99102a_dispute_PP_D_90419_accept",
+    },
+    json={
+        "note": "Autonomous VIP claim resolution via PayOps AI Sentinel (GNN Risk Score 0.12).",
+        "accept_claim_reason": "DID_NOT_SHIP_ITEM",
+    },
+)`,
+  },
+  create_conditional_rules_for_invoice: {
+    toolName: "create_conditional_rules_for_invoice",
+    endpoint: "POST /v2/invoicing/invoices/{invoice_id}/conditional-rules",
+    ts: `import { Client, Environment } from "@paypal/paypal-server-sdk";
+
+// Triggered by Bryntum Scheduler Pro 6.1.2 onEventResizeEnd (F-08, US-05, US-13)
+const response = await fetch("https://api-m.sandbox.paypal.com/v2/invoicing/invoices/INV2-X89A-4412-9012-7731", {
+  method: "PUT",
+  headers: {
+    "Content-Type": "application/json",
+    "PayPal-Request-Id": "idem_ws_99102a_rules_INV-2026-8841_2.00",
+  },
+  body: JSON.stringify({
+    configuration: {
+      early_payment_discount: { percentage: "2.00", cutoff_date: "2026-11-15" },
+      late_payment_fee: { percentage: "1.50" },
+    },
+  }),
+});`,
+    python: `response = requests.put(
+    "https://api-m.sandbox.paypal.com/v2/invoicing/invoices/INV2-X89A-4412-9012-7731",
+    headers={
+        "Content-Type": "application/json",
+        "PayPal-Request-Id": "idem_ws_99102a_rules_INV-2026-8841_2.00",
+    },
+    json={
+        "configuration": {
+            "early_payment_discount": {"percentage": "2.00", "cutoff_date": "2026-11-15"},
+            "late_payment_fee": {"percentage": "1.50"},
+        }
     },
 )`,
   },

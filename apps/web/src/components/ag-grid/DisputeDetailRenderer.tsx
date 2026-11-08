@@ -21,7 +21,13 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
 
   const matchedAudit =
     auditLogs.find((a) => a.paypalRequestId === row.paypalRequestId) ?? auditLogs[0];
-  const matchedDispute = disputes[0];
+  const matchedDispute =
+    disputes.find(
+      (d) =>
+        row.paypalRequestId.includes(d.disputeId) ||
+        row.paypalRequestId.includes(d.disputeId.replace(/-/g, "_")) ||
+        (row.amountValue !== undefined && d.disputedAmountValue === row.amountValue)
+    ) ?? disputes[0];
 
   return (
     <div className="border-t border-slate-800 bg-slate-950/95 px-6 py-4 text-xs text-slate-200 grid grid-cols-1 lg:grid-cols-3 gap-4">

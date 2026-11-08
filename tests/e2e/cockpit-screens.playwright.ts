@@ -39,6 +39,7 @@ export async function verifyFiveScreenCockpitJourney(
   visitedRoutes: string[];
   treegridVerified: boolean;
   wcag257KeyboardDunningVerified: boolean;
+  disputeGraphVerified: boolean;
 }> {
   const visitedRoutes: string[] = [];
 
@@ -65,6 +66,10 @@ export async function verifyFiveScreenCockpitJourney(
   // Screen 4: Autonomous Dispute Defense War-Room & Multi-Hop GNN Graph
   await page.goto(`${baseUrl}/dispute-war-room`);
   visitedRoutes.push("/dispute-war-room");
+  const graphLabel = await page
+    .locator("svg[aria-label*='3-Hop Buyer Device Carrier Fraud Graph']")
+    .getAttribute("aria-label");
+  const disputeGraphVerified = Boolean(graphLabel && graphLabel.includes("3-Hop"));
 
   // Screen 5: Fastlane Checkout Sandbox, Channel3 B2B Restock & PYUSD Solana Bridge
   await page.goto(`${baseUrl}/checkout-bridge`);
@@ -74,5 +79,6 @@ export async function verifyFiveScreenCockpitJourney(
     visitedRoutes,
     treegridVerified,
     wcag257KeyboardDunningVerified,
+    disputeGraphVerified,
   };
 }
