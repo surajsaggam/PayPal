@@ -22,7 +22,7 @@ import type { AutonomyLevel } from "@payops/shared";
 import { validatePayPalMonetaryPayload } from "@payops/shared/apimatic-validators";
 import { MOCK_APIMATIC_SNIPPETS } from "@payops/shared/mock-fixtures";
 import { evaluateCosmosPolicyFirewall } from "@payops/shared/policy-dsl";
-import { updateWorkspacePolicy } from "../../../lib/api-client";
+import { executeAgentPrompt, updateWorkspacePolicy } from "../../../lib/api-client";
 import { useCockpitStore } from "../../../stores/useCockpitStore";
 
 const AUTONOMY_LEVELS: { level: AutonomyLevel; title: string; desc: string }[] = [
@@ -48,6 +48,8 @@ export default function PolicyStudioPage() {
     policies,
     updateWorkspaceAutonomy,
     updatePolicyThreshold,
+    prependExecution,
+    setStatusBanner,
   } = useCockpitStore();
 
   const activeWorkspace =
@@ -64,6 +66,7 @@ export default function PolicyStudioPage() {
   );
   const [sdkLang, setSdkLang] = useState<"ts" | "python">("ts");
   const [copied, setCopied] = useState(false);
+  const [runningDryRun, setRunningDryRun] = useState(false);
 
   const hasPromptInjection =
     simBuyerNote.toLowerCase().includes("ignore") ||
@@ -108,6 +111,23 @@ export default function PolicyStudioPage() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+  };
+
+  const handleRunDryRunSimulation = async () => {
+    setRunningDryRun(true);
+    try {
+      const res = await executeAgentPrompt({
+        workspaceId: activeWorkspaceId,
+        prompt: `[Policy Studio Dry-Run] ${simTool} for $${simAmount} USD · Note: ${simBuyerNote}`,
+        dryRun: true,
+      });
+      prependExecution(res.execution);
+      setStatusBanner(
+        `[DRY-RUN SIMULATION COMPLETE · US-02] Tool=${simTool} ($${simAmount}) -> Verdict: ${simFirewallResult.verdict} (${simFirewallResult.reasonCode}) · 0 Sandbox Mutations.`
+      );
+    } finally {
+      setRunningDryRun(false);
+    }
   };
 
   return (
@@ -396,6 +416,59 @@ THEN VERDICT = CONTEST_WITH_COMPELLING_EVIDENCE`}
                 onChange={(e) => setSimBuyerNote(e.target.value)}
                 className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-amber-200"
               />
+            </div>
+
+            <div className="sm:col-span-3 flex flex-wrap items-center justify-between gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSimTool("create_refund");
+                    setSimAmount("180.00");
+                    setSimGnnScore(0.08);
+                    setSimBuyerNote("Customer returned unopened item in original packaging");
+                  }}
+                  className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] text-emerald-300 hover:border-emerald-500 cursor-pointer"
+                >
+                  Preset: Safe L3 Refund ($180.00)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSimTool("create_refund");
+                    setSimAmount("420.00");
+                    setSimGnnScore(0.78);
+                    setSimBuyerNote("Standard buyer refund request above $250 cap");
+                  }}
+                  className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] text-amber-300 hover:border-amber-500 cursor-pointer"
+                >
+                  Preset: L2 Passkey Hold ($420.00)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSimTool("create_refund");
+                    setSimAmount("2450.5");
+                    setSimGnnScore(0.12);
+                    setSimBuyerNote("Test R-03 single-decimal string rejection");
+                  }}
+                  className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] text-red-300 hover:border-red-500 cursor-pointer"
+                >
+                  Preset: R-03 Float Error (&quot;2450.5&quot;)
+                </button>
+              </div>
+
+              <button
+                type="button"
+                disabled={runningDryRun}
+                onClick={() => void handleRunDryRunSimulation()}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 px-3.5 py-1.5 text-xs font-bold text-white shadow cursor-pointer"
+              >
+                <Play className="h-3.5 w-3.5 fill-current" />
+                {runningDryRun
+                  ? "Simulating..."
+                  : "Run Deterministic Dry-Run (API-01 dry_run=true)"}
+              </button>
             </div>
           </div>
 

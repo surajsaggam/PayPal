@@ -67,6 +67,8 @@ export function GlobalCommandBar() {
     prependExecution,
     openApimaticDrawer,
     openHitlApproval,
+    openQrModal,
+    openPyusdModal,
     setStatusBanner,
   } = useCockpitStore();
 
@@ -90,11 +92,23 @@ export function GlobalCommandBar() {
         inputRef.current?.focus();
       } else if (e.key === "Escape") {
         setTraceDrawerOpen(false);
+        openHitlApproval(null);
+        openApimaticDrawer(null);
+        openQrModal(null);
+        openPyusdModal(null);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [setDryRun, setStatusBanner, setTraceDrawerOpen]);
+  }, [
+    openApimaticDrawer,
+    openHitlApproval,
+    openPyusdModal,
+    openQrModal,
+    setDryRun,
+    setStatusBanner,
+    setTraceDrawerOpen,
+  ]);
 
   useEffect(() => {
     const lower = commandPrompt.toLowerCase();

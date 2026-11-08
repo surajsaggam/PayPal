@@ -6,7 +6,7 @@
  * Write Owner: Dev 2 (100%)
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Code2, Check, Copy, ShieldCheck, X, TerminalSquare } from "lucide-react";
 import { validatePayPalMonetaryPayload } from "@payops/shared/apimatic-validators";
 import { MOCK_APIMATIC_SNIPPETS } from "@payops/shared/mock-fixtures";
@@ -17,6 +17,12 @@ export function ApimaticSdkCodeDrawer() {
   const [lang, setLang] = useState<"ts" | "python">("ts");
   const [copied, setCopied] = useState(false);
   const [testAmountInput, setTestAmountInput] = useState("2450.00");
+
+  useEffect(() => {
+    if (apimaticDrawerExecution?.amountValue) {
+      setTestAmountInput(apimaticDrawerExecution.amountValue);
+    }
+  }, [apimaticDrawerExecution]);
 
   if (!apimaticDrawerExecution) return null;
 

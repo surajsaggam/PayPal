@@ -25,10 +25,18 @@ Built on **Next.js 15 (App Router)**, **React 19**, **Tailwind CSS (OKLCH Dark/L
 
 ---
 
-## 3. Local Development & Verification Commands
+## 3. Accessibility (WCAG 2.2 AA) & Localization (`TKT-031`, `TKT-033`)
+
+- **Multi-Currency & Dual-Currency (`formatters.ts`):** Supports `USD ($)`, `INR (₹ Lakh/Crore)`, `EUR (€)`, `GBP (£)`, and `PYUSD (Solana)` with primary native currency + secondary cross-border equivalent (`LOCALIZATION.md` Section 2).
+- **Multilingual & Hinglish Command Routing:** Interface dictionary supports `en`, `hi`, `es`, and `de`, while `normalizeMultilingualAgentPrompt` routes Hinglish (`hi-Latn`), Hindi (`hi`), Spanish (`es`), and German (`de`) natural-language commands to PayPal MCP tools.
+- **WCAG 2.2 AA Compliance (`ACCESSIBILITY.md`):** Semantic `role="treegrid"` on AG Grid (`Criterion 1.3.1`), keyboard-accessible dunning slot selector on Bryntum Scheduler (`Criterion 2.5.7`), accessible chart/graph table toggles (`Criterion 1.1.1`), `Cmd/Ctrl+Shift+D` dry-run shortcut (`US-02`), and `Escape` dismissal across all modals/drawers.
+
+---
+
+## 4. Local Development & Verification Commands
 
 ```powershell
-# 1. Run Dev 2 Frontend Cockpit Unit & Integration Tests (5/5 tests)
+# 1. Run Dev 2 Frontend Cockpit Unit & Integration Tests (8/8 tests)
 npx --yes vitest run --config "apps/web/vitest.config.ts"
 
 # 2. Run Shared E2E Verification Suite (6/6 tests)

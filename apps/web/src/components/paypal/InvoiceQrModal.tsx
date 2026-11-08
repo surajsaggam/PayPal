@@ -8,7 +8,7 @@
 
 import React from "react";
 import { QrCode, X, Sparkles, CheckCircle2, Coins, ExternalLink, Send } from "lucide-react";
-import { formatCurrencyAmount } from "../../lib/formatters";
+import { formatCurrencyAmount, formatDualCurrency } from "../../lib/formatters";
 import { useCockpitStore } from "../../stores/useCockpitStore";
 
 export function InvoiceQrModal() {
@@ -67,6 +67,15 @@ export function InvoiceQrModal() {
                   qrModalInvoice.currencyCode,
                   activeCurrency
                 )}
+              </div>
+              <div className="font-mono text-[10px] text-slate-400 financial-figure">
+                {
+                  formatDualCurrency(
+                    qrModalInvoice.amountValue,
+                    qrModalInvoice.currencyCode,
+                    activeCurrency === qrModalInvoice.currencyCode ? "INR" : activeCurrency
+                  ).secondary
+                }
               </div>
             </div>
           </div>
