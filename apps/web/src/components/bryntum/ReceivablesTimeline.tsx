@@ -59,6 +59,9 @@ export default function ReceivablesTimeline() {
     toggleRecurringSeriesStatus,
     createRecurringSeries,
     createAutonomousInvoice,
+    activateSubscriberOnPlan,
+    updateSubscriptionPlanPricing,
+    cancelSubscriptionPlanWithGuard,
     openQrModal,
     openPyusdModal,
   } = useCockpitStore();
@@ -614,13 +617,47 @@ export default function ReceivablesTimeline() {
                       <span>
                         Active Subscription Billing Plan (API-12 · {plan.productId})
                       </span>
-                      <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300">
+                      <span
+                        className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                          plan.status === "ACTIVE"
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "bg-red-500/20 text-red-300"
+                        }`}
+                      >
                         {plan.status} · Auto-Renew
                       </span>
                     </div>
                   </td>
                   <td className="py-3 px-3 border-l border-slate-800/80 text-right font-mono text-[11px] text-slate-400">
-                    MCP #33–#34
+                    <div className="inline-flex flex-wrap items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => activateSubscriberOnPlan(plan.planId)}
+                        className="rounded border border-purple-500/50 bg-purple-950/60 hover:bg-purple-900/60 px-2 py-0.5 text-[10px] text-purple-200 cursor-pointer"
+                        title="Enroll subscriber via create_subscription (#34)"
+                      >
+                        +Sub (#34)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextAmt = ((parseFloat(plan.amountValue) || 500) * 1.1).toFixed(2);
+                          updateSubscriptionPlanPricing(plan.planId, nextAmt);
+                        }}
+                        className="rounded border border-sky-500/50 bg-sky-950/60 hover:bg-sky-900/60 px-2 py-0.5 text-[10px] text-sky-200 cursor-pointer"
+                        title="Update billing plan cycle price via update_subscription (API-12)"
+                      >
+                        +10% Price
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => cancelSubscriptionPlanWithGuard(plan.planId)}
+                        className="rounded border border-amber-500/50 bg-amber-950/60 hover:bg-amber-900/60 px-2 py-0.5 text-[10px] text-amber-200 cursor-pointer"
+                        title="Cancel subscription plan (gated by L2 Passkey · cancel_subscription)"
+                      >
+                        Cancel (L2)
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

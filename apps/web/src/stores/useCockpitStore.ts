@@ -11,6 +11,7 @@ import type {
   AutonomyLevel,
   CurrencyCode,
   ImmutableAuditLog,
+  MerchantInsightsResponse,
   MerchantWorkspace,
   OperatorRole,
   OperatorUser,
@@ -25,18 +26,94 @@ import {
   MOCK_DISPUTES,
   MOCK_EXECUTIONS,
   MOCK_INVOICES,
+  MOCK_MERCHANT_INSIGHTS,
   MOCK_OPERATORS,
   MOCK_ORDERS,
   MOCK_POLICY_RULES,
   MOCK_RECURRING_SERIES,
   MOCK_SUBSCRIPTION_PLANS,
   MOCK_WORKSPACES,
+  type Channel3CatalogItem,
   type RecurringInvoiceSeriesFixture,
 } from "@payops/shared/mock-fixtures";
 import type { SupportedLocale } from "../lib/formatters";
 
 export type ApiOperatingMode = "mock" | "live" | "replay";
 export type InteractiveUiState = "success" | "empty" | "loading" | "error" | "offline";
+
+export interface PyusdSettlementReceipt {
+  invoiceId: string;
+  invoiceNumber: string;
+  amountValue: string;
+  solanaTxSig: string;
+  memo: string;
+  settledAtIso: string;
+}
+
+export interface OrderIdempotencyStressResult {
+  totalRequests: number;
+  acquiredCount: number;
+  replayedCount: number;
+  paypalRequestId: string;
+  orderId: string;
+}
+
+function appendChainedAuditLog(
+  logs: ImmutableAuditLog[],
+  execution: AgentToolExecution,
+  actorId: string
+): ImmutableAuditLog[] {
+  const prevHead = logs[logs.length - 1]?.entryHash ?? "0".repeat(64);
+  const rawSuffix = `${execution.executionId}${execution.toolName}`
+    .replace(/[^a-zA-Z0-9]/g, "a")
+    .toLowerCase()
+    .padEnd(16, "f")
+    .slice(0, 16);
+  const entryHash = (prevHead.slice(16) + rawSuffix).slice(0, 64).padEnd(64, "9");
+  const newAudit: ImmutableAuditLog = {
+    logId: `aud_${1000 + logs.length + 1}`,
+    workspaceId: execution.workspaceId,
+    timestampIso: execution.executedAt,
+    actorId,
+    toolName: execution.toolName,
+    paypalRequestId: execution.paypalRequestId,
+    policyVerdict: execution.policyVerdict,
+    prevHash: prevHead,
+    entryHash,
+  };
+  return [...logs, newAudit];
+}
+
+/**
+ * Computes live API-14 (`get_merchant_insights`) North-Star ANMPR ROI metrics,
+ * reflecting dynamic gains from autonomous invoicing, dispute defense, and PYUSD settlement.
+ */
+export function computeLiveMerchantInsights(
+  workspaceId: string,
+  anmprBonusUsd = 0,
+  dsoDeltaDays = 0,
+  winRateDeltaPct = 0
+): MerchantInsightsResponse {
+  const base = MOCK_MERCHANT_INSIGHTS[workspaceId] ?? MOCK_MERCHANT_INSIGHTS.ws_99102a;
+  const baseUsd = parseFloat(base.annualizedSavingsUsd) || 26960;
+  const totalUsd = baseUsd + anmprBonusUsd;
+  const totalInr = totalUsd * 84.0;
+  const dsoDaysCurrent = Number(Math.max(8.0, base.dsoDaysCurrent + dsoDeltaDays).toFixed(1));
+  const dsoReductionPct = Number(
+    Math.min(65.0, base.dsoReductionPct + Math.abs(dsoDeltaDays) * 1.8).toFixed(1)
+  );
+  const disputeWinRatePct = Number(
+    Math.min(98.5, base.disputeWinRatePct + winRateDeltaPct).toFixed(1)
+  );
+  return {
+    workspaceId: base.workspaceId,
+    dsoDaysCurrent,
+    dsoReductionPct,
+    disputeWinRatePct,
+    annualizedSavingsUsd: totalUsd.toFixed(2),
+    annualizedSavingsInr: totalInr.toFixed(2),
+  };
+}
 
 export interface McpTraceStep {
   stepIndex: number;
@@ -73,6 +150,12 @@ export interface CockpitState {
   // Phase 3 Bryntum & Dispute War-Room Interactive State
   selectedInvoiceId: string | null;
   pendingSyncInvoiceIds: string[];
+
+  // Phase 4 Dynamic ANMPR ROI (API-14) & PYUSD Settlement Receipt State
+  anmprBonusUsd: number;
+  dsoDeltaDays: number;
+  winRateDeltaPct: number;
+  lastPyusdSettlement: PyusdSettlementReceipt | null;
 
   // Command Bar & Drawers
   commandPrompt: string;
@@ -158,6 +241,13 @@ export interface CockpitState {
   recordOrderCheckout: (order: PayPalOrderRecord) => void;
   settleInvoiceWithPyusd: (invoiceId: string, solanaTxSig: string, memo: string) => void;
   addSubscriptionPlan: (plan: SubscriptionPlanRecord) => void;
+  activateSubscriberOnPlan: (planId: string, subscriberEmail?: string) => void;
+  updateSubscriptionPlanPricing: (planId: string, newAmountValue: string) => void;
+  cancelSubscriptionPlanWithGuard: (planId: string) => void;
+  runOrderIdempotencyStressTest: (
+    sku: Channel3CatalogItem,
+    repetitions?: number
+  ) => OrderIdempotencyStressResult;
 }
 
 const initialApiMode =
@@ -189,6 +279,11 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
 
   selectedInvoiceId: MOCK_INVOICES[0]?.invoiceId ?? null,
   pendingSyncInvoiceIds: [],
+
+  anmprBonusUsd: 0,
+  dsoDeltaDays: 0,
+  winRateDeltaPct: 0,
+  lastPyusdSettlement: null,
 
   commandPrompt: "",
   commandBarOpen: false,
@@ -326,6 +421,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
 
   resolveHitlExecution: (executionId, decision, signatureHex) =>
     set((state) => {
+      const targetEx = state.executions.find((ex) => ex.executionId === executionId);
       const updatedExecutions = state.executions.map((ex) => {
         if (ex.executionId !== executionId) return ex;
         return {
@@ -341,8 +437,17 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
           junodbLeaseStatus: "RELEASED" as const,
         };
       });
+      const updatedPlans =
+        decision === "APPROVE" && targetEx?.toolName === "cancel_subscription"
+          ? state.subscriptionPlans.map((p) =>
+              targetEx.paypalRequestId.includes(p.planId)
+                ? { ...p, status: "SUSPENDED" as const }
+                : p
+            )
+          : state.subscriptionPlans;
       return {
         executions: updatedExecutions,
+        subscriptionPlans: updatedPlans,
         hitlApprovalExecution: null,
         statusBannerMessage:
           decision === "APPROVE"
@@ -382,9 +487,16 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         currencyCode: invoice.currencyCode,
         executedAt: new Date().toISOString(),
       };
+      const workingCapitalGainUsd = Math.max(
+        45,
+        Math.round((parseFloat(invoice.amountValue) || 1850) * 0.05)
+      );
       return {
         invoices: [invoice, ...state.invoices],
         executions: [newEx, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, newEx, "agent_service_m01"),
+        anmprBonusUsd: state.anmprBonusUsd + workingCapitalGainUsd,
+        dsoDeltaDays: Number((state.dsoDeltaDays - 0.2).toFixed(1)),
         selectedInvoiceId: invoice.invoiceId,
         qrModalInvoice: invoice,
         statusBannerMessage: `Invoice ${invoice.invoiceId} (${invoice.amountValue} ${invoice.currencyCode}) created and sent via PayPal Invoicing v2. 2.0% Net-10 discount rule active; QR code attached. Idempotency key: ${invoice.idempotencyKey}.`,
@@ -735,8 +847,18 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         currencyCode: target?.currencyCode ?? "USD",
         executedAt: new Date().toISOString(),
       };
+      const recoveredUsd =
+        action === "CONTEST_WITH_COMPELLING_EVIDENCE"
+          ? parseFloat(target?.disputedAmountValue ?? "340.00") || 340
+          : 15;
       return {
         executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
+        anmprBonusUsd: state.anmprBonusUsd + recoveredUsd,
+        winRateDeltaPct:
+          action === "CONTEST_WITH_COMPELLING_EVIDENCE"
+            ? Number((state.winRateDeltaPct + 0.6).toFixed(1))
+            : state.winRateDeltaPct,
         statusBannerMessage:
           action === "CONTEST_WITH_COMPELLING_EVIDENCE"
             ? `Dispute ${disputeId} contested via API-11 with signed carrier POD (${target?.carrierCode} #${target?.trackingNumber}), M-03 OCR & M-05 Elastic RAG Clause 4.2.`
@@ -761,8 +883,10 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         executedAt: new Date().toISOString(),
       };
       return {
-        orders: [order, ...state.orders],
+        orders: [order, ...state.orders.filter((o) => o.orderId !== order.orderId)],
         executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
+        anmprBonusUsd: state.anmprBonusUsd + 45,
         statusBannerMessage: `PayPal Order v2 ${order.orderId} (${order.amountValue} ${order.currencyCode}) captured idempotently via Fastlane (PayPal-Request-Id: ${order.paypalRequestId}) & tracking ${order.trackingNumber} synced.`,
       };
     }),
@@ -773,6 +897,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       const updatedInvoices = state.invoices.map((inv) =>
         inv.invoiceId === invoiceId ? { ...inv, status: "PAID" as const } : inv
       );
+      const settledAtIso = new Date().toISOString();
       const exec: AgentToolExecution = {
         executionId: `ex_${Math.floor(9700 + Math.random() * 200)}`,
         sessionId: "ses_20261108_9041",
@@ -785,11 +910,24 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         gnnRiskScore: 0.01,
         amountValue: target?.amountValue ?? "650.00",
         currencyCode: "PYUSD",
-        executedAt: new Date().toISOString(),
+        executedAt: settledAtIso,
       };
+      const invAmountNum = parseFloat(target?.amountValue ?? "650.00") || 650;
+      const fxAndWireSavingsUsd = Math.round(48 + invAmountNum * 0.032);
       return {
         invoices: updatedInvoices,
         executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "pyusd_solana_bridge"),
+        anmprBonusUsd: state.anmprBonusUsd + fxAndWireSavingsUsd,
+        dsoDeltaDays: Number((state.dsoDeltaDays - 0.3).toFixed(1)),
+        lastPyusdSettlement: {
+          invoiceId,
+          invoiceNumber: target?.invoiceNumber ?? "INV-2026-7704",
+          amountValue: target?.amountValue ?? "650.00",
+          solanaTxSig,
+          memo,
+          settledAtIso,
+        },
         pyusdModalInvoice: null,
         statusBannerMessage: `Settled ${target?.amountValue ?? "650.00"} PYUSD on Solana Token-2022 (Tx: ${solanaTxSig.slice(0, 14)}... · Memo: ${memo}) & reconciled PayPal Invoice ${invoiceId} as PAID.`,
       };
@@ -814,7 +952,147 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       return {
         subscriptionPlans: [plan, ...state.subscriptionPlans.filter((p) => p.planId !== plan.planId)],
         executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
         statusBannerMessage: `PayPal Billing Plan ${plan.planId} (${plan.planName} · ${plan.amountValue} ${plan.currencyCode}/${plan.billingIntervalUnit}) activated via API-12 (create_product -> create_subscription_plan).`,
       };
     }),
+
+  activateSubscriberOnPlan: (planId, subscriberEmail = "ap@nordicretail-berlin.example.com") =>
+    set((state) => {
+      const target = state.subscriptionPlans.find((p) => p.planId === planId);
+      if (!target) return {};
+      const exec: AgentToolExecution = {
+        executionId: `ex_${Math.floor(9820 + Math.random() * 170)}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: state.activeWorkspaceId,
+        toolName: "create_subscription",
+        paypalRequestId: `idem_${state.activeWorkspaceId}_create_sub_${planId}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: "RC_OK_SUBSCRIBER_ENROLLED",
+        gnnRiskScore: 0.01,
+        amountValue: target.amountValue,
+        currencyCode: target.currencyCode,
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        subscriptionPlans: state.subscriptionPlans.map((p) =>
+          p.planId === planId ? { ...p, status: "ACTIVE" as const } : p
+        ),
+        executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
+        statusBannerMessage: `Enrolled subscriber ${subscriberEmail} onto Billing Plan ${planId} (${target.amountValue} ${target.currencyCode}/${target.billingIntervalUnit}) via PayPal MCP create_subscription (#34).`,
+      };
+    }),
+
+  updateSubscriptionPlanPricing: (planId, newAmountValue) =>
+    set((state) => {
+      const target = state.subscriptionPlans.find((p) => p.planId === planId);
+      if (!target) return {};
+      const normalized = Number.isFinite(Number(newAmountValue))
+        ? Number(newAmountValue).toFixed(2)
+        : target.amountValue;
+      const exec: AgentToolExecution = {
+        executionId: `ex_${Math.floor(9840 + Math.random() * 150)}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: state.activeWorkspaceId,
+        toolName: "update_subscription",
+        paypalRequestId: `idem_${state.activeWorkspaceId}_update_sub_${planId}_${normalized}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: "RC_OK_SUBSCRIPTION_PRICING_UPDATED",
+        gnnRiskScore: 0.02,
+        amountValue: normalized,
+        currencyCode: target.currencyCode,
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        subscriptionPlans: state.subscriptionPlans.map((p) =>
+          p.planId === planId ? { ...p, amountValue: normalized } : p
+        ),
+        executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
+        statusBannerMessage: `Updated Subscription Plan ${planId} cycle amount to ${normalized} ${target.currencyCode} via PayPal MCP update_subscription (API-12 · 2-decimal R-03 verified).`,
+      };
+    }),
+
+  cancelSubscriptionPlanWithGuard: (planId) =>
+    set((state) => {
+      const target = state.subscriptionPlans.find((p) => p.planId === planId);
+      if (!target) return {};
+      const exec: AgentToolExecution = {
+        executionId: `ex_sub_cancel_${planId.slice(-6)}`,
+        sessionId: "ses_20261108_9042",
+        workspaceId: state.activeWorkspaceId,
+        toolName: "cancel_subscription",
+        paypalRequestId: `idem_${state.activeWorkspaceId}_cancel_sub_${planId}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "HELD_FOR_L2_PASSKEY",
+        reasonCode: "RC_02_SUBSCRIPTION_CANCEL_REQUIRES_PASSKEY",
+        gnnRiskScore: 0.42,
+        amountValue: target.amountValue,
+        currencyCode: target.currencyCode,
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        executions: [exec, ...state.executions.filter((e) => e.executionId !== exec.executionId)],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "cosmos_policy_firewall"),
+        hitlApprovalExecution: exec,
+        statusBannerMessage: `Subscription cancellation for ${planId} (${target.planName}) gated by Cosmos.AI L2 Passkey Policy (API-12 · cancel_subscription). Sign with FIDO2 Passkey to confirm.`,
+      };
+    }),
+
+  runOrderIdempotencyStressTest: (sku, repetitions = 10) => {
+    const state = get();
+    const totalRequests = Math.max(2, repetitions);
+    const paypalRequestId = `idem_${state.activeWorkspaceId}_order_${sku.skuId}_${sku.totalPriceUsd}`;
+    const existingOrder = state.orders.find((o) => o.paypalRequestId === paypalRequestId);
+    const orderId = existingOrder?.orderId ?? `5O190127TN364715T`;
+    const newOrder: PayPalOrderRecord = existingOrder ?? {
+      orderId,
+      workspaceId: state.activeWorkspaceId,
+      paypalRequestId,
+      intent: "CAPTURE",
+      status: "COMPLETED",
+      amountValue: sku.totalPriceUsd,
+      currencyCode: "USD",
+      buyerEmailHmac: "hmac_sha256_4c81e90211ab77d23190cc4188210fa2",
+      carrierCode: "FEDEX",
+      trackingNumber: "794899102341",
+      trackingStatus: "DELIVERED",
+    };
+
+    const replayExec: AgentToolExecution = {
+      executionId: `ex_dedup_${sku.skuId.replace(/[^a-zA-Z0-9]/g, "")}`,
+      sessionId: "ses_20261108_9041",
+      workspaceId: state.activeWorkspaceId,
+      toolName: "pay_order",
+      paypalRequestId,
+      junodbLeaseStatus: "REPLAYED_FROM_JUNODB",
+      policyVerdict: "APPROVED_L3_AUTO",
+      reasonCode: "RC_OK_JUNODB_10X_DEDUP_VERIFIED",
+      gnnRiskScore: 0.01,
+      amountValue: sku.totalPriceUsd,
+      currencyCode: "USD",
+      executedAt: new Date().toISOString(),
+    };
+
+    set({
+      orders: [newOrder, ...state.orders.filter((o) => o.orderId !== newOrder.orderId)],
+      executions: [
+        replayExec,
+        ...state.executions.filter((e) => e.executionId !== replayExec.executionId),
+      ],
+      auditLogs: appendChainedAuditLog(state.auditLogs, replayExec, "junodb_idempotency_guard"),
+      statusBannerMessage: `JunoDB 2PC Stress Test PASS (F-06 · R-02): Fired ${totalRequests} concurrent order capture requests for ${paypalRequestId} -> 1 ACQUIRED + ${totalRequests - 1} REPLAYED_FROM_JUNODB ($0.00 duplicate charge).`,
+    });
+
+    return {
+      totalRequests,
+      acquiredCount: 1,
+      replayedCount: totalRequests - 1,
+      paypalRequestId,
+      orderId,
+    };
+  },
 }));

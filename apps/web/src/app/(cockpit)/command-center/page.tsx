@@ -16,10 +16,12 @@ import {
   PieChart,
   Table,
 } from "lucide-react";
-import { MOCK_MERCHANT_INSIGHTS } from "@payops/shared/mock-fixtures";
 import { LedgerCommandGrid } from "../../../components/ag-grid/LedgerCommandGrid";
 import { formatCurrencyAmount, LOCALE_DICTIONARY } from "../../../lib/formatters";
-import { useCockpitStore } from "../../../stores/useCockpitStore";
+import {
+  computeLiveMerchantInsights,
+  useCockpitStore,
+} from "../../../stores/useCockpitStore";
 
 const WATERFALL_BARS = [
   { label: "Invoiced (v2)", usd: 48200, pct: 100, color: "bg-sky-500" },
@@ -29,11 +31,23 @@ const WATERFALL_BARS = [
 ];
 
 export default function CommandCenterPage() {
-  const { activeWorkspaceId, activeCurrency, activeLocale, executions } = useCockpitStore();
+  const {
+    activeWorkspaceId,
+    activeCurrency,
+    activeLocale,
+    executions,
+    anmprBonusUsd,
+    dsoDeltaDays,
+    winRateDeltaPct,
+  } = useCockpitStore();
   const [showAccessibleChartTable, setShowAccessibleChartTable] = useState(false);
   const strings = LOCALE_DICTIONARY[activeLocale];
-  const insights =
-    MOCK_MERCHANT_INSIGHTS[activeWorkspaceId] ?? MOCK_MERCHANT_INSIGHTS.ws_99102a;
+  const insights = computeLiveMerchantInsights(
+    activeWorkspaceId,
+    anmprBonusUsd,
+    dsoDeltaDays,
+    winRateDeltaPct
+  );
 
   const heldCount = executions.filter(
     (e) => e.policyVerdict === "HELD_FOR_L2_PASSKEY"
@@ -53,10 +67,15 @@ export default function CommandCenterPage() {
           </div>
           <div className="mt-1.5 text-2xl font-bold text-white financial-figure">
             {formatCurrencyAmount(insights.annualizedSavingsUsd, "USD", activeCurrency, true)}
-            <span className="ml-2 text-xs font-mono text-emerald-400">+38.4% YoY</span>
+            <span className="ml-2 text-xs font-mono text-emerald-400">
+              {anmprBonusUsd > 0
+                ? `+${formatCurrencyAmount(anmprBonusUsd, "USD", activeCurrency)} Live`
+                : "+38.4% YoY"}
+            </span>
           </div>
-          <div className="mt-1 font-mono text-[11px] text-slate-400">
-            USD $26,960/yr · INR ₹22.65L/yr Protected
+          <div className="mt-1 font-mono text-[11px] text-slate-400 financial-figure">
+            USD {formatCurrencyAmount(insights.annualizedSavingsUsd, "USD", "USD")}/yr · INR{" "}
+            {formatCurrencyAmount(insights.annualizedSavingsInr, "INR", "INR", true)}/yr Protected
           </div>
         </div>
 

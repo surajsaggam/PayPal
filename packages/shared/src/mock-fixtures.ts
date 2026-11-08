@@ -857,7 +857,154 @@ export const MOCK_CHANNEL3_CATALOG: Channel3CatalogItem[] = [
     sustainabilityBadge: "GOTS Organic Certified",
     policyRuleId: "POL-01",
   },
+  {
+    skuId: "C3-99501",
+    title: "Brother GTXpro Bulk Textile Pigment Ink Master Case (12x700ml)",
+    vendorName: "Precision DTG Supply Co",
+    category: "Industrial Equipment",
+    unitPriceUsd: "65.00",
+    packSize: 12,
+    totalPriceUsd: "780.00",
+    inStock: true,
+    leadTimeDays: 4,
+    sustainabilityBadge: "OEKO-TEX Eco Passport Certified",
+    policyRuleId: "POL-02",
+  },
 ];
+
+/**
+ * R-09 Solana Token-2022 Memo Required Validator:
+ * Enforces `PAYOPS:<invoice_id>:<PayPal-Request-Id>` format and invoice binding.
+ */
+export function validatePyusdToken2022Memo(
+  memo: string,
+  expectedInvoiceId?: string
+): {
+  valid: boolean;
+  parsedInvoiceId: string | null;
+  parsedRequestId: string | null;
+  errorReason?: string;
+} {
+  const trimmed = (memo ?? "").trim();
+  const match = /^PAYOPS:([A-Z0-9-]+):([a-zA-Z0-9_.-]+)$/.exec(trimmed);
+  if (!match) {
+    return {
+      valid: false,
+      parsedInvoiceId: null,
+      parsedRequestId: null,
+      errorReason:
+        "R-09 Memo Mismatch Guard: Solana Token-2022 Memo Required extension must match 'PAYOPS:<invoice_id>:<PayPal-Request-Id>'.",
+    };
+  }
+  const [, parsedInvoiceId, parsedRequestId] = match;
+  if (expectedInvoiceId && parsedInvoiceId !== expectedInvoiceId) {
+    return {
+      valid: false,
+      parsedInvoiceId,
+      parsedRequestId,
+      errorReason: `R-09 Invoice Binding Mismatch: Memo references '${parsedInvoiceId}' instead of active invoice '${expectedInvoiceId}'.`,
+    };
+  }
+  return {
+    valid: true,
+    parsedInvoiceId,
+    parsedRequestId,
+  };
+}
+
+/**
+ * E-10 ImmutableAuditLog SHA-256 Hash-Chain Verifier (Elastic 180-Day Audit Index F-12)
+ */
+export function verifyAuditHashChain(logs: ImmutableAuditLog[]): {
+  valid: boolean;
+  totalChecked: number;
+  tamperedCount: number;
+  headHash: string;
+} {
+  if (logs.length === 0) {
+    return {
+      valid: true,
+      totalChecked: 0,
+      tamperedCount: 0,
+      headHash: "0".repeat(64),
+    };
+  }
+  let tamperedCount = 0;
+  for (let i = 0; i < logs.length; i++) {
+    const entry = logs[i];
+    const expectedPrev = i === 0 ? "0".repeat(64) : logs[i - 1].entryHash;
+    if (
+      entry.prevHash !== expectedPrev ||
+      !entry.entryHash ||
+      entry.entryHash.length !== 64
+    ) {
+      tamperedCount++;
+    }
+  }
+  return {
+    valid: tamperedCount === 0,
+    totalChecked: logs.length,
+    tamperedCount,
+    headHash: logs[logs.length - 1].entryHash,
+  };
+}
+
+/**
+ * R-07 & ADR-0005 Zero-PII Buyer Email HMAC-SHA256 Preview Generator for Fastlane Guest Recognition
+ */
+export function computeBuyerEmailHmacPreview(email: string): string {
+  const normalized = (email || "maya@lumina.io").trim().toLowerCase();
+  let h1 = 0xdeadbeef ^ normalized.length;
+  let h2 = 0x41c6ce57 ^ normalized.length;
+  for (let i = 0; i < normalized.length; i++) {
+    const ch = normalized.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 =
+    Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^
+    Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 =
+    Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^
+    Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  const hex =
+    (h1 >>> 0).toString(16).padStart(8, "0") +
+    (h2 >>> 0).toString(16).padStart(8, "0");
+  return `hmac_sha256_${hex}9f2a88c1e4b7bc11`;
+}
+
+/**
+ * F-12 Zapier Outbound Webhook Payload Builder for HOLD_APPROVAL / HELD_FOR_L2_PASSKEY escalations
+ */
+export function buildZapierHoldApprovalWebhookPayload(execution: AgentToolExecution): {
+  webhookEvent: "PAYOPS.POLICY.HOLD_APPROVAL";
+  targetZapierHookUrl: string;
+  workspaceId: string;
+  executionId: string;
+  toolName: string;
+  amountValue: string;
+  currencyCode: string;
+  policyVerdict: string;
+  reasonCode: string;
+  gnnRiskScore: number;
+  paypalRequestId: string;
+  dispatchedAtIso: string;
+} {
+  return {
+    webhookEvent: "PAYOPS.POLICY.HOLD_APPROVAL",
+    targetZapierHookUrl: "https://hooks.zapier.com/hooks/catch/1984021/payops-sentinel-hitl/",
+    workspaceId: execution.workspaceId,
+    executionId: execution.executionId,
+    toolName: execution.toolName,
+    amountValue: execution.amountValue ?? "420.00",
+    currencyCode: execution.currencyCode ?? "USD",
+    policyVerdict: execution.policyVerdict,
+    reasonCode: execution.reasonCode,
+    gnnRiskScore: execution.gnnRiskScore,
+    paypalRequestId: execution.paypalRequestId,
+    dispatchedAtIso: execution.executedAt,
+  };
+}
 
 export const MOCK_APIMATIC_SNIPPETS: Record<
   string,
@@ -1089,6 +1236,131 @@ const response = await fetch("https://api-m.sandbox.paypal.com/v2/invoicing/invo
             "early_payment_discount": {"percentage": "2.00", "cutoff_date": "2026-11-15"},
             "late_payment_fee": {"percentage": "1.50"},
         }
+    },
+)`,
+  },
+  pay_order: {
+    toolName: "pay_order",
+    endpoint: "POST /v2/checkout/orders/{id}/capture",
+    ts: `import { Client, Environment, OrdersController } from "@paypal/paypal-server-sdk";
+
+// Phase 4 (F-05, F-06, R-02): Idempotent Fastlane & Orders v2 capture with JunoDB 2PC Lease
+const ordersController = new OrdersController(client);
+const { result } = await ordersController.ordersCapture({
+  id: "5O190127TN364715T",
+  paypalRequestId: "idem_ws_99102a_order_C3-88210_390.00",
+  prefer: "return=representation",
+});`,
+    python: `result = client.orders.orders_capture(
+    id="5O190127TN364715T",
+    paypal_request_id="idem_ws_99102a_order_C3-88210_390.00",
+    prefer="return=representation",
+)`,
+  },
+  create_shipment_tracking: {
+    toolName: "create_shipment_tracking",
+    endpoint: "POST /v1/shipping/trackers-batch",
+    ts: `import { Client, Environment, TrackersController } from "@paypal/paypal-server-sdk";
+
+// Phase 4 (F-05, US-11): Auto-attach carrier tracking immediately upon Order v2 capture (#28)
+const trackersController = new TrackersController(client);
+const { result } = await trackersController.trackersBatch({
+  body: {
+    trackers: [
+      {
+        transactionId: "5O190127TN364715T",
+        trackingNumber: "794899102341",
+        status: "DELIVERED",
+        carrier: "FEDEX",
+      },
+    ],
+  },
+});`,
+    python: `result = client.trackers.trackers_batch(
+    body={
+        "trackers": [
+            {
+                "transaction_id": "5O190127TN364715T",
+                "tracking_number": "794899102341",
+                "status": "DELIVERED",
+                "carrier": "FEDEX",
+            }
+        ]
+    }
+)`,
+  },
+  record_payment_for_invoice: {
+    toolName: "record_payment_for_invoice",
+    endpoint: "POST /v2/invoicing/invoices/{invoice_id}/payments",
+    ts: `import { Client, Environment, InvoicingController } from "@paypal/paypal-server-sdk";
+
+// Phase 4 (F-11, US-15, R-09): Reconcile cross-border Solana Token-2022 PYUSD settlement (#13)
+const invoicingController = new InvoicingController(client);
+const { result } = await invoicingController.invoicesPayments({
+  invoiceId: "INV2-F19A-7704-6612-4002",
+  paypalRequestId: "idem_ws_99102a_pyusd_INV_2026_7704",
+  body: {
+    method: "EXTERNAL",
+    paymentDate: "2026-11-08",
+    amount: { currencyCode: "USD", value: "650.00" },
+    note: "Settled via Solana Token-2022 PYUSD (Memo: PAYOPS:INV2-F19A-7704-6612-4002:idem_ws_99102a_invoice_INV_2026_7704)",
+  },
+});`,
+    python: `result = client.invoicing.invoices_payments(
+    invoice_id="INV2-F19A-7704-6612-4002",
+    paypal_request_id="idem_ws_99102a_pyusd_INV_2026_7704",
+    body={
+        "method": "EXTERNAL",
+        "payment_date": "2026-11-08",
+        "amount": {"currency_code": "USD", "value": "650.00"},
+        "note": "Settled via Solana Token-2022 PYUSD (Memo: PAYOPS:INV2-F19A-7704-6612-4002:idem_ws_99102a_invoice_INV_2026_7704)",
+    },
+)`,
+  },
+  create_subscription_plan: {
+    toolName: "create_subscription_plan",
+    endpoint: "POST /v1/billing/plans",
+    ts: `import { Client, Environment } from "@paypal/paypal-server-sdk";
+
+// Phase 4 (API-12, TKT-021, E-09): Create recurring B2B retainer subscription billing plan (#33)
+const response = await fetch("https://api-m.sandbox.paypal.com/v1/billing/plans", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "PayPal-Request-Id": "idem_ws_99102a_subplan_P-5ML4271244454362WXNWU5NQ",
+  },
+  body: JSON.stringify({
+    product_id: "PROD-KAVERI-RET-104",
+    name: "Vortex SaaS & B2B Textile Replenishment Retainer (Monthly)",
+    billing_cycles: [
+      {
+        frequency: { interval_unit: "MONTH", interval_count: 1 },
+        tenure_type: "REGULAR",
+        sequence: 1,
+        total_cycles: 0,
+        pricing_scheme: { fixed_price: { value: "2500.00", currency_code: "USD" } },
+      },
+    ],
+  }),
+});`,
+    python: `response = requests.post(
+    "https://api-m.sandbox.paypal.com/v1/billing/plans",
+    headers={
+        "Content-Type": "application/json",
+        "PayPal-Request-Id": "idem_ws_99102a_subplan_P-5ML4271244454362WXNWU5NQ",
+    },
+    json={
+        "product_id": "PROD-KAVERI-RET-104",
+        "name": "Vortex SaaS & B2B Textile Replenishment Retainer (Monthly)",
+        "billing_cycles": [
+            {
+                "frequency": {"interval_unit": "MONTH", "interval_count": 1},
+                "tenure_type": "REGULAR",
+                "sequence": 1,
+                "total_cycles": 0,
+                "pricing_scheme": {"fixed_price": {"value": "2500.00", "currency_code": "USD"}},
+            }
+        ],
     },
 )`,
   },

@@ -9,13 +9,19 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+  buildZapierHoldApprovalWebhookPayload,
+  computeBuyerEmailHmacPreview,
   generateHighDensityLedgerRows,
   getM04HopTelemetry,
+  MOCK_AUDIT_LOGS,
+  MOCK_CHANNEL3_CATALOG,
   MOCK_DISPUTES,
   MOCK_EXECUTIONS,
   MOCK_INVOICES,
   MOCK_RECURRING_SERIES,
   MOCK_SUBSCRIPTION_PLANS,
+  validatePyusdToken2022Memo,
+  verifyAuditHashChain,
 } from "@payops/shared/mock-fixtures";
 import { computeWorkingCapitalBuckets } from "../components/bryntum/DunningHistogram";
 import { dispatchSyntheticSseEvent } from "../hooks/useSseExecutionStream";
@@ -38,7 +44,10 @@ import {
   resolveDispute,
   simulatePayPalWebhook,
 } from "../lib/api-client";
-import { useCockpitStore } from "../stores/useCockpitStore";
+import {
+  computeLiveMerchantInsights,
+  useCockpitStore,
+} from "../stores/useCockpitStore";
 import {
   COCKPIT_SCREEN_ROUTES,
   verifyFiveScreenCockpitJourney,
@@ -56,7 +65,13 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
       executions: MOCK_EXECUTIONS,
       subscriptionPlans: MOCK_SUBSCRIPTION_PLANS,
       recurringSeries: MOCK_RECURRING_SERIES,
+      auditLogs: MOCK_AUDIT_LOGS,
       pendingSyncInvoiceIds: [],
+      anmprBonusUsd: 0,
+      dsoDeltaDays: 0,
+      winRateDeltaPct: 0,
+      lastPyusdSettlement: null,
+      hitlApprovalExecution: null,
     });
   });
 
@@ -370,5 +385,109 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
 
     expect(useCockpitStore.getState().disputes[0].disputeId).toBe("PP-D-99801");
     expect(appliedGridRows).toHaveLength(1);
+  });
+
+  it("verifies Phase 4 Channel3 B2B procurement, 10x JunoDB order capture deduplication (R-02), PYUSD Token-2022 Memo Required regex (R-09), dynamic ANMPR ROI (API-14), API-12 subscriptions & E-10 audit hash chain", () => {
+    // 1. Channel3 B2B Catalog <= $500 vs > $500 policy split (F-12, US-16)
+    const ecoMailer = MOCK_CHANNEL3_CATALOG.find((item) => item.skuId === "C3-88210")!;
+    const bulkInk = MOCK_CHANNEL3_CATALOG.find((item) => item.skuId === "C3-99501")!;
+    expect(Number(ecoMailer.totalPriceUsd)).toBeLessThanOrEqual(500);
+    expect(ecoMailer.policyRuleId).toBe("POL-01");
+    expect(Number(bulkInk.totalPriceUsd)).toBeGreaterThan(500);
+    expect(bulkInk.policyRuleId).toBe("POL-02");
+
+    // 2. Zero-PII Buyer Email HMAC-SHA256 preview (R-07, ADR-0005)
+    const hmacMaya = computeBuyerEmailHmacPreview("maya@lumina.io");
+    expect(hmacMaya).toMatch(/^hmac_sha256_[0-9a-f]+$/);
+    expect(hmacMaya).toBe(computeBuyerEmailHmacPreview("MAYA@LUMINA.IO"));
+
+    // 3. 10x Concurrent Order Capture Idempotency Stress Test (R-02, F-06)
+    const dedupResult = useCockpitStore
+      .getState()
+      .runOrderIdempotencyStressTest(ecoMailer, 10);
+    expect(dedupResult.totalRequests).toBe(10);
+    expect(dedupResult.acquiredCount).toBe(1);
+    expect(dedupResult.replayedCount).toBe(9);
+    expect(dedupResult.paypalRequestId).toBe("idem_ws_99102a_order_C3-88210_390.00");
+
+    // 4. PYUSD Solana Token-2022 Memo Required regex validation (R-09, F-11, TKT-022)
+    const validMemo = validatePyusdToken2022Memo(
+      "PAYOPS:INV2-F19A-7704-6612-4002:idem_ws_99102a_invoice_INV_2026_7704",
+      "INV2-F19A-7704-6612-4002"
+    );
+    expect(validMemo.valid).toBe(true);
+    expect(validMemo.parsedInvoiceId).toBe("INV2-F19A-7704-6612-4002");
+
+    const corruptMemo = validatePyusdToken2022Memo(
+      "CORRUPT_MEMO:INV2-F19A-7704-6612-4002",
+      "INV2-F19A-7704-6612-4002"
+    );
+    expect(corruptMemo.valid).toBe(false);
+    expect(corruptMemo.errorReason).toContain("R-09");
+
+    const wrongInvoiceMemo = validatePyusdToken2022Memo(
+      "PAYOPS:INV2-X89A-4412-9012-7731:idem_ws_99102a_invoice_INV_2026_8841",
+      "INV2-F19A-7704-6612-4002"
+    );
+    expect(wrongInvoiceMemo.valid).toBe(false);
+    expect(wrongInvoiceMemo.errorReason).toContain("Invoice Binding Mismatch");
+
+    // 5. Dynamic North-Star ANMPR ROI updates (API-14, TKT-027)
+    const baseInsights = computeLiveMerchantInsights("ws_99102a", 0, 0, 0);
+    expect(baseInsights.annualizedSavingsUsd).toBe("26960.00");
+
+    useCockpitStore.getState().settleInvoiceWithPyusd(
+      "INV2-F19A-7704-6612-4002",
+      "5xPyusdSolanaToken2022Sig99102a",
+      "PAYOPS:INV2-F19A-7704-6612-4002:idem_ws_99102a_invoice_INV_2026_7704"
+    );
+    useCockpitStore
+      .getState()
+      .resolveDisputeCase("PP-D-4012", "CONTEST_WITH_COMPELLING_EVIDENCE");
+
+    const afterState = useCockpitStore.getState();
+    expect(afterState.anmprBonusUsd).toBeGreaterThan(350);
+    expect(afterState.lastPyusdSettlement?.invoiceId).toBe("INV2-F19A-7704-6612-4002");
+
+    const liveInsights = computeLiveMerchantInsights(
+      "ws_99102a",
+      afterState.anmprBonusUsd,
+      afterState.dsoDeltaDays,
+      afterState.winRateDeltaPct
+    );
+    expect(parseFloat(liveInsights.annualizedSavingsUsd)).toBeGreaterThan(26960);
+    expect(liveInsights.dsoDaysCurrent).toBeLessThan(16.0);
+    expect(liveInsights.disputeWinRatePct).toBeGreaterThan(84.0);
+
+    // 6. Subscription Lifecycle Actions (API-12, TKT-021: create_subscription, update_subscription, cancel_subscription L2 Passkey)
+    const planId = MOCK_SUBSCRIPTION_PLANS[0].planId;
+    useCockpitStore.getState().activateSubscriberOnPlan(planId, "cfo@acmerobotics.example.io");
+    useCockpitStore.getState().updateSubscriptionPlanPricing(planId, "2750.00");
+    expect(
+      useCockpitStore.getState().subscriptionPlans.find((p) => p.planId === planId)?.amountValue
+    ).toBe("2750.00");
+
+    useCockpitStore.getState().cancelSubscriptionPlanWithGuard(planId);
+    const heldCancelExec = useCockpitStore.getState().hitlApprovalExecution;
+    expect(heldCancelExec?.toolName).toBe("cancel_subscription");
+    expect(heldCancelExec?.policyVerdict).toBe("HELD_FOR_L2_PASSKEY");
+
+    // Approve cancellation with FIDO2 Passkey -> marks plan SUSPENDED
+    useCockpitStore
+      .getState()
+      .resolveHitlExecution(heldCancelExec!.executionId, "APPROVE", "fido2_sig_99102a");
+    expect(
+      useCockpitStore.getState().subscriptionPlans.find((p) => p.planId === planId)?.status
+    ).toBe("SUSPENDED");
+
+    // 7. Elastic 180-Day SHA-256 Hash-Chain Integrity & Zapier HOLD_APPROVAL Payload (F-12, E-10)
+    const chainCheck = verifyAuditHashChain(useCockpitStore.getState().auditLogs);
+    expect(chainCheck.valid).toBe(true);
+    expect(chainCheck.tamperedCount).toBe(0);
+    expect(chainCheck.totalChecked).toBeGreaterThan(MOCK_AUDIT_LOGS.length);
+
+    const zapierPayload = buildZapierHoldApprovalWebhookPayload(MOCK_EXECUTIONS[0]);
+    expect(zapierPayload.webhookEvent).toBe("PAYOPS.POLICY.HOLD_APPROVAL");
+    expect(zapierPayload.targetZapierHookUrl).toContain("hooks.zapier.com");
   });
 });
