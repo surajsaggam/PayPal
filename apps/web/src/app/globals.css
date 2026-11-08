@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+.dark {
+  --payops-bg-canvas: #070b14;
+  --payops-bg-surface: #0f172a;
+  --payops-bg-elevated: #1e293b;
+  --payops-brand-admiral: #003087;
+  --payops-brand-sky: #0070e0;
+  --payops-brand-pyusd: #14f195;
+  --payops-status-allow: #10b981;
+  --payops-status-hold: #f59e0b;
+  --payops-status-deny: #ef4444;
+  --payops-text-primary: #f8fafc;
+  --payops-text-secondary: #94a3b8;
+  --payops-border-subtle: #1e293b;
+  --font-sans: "Inter Variable", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+  --font-indic: "Noto Sans Devanagari", "Noto Sans", sans-serif;
+  --spring-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.light {
+  --payops-bg-canvas: #f8fafc;
+  --payops-bg-surface: #ffffff;
+  --payops-bg-elevated: #f1f5f9;
+  --payops-brand-admiral: #003087;
+  --payops-brand-sky: #005ea6;
+  --payops-brand-pyusd: #059669;
+  --payops-status-allow: #047857;
+  --payops-status-hold: #b45309;
+  --payops-status-deny: #b91c1c;
+  --payops-text-primary: #0f172a;
+  --payops-text-secondary: #475569;
+  --payops-border-subtle: #e2e8f0;
+}
+
+body {
+  background-color: var(--payops-bg-canvas);
+  color: var(--payops-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.financial-figure {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.015em;
+}
+
+@keyframes rowFlashEmerald {
+  0% {
+    background-color: rgba(16, 185, 129, 0.28);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes rowFlashAmber {
+  0% {
+    background-color: rgba(245, 158, 11, 0.28);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.animate-row-emerald {
+  animation: rowFlashEmerald 600ms ease-out;
+}
+
+.animate-row-amber {
+  animation: rowFlashAmber 600ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
