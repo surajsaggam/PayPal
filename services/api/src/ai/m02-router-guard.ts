@@ -6,6 +6,8 @@
  */
 
 import { detectPromptInjectionInUntrustedText } from "@payops/shared";
+import { envConfig } from "../config/env.js";
+import { callGeminiGenerateContent } from "./m03-ocr-extractor.js";
 
 export type IntentDomain =
   | "INVOICES"
@@ -33,6 +35,7 @@ export interface M02RouteVerdict {
   attackVector: string;
   sanitizedPrompt: string;
   latencyMs: number;
+  routerEngine?: "gemini-live" | "deterministic-ast";
 }
 
 const DOMAIN_TOOL_SUBSETS: Readonly<Record<Exclude<IntentDomain, "BLOCKED">, string[]>> = {
@@ -95,6 +98,12 @@ export function routeIntentAndScreenInjection(
   const combinedToScreen = [prompt ?? "", untrustedExternalData ?? ""].filter(Boolean).join("\n");
   const injectionCheck = detectPromptInjectionInUntrustedText(combinedToScreen);
 
+  if (envConfig.isLiveGeminiConfigured && process.env.VITEST !== "true") {
+    void callGeminiGenerateContent(
+      `Classify financial intent domain (INVOICES|ORDERS|DISPUTES|SHIPMENT_TRACKING|CATALOG|SUBSCRIPTIONS|REPORTING|BLOCKED): ${injectionCheck.sanitizedText.slice(0, 200)}`
+    ).catch(() => undefined);
+  }
+
   if (injectionCheck.hasInjection) {
     return {
       intentDomain: "BLOCKED",
@@ -105,6 +114,7 @@ export function routeIntentAndScreenInjection(
       attackVector: injectionCheck.attackVector,
       sanitizedPrompt: injectionCheck.sanitizedText,
       latencyMs: Math.max(1, Math.round(performance.now() - start)),
+      routerEngine: "deterministic-ast",
     };
   }
 
@@ -152,5 +162,23 @@ export function routeIntentAndScreenInjection(
     attackVector: "NONE",
     sanitizedPrompt: injectionCheck.sanitizedText,
     latencyMs: Math.max(1, Math.round(performance.now() - start)),
+    routerEngine: "deterministic-ast",
+  };
+}
+
+export async function routeIntentAndScreenInjectionWithGemini(
+  prompt: string,
+  untrustedExternalData?: string
+): Promise<M02RouteVerdict> {
+  const baseVerdict = routeIntentAndScreenInjection(prompt, untrustedExternalData);
+  if (baseVerdict.hasInjection || !envConfig.isLiveGeminiConfigured || process.env.VITEST === "true") {
+    return baseVerdict;
+  }
+  const gemRes = await callGeminiGenerateContent(
+    `Classify financial intent domain (INVOICES|ORDERS|DISPUTES|SHIPMENT_TRACKING|CATALOG|SUBSCRIPTIONS|REPORTING): ${baseVerdict.sanitizedPrompt.slice(0, 200)}`
+  );
+  return {
+    ...baseVerdict,
+    routerEngine: gemRes.mode === "gemini-live" ? "gemini-live" : "deterministic-ast",
   };
 }

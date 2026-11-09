@@ -362,6 +362,26 @@ class PayPalToolkitHost {
             paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
           };
         }
+      } else if (toolName === "get_order") {
+        const orderId = String(args.order_id ?? args.orderId ?? "");
+        if (orderId) {
+          const res = await fetch(
+            `${envConfig.paypalApiBaseUrl}/v2/checkout/orders/${encodeURIComponent(orderId)}`,
+            {
+              method: "GET",
+              headers,
+              signal: AbortSignal.timeout(3500),
+            }
+          );
+          if (res.ok) {
+            const json = (await res.json()) as { id?: string; status?: string };
+            return {
+              paypalSandboxLiveOrderId: json.id,
+              paypalSandboxOrderStatus: json.status,
+              paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
+            };
+          }
+        }
       } else if (toolName === "list_products") {
         const res = await fetch(
           `${envConfig.paypalApiBaseUrl}/v1/catalogs/products?page_size=10&total_required=true`,
@@ -375,6 +395,25 @@ class PayPalToolkitHost {
           const json = (await res.json()) as { products?: unknown[]; total_items?: number };
           return {
             paypalSandboxProductsCount: json.total_items ?? json.products?.length ?? 0,
+            paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
+          };
+        }
+      } else if (toolName === "create_product") {
+        const res = await fetch(`${envConfig.paypalApiBaseUrl}/v1/catalogs/products`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            name: String(args.name ?? args.productName ?? "PayOps Managed B2B Service"),
+            type: String(args.type ?? "SERVICE"),
+            description: String(args.description ?? "Created via @paypal/agent-toolkit"),
+            category: "SOFTWARE",
+          }),
+          signal: AbortSignal.timeout(3500),
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { id?: string; name?: string };
+          return {
+            paypalSandboxLiveProductId: json.id,
             paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
           };
         }
@@ -394,6 +433,81 @@ class PayPalToolkitHost {
             paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
           };
         }
+      } else if (toolName === "create_invoice") {
+        const currencyCode = String(args.currencyCode ?? "USD");
+        const amountValue = String(args.amountValue ?? "320.00");
+        const recipientEmail = String(
+          args.recipientEmail ??
+            args.recipient_email ??
+            "buyer@pacificboutique-la.example.com"
+        );
+        const res = await fetch(`${envConfig.paypalApiBaseUrl}/v2/invoicing/invoices`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            detail: { currency_code: currencyCode },
+            primary_recipients: [{ billing_info: { email_address: recipientEmail } }],
+            items: [
+              {
+                name: "PayOps AI Autonomous B2B Commercial Invoice",
+                quantity: "1",
+                unit_amount: { currency_code: currencyCode, value: amountValue },
+              },
+            ],
+          }),
+          signal: AbortSignal.timeout(3500),
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { href?: string; id?: string };
+          const hrefId = json.href ? json.href.split("/").pop() : undefined;
+          return {
+            paypalSandboxLiveInvoiceId: json.id ?? hrefId,
+            paypalSandboxInvoiceHref: json.href,
+            paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
+          };
+        }
+      } else if (toolName === "list_invoices" || toolName === "search_invoicing") {
+        const res = await fetch(
+          `${envConfig.paypalApiBaseUrl}/v2/invoicing/invoices?page_size=10&total_required=true`,
+          {
+            method: "GET",
+            headers,
+            signal: AbortSignal.timeout(3500),
+          }
+        );
+        if (res.ok) {
+          const json = (await res.json()) as { items?: unknown[]; total_items?: number };
+          return {
+            paypalSandboxInvoicesCount: json.total_items ?? json.items?.length ?? 0,
+            paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
+          };
+        }
+      } else if (toolName === "list_disputes" || toolName === "get_dispute") {
+        const res = await fetch(`${envConfig.paypalApiBaseUrl}/v1/customer/disputes`, {
+          method: "GET",
+          headers,
+          signal: AbortSignal.timeout(3500),
+        });
+        if (res.ok) {
+          const json = (await res.json()) as { items?: unknown[] };
+          return {
+            paypalSandboxDisputesCount: json.items?.length ?? 0,
+            paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
+          };
+        }
+      } else if (toolName === "get_merchant_insights" || toolName === "list_transactions") {
+        const res = await fetch(
+          `${envConfig.paypalApiBaseUrl}/v1/reporting/balances?currency_code=USD`,
+          {
+            method: "GET",
+            headers,
+            signal: AbortSignal.timeout(3500),
+          }
+        );
+        return {
+          paypalSandboxReportingHttpStatus: res.status,
+          paypalDebugId: res.headers.get("paypal-debug-id") ?? undefined,
+        };
       }
     } catch {
       // Graceful fallback to deterministic Sandbox Replay

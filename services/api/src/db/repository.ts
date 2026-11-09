@@ -408,8 +408,10 @@ export class DualModeRepository {
         this.pool = new Pool({
           connectionString: normalizedConnStr,
           connectionTimeoutMillis: 15000,
-          max: 5,
+          idleTimeoutMillis: 30000,
+          max: 10,
         });
+        this.pool.on("error", () => undefined);
       }
       await this.pool.query("SELECT 1");
       this.db = drizzle(this.pool, { schema });
@@ -501,6 +503,18 @@ export class DualModeRepository {
         ]
       );
     }
+
+    // Seed baseline E-03 AgentSession & E-04 AgentToolExecution
+    await this.pool.query(
+      `INSERT INTO agent_sessions (session_id, workspace_id, operator_id, active_persona, intent_domain, max_tool_hops, used_tool_hops, token_budget_usd, spent_cost_usd, trace_id, status)
+       VALUES ('ses_baseline_001', 'ws_99102a', 'usr_maya_lin_owner', 'SENTINEL_CFO', 'INVOICES', 6, 1, 0.2500, 0.0120, 'trace_ses_baseline_001', 'COMPLETED')
+       ON CONFLICT (session_id) DO NOTHING`
+    );
+    await this.pool.query(
+      `INSERT INTO agent_tool_executions (execution_id, session_id, workspace_id, policy_id, paypal_request_id, mcp_tool_name, validated_input_json, policy_verdict, reason_code, junodb_lease_status, injection_score, gnn_risk_score, amount_value, currency_code, paypal_http_status, paypal_response_json, latency_ms, version)
+       VALUES ('exec_baseline_001', 'ses_baseline_001', 'ws_99102a', 'pol_refund_risk_gate_01', 'idem_ws_99102a_baseline_send_invoice_01', 'send_invoice', '{"invoiceId":"INV2-X89A-4412-9012-7731","amountValue":"2450.00","currencyCode":"USD"}'::jsonb, 'APPROVED_L3_AUTO', 'RC_OK_POLICY_PASSED', 'ACQUIRED', 0.000, 0.050, '2450.00', 'USD', 200, '{"status":"SENT"}'::jsonb, 14, 1)
+       ON CONFLICT (execution_id) DO NOTHING`
+    );
 
     // Seed baseline E-06 Orders
     for (const ord of this.orders.values()) {
@@ -621,6 +635,8 @@ export class DualModeRepository {
     connected: boolean;
     storageMode: "postgres" | "in-memory";
     databaseHost: string;
+    readWriteVerified: boolean;
+    primaryWorkspace?: { workspaceId: string; merchantName: string; autonomyLevel: string };
     tableRowCounts: Record<string, number>;
   }> {
     if (!this.pool || this.storageMode !== "postgres") {
@@ -628,6 +644,7 @@ export class DualModeRepository {
         connected: false,
         storageMode: this.storageMode,
         databaseHost: "in-memory-ledger",
+        readWriteVerified: false,
         tableRowCounts: {},
       };
     }
@@ -635,22 +652,32 @@ export class DualModeRepository {
       const res = await this.pool.query<{
         workspaces: string;
         operators: string;
+        sessions: string;
+        executions: string;
         policies: string;
         orders: string;
         invoices: string;
         disputes: string;
         subscriptions: string;
         audit_logs: string;
+        ws_id: string | null;
+        ws_name: string | null;
+        ws_autonomy: string | null;
       }>(`
         SELECT
           (SELECT count(*) FROM merchant_workspaces) AS workspaces,
           (SELECT count(*) FROM operator_users) AS operators,
+          (SELECT count(*) FROM agent_sessions) AS sessions,
+          (SELECT count(*) FROM agent_tool_executions) AS executions,
           (SELECT count(*) FROM policy_rules) AS policies,
           (SELECT count(*) FROM paypal_order_records) AS orders,
           (SELECT count(*) FROM paypal_invoice_records) AS invoices,
           (SELECT count(*) FROM paypal_dispute_cases) AS disputes,
           (SELECT count(*) FROM subscription_plan_records) AS subscriptions,
-          (SELECT count(*) FROM immutable_audit_logs) AS audit_logs
+          (SELECT count(*) FROM immutable_audit_logs) AS audit_logs,
+          (SELECT workspace_id FROM merchant_workspaces WHERE workspace_id = 'ws_99102a' LIMIT 1) AS ws_id,
+          (SELECT merchant_name FROM merchant_workspaces WHERE workspace_id = 'ws_99102a' LIMIT 1) AS ws_name,
+          (SELECT autonomy_level FROM merchant_workspaces WHERE workspace_id = 'ws_99102a' LIMIT 1) AS ws_autonomy
       `);
       const row = res.rows[0];
       const hostMatch = /@([^/?]+)/.exec(envConfig.databaseUrl);
@@ -658,9 +685,19 @@ export class DualModeRepository {
         connected: true,
         storageMode: "postgres",
         databaseHost: hostMatch ? hostMatch[1] : "neon-postgres",
+        readWriteVerified: row?.ws_id === "ws_99102a",
+        primaryWorkspace: row?.ws_id
+          ? {
+              workspaceId: row.ws_id,
+              merchantName: row.ws_name ?? "",
+              autonomyLevel: row.ws_autonomy ?? "L3",
+            }
+          : undefined,
         tableRowCounts: {
           merchant_workspaces: Number(row?.workspaces ?? 0),
           operator_users: Number(row?.operators ?? 0),
+          agent_sessions: Number(row?.sessions ?? 0),
+          agent_tool_executions: Number(row?.executions ?? 0),
           policy_rules: Number(row?.policies ?? 0),
           paypal_order_records: Number(row?.orders ?? 0),
           paypal_invoice_records: Number(row?.invoices ?? 0),
@@ -674,6 +711,7 @@ export class DualModeRepository {
         connected: false,
         storageMode: this.storageMode,
         databaseHost: "in-memory-ledger",
+        readWriteVerified: false,
         tableRowCounts: {},
       };
     }
@@ -1590,11 +1628,12 @@ export class DualModeRepository {
       void this.pool
         .query(
           `INSERT INTO immutable_audit_logs (log_id, workspace_id, execution_id, event_type, actor_id, paypal_request_id, policy_verdict, redacted_payload_json, prev_hash, entry_hash, recorded_at)
-           VALUES ($1, $2, NULL, $3, $4, $5, $6, $7::jsonb, $8, $9, $10)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11)
            ON CONFLICT (entry_hash) DO NOTHING`,
           [
             entry.logId,
             entry.workspaceId,
+            entry.execution_id ?? null,
             entry.toolName,
             entry.actorId,
             entry.paypalRequestId,

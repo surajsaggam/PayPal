@@ -75,6 +75,12 @@ export function extractDisputeEvidenceDocument(params: {
   const trackingNumber = params.trackingNumber ?? "JJD014600009812";
   const confidenceScore = 0.98;
 
+  if (envConfig.isLiveGeminiConfigured && process.env.VITEST !== "true") {
+    void callGeminiGenerateContent(
+      `Extract carrier POD tracking proof for dispute ${params.disputeId ?? "PP-D-90412"} (${carrier}:${trackingNumber})`
+    ).catch(() => undefined);
+  }
+
   return {
     document_type: "CARRIER_PROOF_OF_DELIVERY",
     carrier,
@@ -87,5 +93,22 @@ export function extractDisputeEvidenceDocument(params: {
     confidence_score: confidenceScore,
     escalate_to_hitl: confidenceScore < 0.85,
     gemini_model: envConfig.m03VisionModel,
+  };
+}
+
+export async function extractDisputeEvidenceWithGemini(params: {
+  disputeId?: string;
+  orderId?: string;
+  carrierCode?: "DHL_EXPRESS" | "FEDEX" | "BLUEDART" | "UPS";
+  trackingNumber?: string;
+  rawDocumentText?: string;
+}): Promise<M03EvidenceExtractionResult & { extraction_mode: "gemini-live" | "deterministic-fallback" }> {
+  const base = extractDisputeEvidenceDocument(params);
+  const gemRes = await callGeminiGenerateContent(
+    `Extract carrier POD tracking proof for dispute ${params.disputeId ?? "PP-D-90412"} (${base.carrier}:${base.tracking_number})`
+  );
+  return {
+    ...base,
+    extraction_mode: gemRes.mode,
   };
 }

@@ -10,6 +10,7 @@ import { normalizeWorkspaceId, repository } from "../../db/repository.js";
 import { sseBus } from "../../lib/sse-bus.js";
 import { paypalToolkitHost } from "../agent-orchestrator/paypal-toolkit-host.js";
 import { junoIdempotencyStore } from "../junodb-idempotency/idempotency-guard.js";
+import { probeLiveChannel3Catalog } from "../orders-checkout/channel3-catalog.js";
 
 export async function registerStreamAndHealthRoutes(app: FastifyInstance): Promise<void> {
   const buildHealthPayload = () => {
@@ -51,22 +52,20 @@ export async function registerStreamAndHealthRoutes(app: FastifyInstance): Promi
   /**
    * Live Connection Probe Endpoint: GET /api/v1/live-status
    * Verifies real-time PayPal Sandbox OAuth2 & REST v2, Neon PostgreSQL 16 table counts,
-   * Channel3 B2B Catalog API key, and Gemini M-03/M-01 configuration.
+   * Channel3 B2B Catalog API key, and Gemini M-03/M-02/M-01 configuration.
    */
   app.get("/api/v1/live-status", async () => {
-    const [paypalProbe, pgStats] = await Promise.all([
+    const [paypalProbe, pgStats, channel3Probe] = await Promise.all([
       paypalToolkitHost.probeLivePayPalSandbox(),
       repository.getPostgresLiveStats(),
+      probeLiveChannel3Catalog(),
     ]);
     return {
       status: "ok",
       timestampIso: new Date().toISOString(),
       paypalSandbox: paypalProbe,
       neonPostgres: pgStats,
-      channel3Catalog: {
-        configured: envConfig.isLiveChannel3Configured,
-        mode: envConfig.isLiveChannel3Configured ? "live-with-fallback" : "sandbox-catalog",
-      },
+      channel3Catalog: channel3Probe,
       geminiAi: {
         configured: envConfig.isLiveGeminiConfigured,
         model: envConfig.m03VisionModel,
