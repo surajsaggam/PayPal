@@ -9,6 +9,12 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import {
   twoDecimalStringToMinorUnits,
   compileCosmosDslExpression,
+  MOCK_OPERATORS,
+  MOCK_POLICY_RULES,
+  MOCK_EXECUTIONS,
+  MOCK_ORDERS,
+  MOCK_INVOICES,
+  MOCK_DISPUTES,
   type AutonomyLevel,
   type CurrencyCode,
   type MerchantWorkspace,
@@ -797,7 +803,7 @@ export class DualModeRepository {
         role: "AGENT_SERVICE",
       },
     ];
-    for (const op of seededOperators) {
+    for (const op of [...seededOperators, ...MOCK_OPERATORS]) {
       this.operators.set(op.userId, op);
     }
 
@@ -853,8 +859,109 @@ export class DualModeRepository {
     };
     this.policies.set(pol1.policyId, pol1);
     this.policies.set(pol2.policyId, pol2);
+    for (const mockPol of MOCK_POLICY_RULES) {
+      if (!this.policies.has(mockPol.policyId)) {
+        this.policies.set(mockPol.policyId, {
+          ...mockPol,
+          policy_id: mockPol.policyId,
+          workspace_id: mockPol.workspaceId,
+          rule_code: mockPol.policyId,
+          rule_name: mockPol.ruleName,
+          autonomy_level: mockPol.autonomyLevel,
+          dsl_expression:
+            mockPol.policyId === "POL-02"
+              ? pol1.dsl_expression
+              : pol2.dsl_expression,
+          max_single_tx_minor: Math.round(mockPol.maxSingleAutoRefundUsd * 100),
+          daily_velocity_cap_minor: Math.round(mockPol.maxDailyRefundVelocityUsd * 100),
+          required_approval_role: "FINANCE_ADMIN",
+          risk_threshold: mockPol.maxGnnRiskScoreForAutoRefund,
+          is_enabled: mockPol.isActive,
+        });
+      }
+    }
 
-    // 4. E-06 Orders (matching SEED_DISPUTES order IDs)
+    // 3b. E-04 Seeded AgentToolExecutions (matching MOCK_EXECUTIONS & UI fixtures)
+    const extraExecs: AgentToolExecution[] = [
+      {
+        executionId: "ex_88101",
+        sessionId: "ses_20261108_9041",
+        workspaceId: "ws_99102a",
+        toolName: "send_invoice",
+        paypalRequestId: "idem_ws_99102a_ex_88101_send_invoice",
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: "RC_OK_WITHIN_POLICY",
+        gnnRiskScore: 0.04,
+        amountValue: "2450.00",
+        currencyCode: "USD",
+        executedAt: "2026-11-08T18:40:00.000Z",
+      },
+      {
+        executionId: "ex_88102",
+        sessionId: "ses_20261108_9042",
+        workspaceId: "ws_99102a",
+        toolName: "create_refund",
+        paypalRequestId: "idem_ws_99102a_ex_88102_create_refund",
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "HELD_FOR_L2_PASSKEY",
+        reasonCode: "RC_01_SINGLE_TX_CAP_EXCEEDED",
+        gnnRiskScore: 0.89,
+        amountValue: "420.00",
+        currencyCode: "USD",
+        executedAt: "2026-11-08T18:41:00.000Z",
+      },
+      {
+        executionId: "ex_88103",
+        sessionId: "ses_20261108_9041",
+        workspaceId: "ws_99102a",
+        toolName: "get_dispute",
+        paypalRequestId: "idem_ws_99102a_ex_88103_get_dispute",
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: "RC_OK_WITHIN_POLICY",
+        gnnRiskScore: 0.88,
+        amountValue: "340.00",
+        currencyCode: "USD",
+        executedAt: "2026-11-08T18:42:00.000Z",
+      },
+    ];
+    for (const ex of [...MOCK_EXECUTIONS, ...extraExecs]) {
+      this.executions.set(ex.executionId, {
+        ...ex,
+        execution_id: ex.executionId,
+        session_id: ex.sessionId,
+        workspace_id: ex.workspaceId,
+        policy_id: "pol_refund_risk_gate_01",
+        paypal_request_id: ex.paypalRequestId,
+        mcp_tool_name: ex.toolName,
+        intent_class: ex.toolName.includes("refund") ? "REFUND" : "INVOICING",
+        injection_score: ex.policyVerdict === "BLOCKED_SECURITY_INJECTION" ? 0.94 : 0.01,
+        gnn_risk_score: ex.gnnRiskScore,
+        apimatic_schema_valid: true,
+        policy_verdict:
+          ex.policyVerdict === "HELD_FOR_L2_PASSKEY"
+            ? "HOLD_APPROVAL"
+            : ex.policyVerdict === "BLOCKED_SECURITY_INJECTION"
+              ? "DENY"
+              : "ALLOW",
+        matched_rule_code:
+          ex.policyVerdict === "HELD_FOR_L2_PASSKEY"
+            ? "POL-02-REFUND-HOLD"
+            : "POL-01-INVOICE-SEND",
+        tool_calls: [],
+        audit_entry_hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        latency_ms: 8,
+        version: 1,
+        validated_input_json: {
+          order_id: "8XL99102481",
+          amountValue: ex.amountValue,
+          currencyCode: ex.currencyCode,
+        },
+      });
+    }
+
+    // 4. E-06 Orders (matching SEED_DISPUTES & MOCK_ORDERS order IDs)
     const seededOrders: HydratedOrderRecord[] = [
       {
         orderId: "8XL99102481",
@@ -929,6 +1036,114 @@ export class DualModeRepository {
         shipment_tracking_status: "DELIVERED",
         approve_link: "https://www.sandbox.paypal.com/checkoutnow?token=4KM22019482",
         created_at: "2026-11-02T14:20:00.000Z",
+      },
+      {
+        orderId: "5O190127TN364715T",
+        workspaceId: "ws_99102a",
+        paypalRequestId: "idem_ws_99102a_7a8b9c0d1e2f3a4b5c6d7e8f9012a3b4",
+        intent: "CAPTURE",
+        status: "COMPLETED",
+        amountValue: "390.00",
+        currencyCode: "USD",
+        buyerEmailHmac: "hmac_sha256_4c81e90211ab77d23190cc4188210fa2",
+        carrierCode: "FEDEX",
+        trackingNumber: "794899102341",
+        trackingStatus: "DELIVERED",
+        order_record_id: "ord_rec_5o190127tn364715t",
+        workspace_id: "ws_99102a",
+        paypal_order_id: "5O190127TN364715T",
+        paypal_capture_id: "2GG55190127TN",
+        paypal_request_id: "idem_ws_99102a_7a8b9c0d1e2f3a4b5c6d7e8f9012a3b4",
+        amount_minor: 39000,
+        currency_code: "USD",
+        buyer_hash: "hmac_sha256_4c81e90211ab77d23190cc4188210fa2",
+        fastlane_accelerated: true,
+        carrier_code: "FEDEX",
+        tracking_number: "794899102341",
+        shipment_tracking_status: "DELIVERED",
+        approve_link: "https://www.sandbox.paypal.com/checkoutnow?token=5O190127TN364715T",
+        created_at: "2026-11-03T11:00:00.000Z",
+      },
+      {
+        orderId: "9K281044BC991023A",
+        workspaceId: "ws_99102a",
+        paypalRequestId: "idem_ws_99102a_order_9K281044BC991023A_capture",
+        intent: "CAPTURE",
+        status: "COMPLETED",
+        amountValue: "35.00",
+        currencyCode: "USD",
+        buyerEmailHmac: hashBuyerIdentifier("buyer.9k@retail.example.com"),
+        carrierCode: "FEDEX",
+        trackingNumber: "794801928374",
+        trackingStatus: "DELIVERED",
+        order_record_id: "ord_rec_9k281044bc991023a",
+        workspace_id: "ws_99102a",
+        paypal_order_id: "9K281044BC991023A",
+        paypal_capture_id: "2GG9K281044BC",
+        paypal_request_id: "idem_ws_99102a_order_9K281044BC991023A_capture",
+        amount_minor: 3500,
+        currency_code: "USD",
+        buyer_hash: hashBuyerIdentifier("buyer.9k@retail.example.com"),
+        fastlane_accelerated: false,
+        carrier_code: "FEDEX",
+        tracking_number: "794801928374",
+        shipment_tracking_status: "DELIVERED",
+        approve_link: "https://www.sandbox.paypal.com/checkoutnow?token=9K281044BC991023A",
+        created_at: "2026-11-03T12:00:00.000Z",
+      },
+      {
+        orderId: "8XY92011",
+        workspaceId: "ws_99102a",
+        paypalRequestId: "idem_ws_99102a_11223344556677889900aabbccddeeff",
+        intent: "CAPTURE",
+        status: "COMPLETED",
+        amountValue: "340.00",
+        currencyCode: "USD",
+        buyerEmailHmac: "hmac_sha256_7d12f009a8b1c2d3e4f5061728394a5b",
+        carrierCode: "DHL_EXPRESS",
+        trackingNumber: "77819201",
+        trackingStatus: "DELIVERED",
+        order_record_id: "ord_rec_8xy92011",
+        workspace_id: "ws_99102a",
+        paypal_order_id: "8XY92011",
+        paypal_capture_id: "2GG8XY9201100",
+        paypal_request_id: "idem_ws_99102a_11223344556677889900aabbccddeeff",
+        amount_minor: 34000,
+        currency_code: "USD",
+        buyer_hash: "hmac_sha256_7d12f009a8b1c2d3e4f5061728394a5b",
+        fastlane_accelerated: true,
+        carrier_code: "DHL_EXPRESS",
+        tracking_number: "77819201",
+        shipment_tracking_status: "DELIVERED",
+        approve_link: "https://www.sandbox.paypal.com/checkoutnow?token=8XY92011",
+        created_at: "2026-11-04T09:00:00.000Z",
+      },
+      {
+        orderId: "9ZZ77401",
+        workspaceId: "ws_99102a",
+        paypalRequestId: "idem_ws_99102a_order_9ZZ77401_capture",
+        intent: "CAPTURE",
+        status: "COMPLETED",
+        amountValue: "2400.00",
+        currencyCode: "USD",
+        buyerEmailHmac: hashBuyerIdentifier("buyer.9zz@retail.example.com"),
+        carrierCode: "BLUEDART",
+        trackingNumber: "BD901182736",
+        trackingStatus: "IN_TRANSIT",
+        order_record_id: "ord_rec_9zz77401",
+        workspace_id: "ws_99102a",
+        paypal_order_id: "9ZZ77401",
+        paypal_capture_id: "2GG9ZZ7740100",
+        paypal_request_id: "idem_ws_99102a_order_9ZZ77401_capture",
+        amount_minor: 240000,
+        currency_code: "USD",
+        buyer_hash: hashBuyerIdentifier("buyer.9zz@retail.example.com"),
+        fastlane_accelerated: false,
+        carrier_code: "BLUEDART",
+        tracking_number: "BD901182736",
+        shipment_tracking_status: "IN_TRANSIT",
+        approve_link: "https://www.sandbox.paypal.com/checkoutnow?token=9ZZ77401",
+        created_at: "2026-11-04T15:00:00.000Z",
       },
     ];
     for (const ord of seededOrders) {
@@ -1039,6 +1254,82 @@ export class DualModeRepository {
     this.invoices.set(inv1.invoiceId, inv1);
     this.invoices.set(inv2.invoiceId, inv2);
 
+    const extraMockInvoices: Array<PayPalInvoiceRecord & { settledTxHash?: string }> = [
+      ...MOCK_INVOICES,
+      {
+        invoiceId: "INV2-Z90D-1122-3344-5566",
+        workspaceId: "ws_99102a",
+        invoiceNumber: "INV-2026-8843",
+        recipientEmail: "ap@kaveri-yarn-supplier.example.in",
+        amountValue: "890.00",
+        currencyCode: "USD",
+        status: "PAID",
+        dueDate: "2026-11-18",
+        qrCodeUri:
+          "https://api-m.sandbox.paypal.com/v2/invoicing/invoices/INV2-Z90D-1122-3344-5566/generate-qr-code",
+        conditionalRule: {
+          ruleType: "EARLY_PAYMENT_DISCOUNT",
+          percentage: "2.00",
+          triggerDate: "2026-11-10",
+        },
+        settledTxHash: "5xPyuSD99102aSolanaTxSignature8843Confirmed11111111",
+        idempotencyKey: "idem_ws_99102a_invoice_INV_2026_8843",
+      },
+      {
+        invoiceId: "INV2-C50D-8821-3349-1920",
+        workspaceId: "ws_99102a",
+        invoiceNumber: "INV-2026-8840",
+        recipientEmail: "billing@globaltextiles.example.com",
+        amountValue: "1250.00",
+        currencyCode: "USD",
+        status: "SENT",
+        dueDate: "2026-11-21",
+        qrCodeUri:
+          "https://api-m.sandbox.paypal.com/v2/invoicing/invoices/INV2-C50D-8821-3349-1920/generate-qr-code",
+        conditionalRule: {
+          ruleType: "EARLY_PAYMENT_DISCOUNT",
+          percentage: "2.00",
+          triggerDate: "2026-11-14",
+        },
+        idempotencyKey: "idem_ws_99102a_invoice_INV_2026_8840",
+      },
+    ];
+    for (const mInv of extraMockInvoices) {
+      if (!this.invoices.has(mInv.invoiceId)) {
+        const dunningState =
+          mInv.status === "PAID"
+            ? "PAID"
+            : mInv.status === "OVERDUE"
+              ? "OVERDUE"
+              : "SENT";
+        this.invoices.set(mInv.invoiceId, {
+          ...mInv,
+          invoice_record_id: `inv_rec_${mInv.invoiceNumber.toLowerCase().replace(/[^a-z0-9]/g, "_")}`,
+          workspace_id: mInv.workspaceId,
+          paypal_invoice_id: mInv.invoiceId,
+          invoice_number: mInv.invoiceNumber,
+          recipient_hash: hashBuyerIdentifier(mInv.recipientEmail),
+          recipient_email: mInv.recipientEmail,
+          amount_minor: Math.round(parseFloat(mInv.amountValue) * 100),
+          currency_code: mInv.currencyCode,
+          due_date: mInv.dueDate,
+          qr_code_uri: mInv.qrCodeUri,
+          dunning_state: dunningState,
+          conditional_rules_json: (mInv.conditionalRule ?? {}) as Record<string, unknown>,
+          recurring_series_id: null,
+          pyusd_tx_signature: mInv.settledTxHash ?? null,
+          aging_bucket: mInv.status === "OVERDUE" ? "1_30_DAYS" : "CURRENT",
+          bryntum_task: {
+            id: mInv.invoiceId,
+            name: `${mInv.invoiceNumber} (${mInv.currencyCode} ${mInv.amountValue})`,
+            startDate: "2026-11-05",
+            endDate: mInv.dueDate,
+            dunningState,
+          },
+        });
+      }
+    }
+
     // 6. E-08 Disputes (matching SEED_DISPUTES & MOCK_DISPUTES)
     const disp1Fixture = {
       disputeId: "PP-D-90412",
@@ -1137,6 +1428,72 @@ export class DualModeRepository {
 
     this.disputes.set(disp1.disputeId, disp1);
     this.disputes.set(disp2.disputeId, disp2);
+
+    const extraMockDisputes: PayPalDisputeCase[] = [
+      ...MOCK_DISPUTES,
+      {
+        disputeId: "PP-D-4490",
+        workspaceId: "ws_99102a",
+        orderId: "8XY92011",
+        reasonCode: "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+        disputedAmountValue: "340.00",
+        currencyCode: "USD",
+        carrierCode: "DHL_EXPRESS",
+        trackingNumber: "789102938102",
+        trackingStatus: "DELIVERED",
+        gnnRiskScore: 0.88,
+        treeShapReasons: [
+          "CARRIER_DELIVERED_GEO_MATCH (+0.52)",
+          "SHARED_DEVICE_IP_3_PRIOR_INR_CLAIMS (+0.24)",
+          "BUYER_SIGNATURE_VERIFIED_BY_M03_OCR (+0.12)",
+        ],
+        recommendedAction: "CONTEST_WITH_COMPELLING_EVIDENCE",
+        responseDueIso: "2026-11-16T18:00:00.000Z",
+      },
+      {
+        disputeId: "PP-D-3988",
+        workspaceId: "ws_99102a",
+        orderId: "4KM22019482",
+        reasonCode: "SIGNIFICANTLY_NOT_AS_DESCRIBED",
+        disputedAmountValue: "35.00",
+        currencyCode: "USD",
+        carrierCode: "FEDEX",
+        trackingNumber: "794801928374",
+        trackingStatus: "DELIVERED",
+        gnnRiskScore: 0.14,
+        treeShapReasons: [
+          "LOW_VALUE_FIRST_TIME_BUYER_DISPUTE (-0.38)",
+          "NO_SHARED_DEVICE_CLUSTER_ANOMALY (-0.21)",
+        ],
+        recommendedAction: "AUTO_ACCEPT_LOW_VALUE_CLAIM",
+        responseDueIso: "2026-11-17T18:00:00.000Z",
+      },
+    ];
+    for (const mDisp of extraMockDisputes) {
+      if (!this.disputes.has(mDisp.disputeId)) {
+        this.disputes.set(mDisp.disputeId, {
+          ...mDisp,
+          dispute_case_id: `disp_rec_${mDisp.disputeId.toLowerCase().replace(/[^a-z0-9]/g, "_")}`,
+          workspace_id: mDisp.workspaceId,
+          paypal_dispute_id: mDisp.disputeId,
+          paypal_order_id: mDisp.orderId,
+          reason_code: mDisp.reasonCode,
+          disputed_amount_minor: Math.round(parseFloat(mDisp.disputedAmountValue) * 100),
+          currency_code: mDisp.currencyCode,
+          response_deadline: mDisp.responseDueIso,
+          shipment_tracking_proof_json: {
+            carrier: mDisp.carrierCode,
+            tracking_number: mDisp.trackingNumber,
+            status: mDisp.trackingStatus,
+            signed_by: "VERIFIED_RECIPIENT",
+          },
+          gnn_risk_score: mDisp.gnnRiskScore,
+          gnn_reason_codes: mDisp.treeShapReasons,
+          evidence_bundle_json: {},
+          agent_action: mDisp.recommendedAction,
+        });
+      }
+    }
 
     // 7. E-09 Subscriptions
     const sub1: HydratedSubscriptionPlan = {
@@ -1389,6 +1746,7 @@ export class DualModeRepository {
         exec.workspaceId === norm &&
         (exec.toolName === "create_refund" || exec.toolName === "record_refund_for_invoice") &&
         exec.policyVerdict === "APPROVED_L3_AUTO" &&
+        !exec.approved_by_operator_id &&
         Date.parse(exec.executedAt) >= cutoff
       ) {
         sum += Number(exec.amountValue ?? 0);

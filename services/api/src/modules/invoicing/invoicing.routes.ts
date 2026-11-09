@@ -349,7 +349,14 @@ export async function registerInvoicingRoutes(app: FastifyInstance): Promise<voi
 
         const updated = repository.getInvoice(invoiceId)!;
         reply.header("PayPal-Request-Id", paypalRequestId);
-        return reply.code(200).send(updated);
+        return reply.code(200).send({
+          ...updated,
+          invoice: updated,
+          invoiceId: updated.invoiceId,
+          status: "REMINDER_SCHEDULED_72H_GUARD_OK",
+          newTriggerDate: newTriggerDate ?? updated.dueDate,
+          scheduleUpdated: true,
+        });
       }
 
       // Mode 3: Smart Invoice Reminder with 72h Cooldown Check (R-11)
@@ -442,6 +449,11 @@ export async function registerInvoicingRoutes(app: FastifyInstance): Promise<voi
   };
 
   app.post("/api/v1/pyusd/settle", async (req, reply) => {
+    assertMutationPermitted(req);
+    return handlePyusdEndpoint(req, reply);
+  });
+
+  app.post("/api/v1/pyusd/settle-invoice", async (req, reply) => {
     assertMutationPermitted(req);
     return handlePyusdEndpoint(req, reply);
   });

@@ -501,6 +501,7 @@ export async function registerOrdersRoutes(app: FastifyInstance): Promise<void> 
             statusCode,
             result: {
               ...execRecord,
+              orderId: updatedOrder.orderId,
               order: updatedOrder,
               paypalRequestId,
               junodbLeaseStatus: "ACQUIRED" as "ACQUIRED" | "REPLAYED_FROM_JUNODB",
@@ -533,6 +534,11 @@ export async function registerOrdersRoutes(app: FastifyInstance): Promise<void> 
   });
 
   app.get("/api/v1/catalog/channel3/search", async (req) => {
+    const query = (req.query ?? {}) as Record<string, string | undefined>;
+    return searchChannel3Catalog(query.q ?? query.query);
+  });
+
+  app.get("/api/v1/channel3/catalog", async (req) => {
     const query = (req.query ?? {}) as Record<string, string | undefined>;
     return searchChannel3Catalog(query.q ?? query.query);
   });

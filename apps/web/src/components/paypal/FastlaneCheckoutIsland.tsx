@@ -75,6 +75,8 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
   const installmentQuarterUsd = (computedOrderTotalNum / 4).toFixed(2);
   const isOverProcurementCap = computedOrderTotalNum > 500.0;
 
+  const paypalClientId =
+    (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_PAYPAL_CLIENT_ID) || "sb";
   const buyerEmailHmac = computeBuyerEmailHmacPreview(fastlaneEmail);
   const deterministicRequestId = `idem_${activeWorkspaceId}_order_${selectedSku.skuId}_${computedOrderTotalUsd}`;
   const dualPrice = formatDualCurrency(
@@ -168,7 +170,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
     try {
       const res = await refundOrder(targetOrderId, activeWorkspaceId, refundAmountUsd, "USD");
       const exec = {
-        executionId: `ex_ref_${Math.floor(9650 + Math.random() * 250)}`,
+        executionId: res.executionId ?? `ex_ref_${Math.floor(9650 + Math.random() * 250)}`,
         sessionId: "ses_20261108_9042",
         workspaceId: activeWorkspaceId,
         toolName: "create_refund",
@@ -198,7 +200,10 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
   };
 
   return (
-    <div className="surface-bento rounded-2xl p-6 space-y-5">
+    <div
+      data-paypal-client-id={paypalClientId.slice(0, 12)}
+      className="surface-bento rounded-2xl p-6 space-y-5"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-hairline pb-4">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 text-xs font-medium text-ink-secondary">

@@ -102,8 +102,13 @@ export async function registerPolicyRoutes(app: FastifyInstance): Promise<void> 
       },
     });
 
+    const allPolicies = repository.listPolicies(updated.policy.workspaceId);
     return {
       ...updated.policy,
+      workspaceId: updated.policy.workspaceId,
+      workspace_id: updated.policy.workspaceId,
+      policies: allPolicies,
+      data: allPolicies,
       policy: updated.policy,
       ast_compiled: updated.ast_compiled,
       compile_time_ms: updated.compile_time_ms,

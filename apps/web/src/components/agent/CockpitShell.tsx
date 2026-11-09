@@ -23,6 +23,12 @@ import {
   Cpu,
 } from "lucide-react";
 import type { CurrencyCode } from "@payops/shared";
+import {
+  fetchDisputes,
+  fetchInvoices,
+  fetchMerchantInsights,
+  fetchWorkspacePolicies,
+} from "../../lib/api-client";
 import { LOCALE_DICTIONARY, type SupportedLocale } from "../../lib/formatters";
 import {
   useCockpitStore,
@@ -68,6 +74,15 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
   const strings = LOCALE_DICTIONARY[activeLocale];
   const activeWorkspace =
     workspaces.find((w) => w.workspaceId === activeWorkspaceId) ?? workspaces[0];
+
+  // Hydrate live endpoints (API-03, API-05, API-10, API-14) when operating in live mode
+  useEffect(() => {
+    if (apiMode !== "live") return;
+    void fetchMerchantInsights(activeWorkspaceId);
+    void fetchWorkspacePolicies(activeWorkspaceId);
+    void fetchInvoices(activeWorkspaceId);
+    void fetchDisputes(activeWorkspaceId);
+  }, [apiMode, activeWorkspaceId]);
 
   // Sync HTML theme class with Zustand store
   useEffect(() => {

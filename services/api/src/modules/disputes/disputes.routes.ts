@@ -217,6 +217,12 @@ export async function registerDisputesRoutes(app: FastifyInstance): Promise<void
       reply.header("PayPal-Request-Id", paypalRequestId);
       return reply.code(200).send({
         ...updatedDispute,
+        disputeId,
+        status:
+          effectiveAction === "CONTEST_WITH_COMPELLING_EVIDENCE"
+            ? "EVIDENCE_SUBMITTED_TO_PAYPAL_SANDBOX"
+            : "CLAIM_AUTO_ACCEPTED",
+        paypalRequestId,
         dispute: updatedDispute,
         paypal_dispute_id: disputeId,
         executed_strategy: effectiveAction,

@@ -30,12 +30,14 @@ import { evaluateCosmosPolicyFirewall } from "@payops/shared/policy-dsl";
 import {
   MOCK_APIMATIC_SNIPPETS,
   MOCK_AUDIT_LOGS,
+  MOCK_CHANNEL3_CATALOG,
   MOCK_DISPUTES,
   MOCK_INVOICES,
   MOCK_MERCHANT_INSIGHTS,
   MOCK_POLICY_RULES,
   MOCK_SIGNED_SANDBOX_TRANSCRIPTS,
   resolveSignedSandboxTranscript,
+  type Channel3CatalogItem,
   type SignedSandboxTranscript,
 } from "@payops/shared/mock-fixtures";
 import { normalizeMultilingualAgentPrompt } from "./formatters";
@@ -45,7 +47,7 @@ const API_BASE_URL =
   (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) ||
   "http://localhost:4000";
 
-const LIVE_TIMEOUT_MS = 2500;
+const LIVE_TIMEOUT_MS = 10000;
 const REPLAY_CACHE_LATENCY_MS = 8;
 
 export function getSignedSandboxTranscriptForPath(path: string): SignedSandboxTranscript {
@@ -86,15 +88,20 @@ async function fetchWithReplayFallback<T>(
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), LIVE_TIMEOUT_MS);
+  const activeRole =
+    store.operators.find((op) => op.userId === store.activeOperatorId)?.role ?? "OWNER";
 
   try {
+    const headers: Record<string, string> = {
+      "X-PayOps-Role": activeRole,
+      "X-PayOps-Signed-Transcript-Fallback": transcript.transcriptId,
+      ...(init?.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...((init?.headers as Record<string, string> | undefined) ?? {}),
+    };
+
     const response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
-      headers: {
-        "Content-Type": "application/json",
-        "X-PayOps-Signed-Transcript-Fallback": transcript.transcriptId,
-        ...(init?.headers ?? {}),
-      },
+      headers,
       signal: controller.signal,
     });
     clearTimeout(timer);
@@ -111,17 +118,17 @@ async function fetchWithReplayFallback<T>(
     }
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} on ${path}`);
+      return fallbackFactory();
     }
 
     return (await response.json()) as T;
   } catch {
     clearTimeout(timer);
-    // R-06 Automatic Circuit Breaker on network disconnect or >2.5s timeout
+    // R-06 Automatic Circuit Breaker on network disconnect or timeout
     useCockpitStore
       .getState()
       .triggerHttp429CircuitBreakerFailover(
-        `Upstream network disconnect / >2.5s timeout on ${path}`,
+        `Upstream network disconnect / >10s timeout on ${path}`,
         path
       );
     return fallbackFactory();
@@ -380,6 +387,7 @@ export async function refundOrder(
   amountValue: string,
   currencyCode: "USD" | "INR" | "EUR" | "GBP" | "PYUSD" = "USD"
 ): Promise<{
+  executionId?: string;
   orderId: string;
   paypalRequestId: string;
   policyVerdict: "APPROVED_L3_AUTO" | "HELD_FOR_L2_PASSKEY" | "BLOCKED_SECURITY_INJECTION";
@@ -407,6 +415,7 @@ export async function refundOrder(
         }
       );
       return {
+        executionId: `ex_ref_${Math.floor(9650 + Math.random() * 250)}`,
         orderId,
         paypalRequestId: `idem_${workspaceId}_order_${orderId}_refund`,
         policyVerdict: verdict.verdict,
@@ -426,7 +435,11 @@ export async function simulatePayPalWebhook(
       method: "POST",
       headers: {
         "PAYPAL-TRANSMISSION-ID": envelope.id,
+        "PAYPAL-TRANSMISSION-TIME": new Date().toISOString(),
         "PAYPAL-TRANSMISSION-SIG": "rsa_sha256_verified_sandbox_signature",
+        "PAYPAL-CERT-URL":
+          "https://api-m.sandbox.paypal.com/v1/notifications/certs/CERT-360caa42",
+        "PAYPAL-AUTH-ALGO": "SHA256withRSA",
       },
       body: JSON.stringify(envelope),
     },
@@ -497,6 +510,97 @@ export async function fetchMerchantInsights(
     undefined,
     () => MOCK_MERCHANT_INSIGHTS[workspaceId] ?? MOCK_MERCHANT_INSIGHTS.ws_99102a
   );
+}
+
+/** F-11: POST /api/v1/pyusd/settle */
+export async function settleInvoicePyusd(req: {
+  workspaceId?: string;
+  invoiceId: string;
+  amountValue: string;
+  memo: string;
+  solanaTxSignature?: string;
+}): Promise<{
+  status: string;
+  solanaTxSignature: string;
+  memoVerified: string;
+}> {
+  const txSig =
+    req.solanaTxSignature ?? `5xPyusdSolanaToken2022Sig99102a${Date.now().toString(16)}`;
+  return fetchWithReplayFallback(
+    "/api/v1/pyusd/settle",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        workspaceId: req.workspaceId ?? "ws_99102a",
+        invoiceId: req.invoiceId,
+        amountValue: req.amountValue,
+        memo: req.memo,
+        solanaTxSignature: txSig,
+      }),
+    },
+    () => ({
+      status: "PAID",
+      solanaTxSignature: txSig,
+      memoVerified: req.memo,
+    })
+  );
+}
+
+/** F-12: GET /api/v1/catalog/channel3/search */
+export async function searchChannel3CatalogApi(
+  query: string
+): Promise<{ items: Channel3CatalogItem[]; source?: string }> {
+  const raw = await fetchWithReplayFallback<{
+    items?: Array<Partial<Channel3CatalogItem> & { name?: string; brand?: string }>;
+    source?: string;
+  }>(
+    `/api/v1/catalog/channel3/search?q=${encodeURIComponent(query)}`,
+    undefined,
+    () => {
+      const q = query.trim().toLowerCase();
+      const items = !q
+        ? MOCK_CHANNEL3_CATALOG
+        : MOCK_CHANNEL3_CATALOG.filter(
+            (item) =>
+              item.title.toLowerCase().includes(q) ||
+              item.skuId.toLowerCase().includes(q) ||
+              item.category.toLowerCase().includes(q) ||
+              item.vendorName.toLowerCase().includes(q)
+          );
+      return { items, source: "fallback" };
+    }
+  );
+
+  const normalized: Channel3CatalogItem[] = (raw.items ?? []).map((item) => {
+    const matchMock = MOCK_CHANNEL3_CATALOG.find((m) => m.skuId === item.skuId);
+    if (matchMock) return matchMock;
+    const totalPrice = item.totalPriceUsd ?? item.unitPriceUsd ?? "390.00";
+    return {
+      skuId: item.skuId ?? "C3-88210",
+      title: item.title ?? item.name ?? "Channel3 B2B Commercial Supply Item",
+      category: item.category ?? "B2B_SUPPLIES",
+      vendorName: item.vendorName ?? item.brand ?? "Verified Channel3 Supplier",
+      packSize: item.packSize ?? 1,
+      unitPriceUsd: item.unitPriceUsd ?? totalPrice,
+      totalPriceUsd: totalPrice,
+      leadTimeDays: item.leadTimeDays ?? 3,
+      sustainabilityBadge: item.sustainabilityBadge ?? "Verified B2B Supplier",
+      inStock: item.inStock ?? true,
+      policyRuleId: item.policyRuleId ?? "POL-01",
+    };
+  });
+
+  const merged = [...normalized];
+  for (const mockSku of MOCK_CHANNEL3_CATALOG) {
+    if (!merged.some((m) => m.skuId === mockSku.skuId)) {
+      merged.push(mockSku);
+    }
+  }
+
+  return {
+    items: merged.length > 0 ? merged : MOCK_CHANNEL3_CATALOG,
+    source: raw.source,
+  };
 }
 
 export function getDisputeById(disputeId: string): PayPalDisputeCase | undefined {

@@ -7,7 +7,7 @@
  *  - Smooth pop-in and hover transitions across all cards
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ShoppingBag,
   Search,
@@ -30,6 +30,7 @@ import {
   type Channel3CatalogItem,
 } from "@payops/shared/mock-fixtures";
 import { FastlaneCheckoutIsland } from "../../../components/paypal/FastlaneCheckoutIsland";
+import { searchChannel3CatalogApi, settleInvoicePyusd } from "../../../lib/api-client";
 import { formatCurrencyAmount, formatDualCurrency } from "../../../lib/formatters";
 import {
   useCockpitStore,
@@ -105,6 +106,7 @@ function formatAuditTitle(toolName: string, verdict: string): {
 
 export default function CheckoutBridgePage() {
   const {
+    apiMode,
     activeCurrency,
     uiState,
     setUiState,
@@ -118,6 +120,9 @@ export default function CheckoutBridgePage() {
   } = useCockpitStore();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [catalogItems, setCatalogItems] = useState<Channel3CatalogItem[]>(
+    MOCK_CHANNEL3_CATALOG
+  );
   const [selectedSku, setSelectedSku] = useState<Channel3CatalogItem>(
     MOCK_CHANNEL3_CATALOG[0]
   );
@@ -128,7 +133,20 @@ export default function CheckoutBridgePage() {
   const [chainVerifiedBanner, setChainVerifiedBanner] = useState<string | null>(null);
   const [showZapierPayload, setShowZapierPayload] = useState<boolean>(false);
 
-  const filteredCatalog = MOCK_CHANNEL3_CATALOG.filter(
+  useEffect(() => {
+    if (apiMode !== "live") return;
+    let active = true;
+    void searchChannel3CatalogApi(searchQuery).then((res) => {
+      if (active && Array.isArray(res.items) && res.items.length > 0) {
+        setCatalogItems(res.items);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [apiMode, searchQuery]);
+
+  const filteredCatalog = catalogItems.filter(
     (item) =>
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.skuId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -160,6 +178,7 @@ export default function CheckoutBridgePage() {
   const handleApplyNaturalPrompt = (promptItem: { prompt: string; skuId: string }) => {
     setSearchQuery("");
     const found =
+      catalogItems.find((c) => c.skuId === promptItem.skuId) ??
       MOCK_CHANNEL3_CATALOG.find((c) => c.skuId === promptItem.skuId) ??
       MOCK_CHANNEL3_CATALOG[0];
     setSelectedSku(found);
@@ -199,6 +218,13 @@ export default function CheckoutBridgePage() {
       return;
     }
     const sig = `5xPyusdSolanaToken2022Sig99102a${Date.now().toString(16)}`;
+    void settleInvoicePyusd({
+      workspaceId: crossBorderInvoice.workspaceId,
+      invoiceId: crossBorderInvoice.invoiceId,
+      amountValue: crossBorderInvoice.amountValue,
+      memo: activeMemoString,
+      solanaTxSignature: sig,
+    });
     settleInvoiceWithPyusd(crossBorderInvoice.invoiceId, sig, activeMemoString);
     setUiState("success");
   };

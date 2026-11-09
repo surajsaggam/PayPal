@@ -26,43 +26,112 @@ export function dispatchSyntheticSseEvent(
   gridApi?: GridApi<AgentToolExecution> | null
 ): void {
   const store = useCockpitStore.getState();
+  const rawPayload = event.payload as Record<string, unknown> | undefined;
+  const inner =
+    rawPayload &&
+    typeof rawPayload === "object" &&
+    "payload" in rawPayload &&
+    "eventType" in rawPayload
+      ? (rawPayload.payload as Record<string, unknown>)
+      : rawPayload;
 
   if (event.eventType === "execution_delta") {
-    const raw = event.payload as
-      | AgentToolExecution
-      | { type?: "ADD" | "UPDATE"; row?: AgentToolExecution };
-    const row = "row" in raw && raw.row ? raw.row : (raw as AgentToolExecution);
-    const txType = "type" in raw && raw.type ? raw.type : "ADD";
-
-    if (gridApi) {
-      gridApi.applyTransactionAsync({
-        add: txType === "ADD" ? [row] : undefined,
-        update: txType === "UPDATE" ? [row] : undefined,
-      });
+    if (inner && typeof inner === "object") {
+      // Handle autonomous invoice creation delta emitted by API-04
+      const maybeInvoice = (inner as { invoice?: Record<string, unknown> }).invoice;
+      if (maybeInvoice && typeof maybeInvoice.invoiceId === "string") {
+        store.createAutonomousInvoice(
+          maybeInvoice as unknown as Parameters<typeof store.createAutonomousInvoice>[0]
+        );
+      }
+      // Handle PYUSD settlement confirmation delta emitted by F-11
+      if (
+        inner.event === "PYUSD_SETTLEMENT_CONFIRMED" &&
+        typeof inner.invoiceId === "string"
+      ) {
+        const invId = String(inner.invoiceId);
+        const txSig = String(
+          inner.solanaTxSignature ?? "5xPyusdSolanaToken2022Sig99102aConfirmed"
+        );
+        const memoStr = String(
+          inner.memo ?? `PAYOPS:${invId}:idem_ws_99102a_pyusd`
+        );
+        store.settleInvoiceWithPyusd(invId, txSig, memoStr);
+      }
     }
-    store.prependExecution(row);
+
+    const candidate = (
+      inner && typeof inner === "object" && "row" in inner && inner.row
+        ? inner.row
+        : inner
+    ) as Partial<AgentToolExecution> | undefined;
+
+    if (
+      candidate &&
+      typeof candidate.executionId === "string" &&
+      typeof candidate.toolName === "string" &&
+      typeof candidate.gnnRiskScore === "number"
+    ) {
+      const row = candidate as AgentToolExecution;
+      const txType =
+        inner && typeof inner === "object" && "type" in inner && inner.type === "UPDATE"
+          ? "UPDATE"
+          : "ADD";
+
+      if (gridApi) {
+        gridApi.applyTransactionAsync({
+          add: txType === "ADD" ? [row] : undefined,
+          update: txType === "UPDATE" ? [row] : undefined,
+        });
+      }
+      store.prependExecution(row);
+    }
     return;
   }
 
   if (event.eventType === "dispute_alert") {
-    const dispute = event.payload as PayPalDisputeCase;
-    store.upsertDisputeAlert(dispute);
-    if (gridApi) {
-      const latestExec = useCockpitStore.getState().executions[0];
-      if (latestExec) {
-        gridApi.applyTransactionAsync({ add: [latestExec] });
+    const disputeCandidate = (
+      inner && typeof inner === "object" && "dispute" in inner && inner.dispute
+        ? inner.dispute
+        : inner
+    ) as Partial<PayPalDisputeCase> | undefined;
+
+    if (
+      disputeCandidate &&
+      typeof disputeCandidate.disputeId === "string" &&
+      typeof disputeCandidate.gnnRiskScore === "number"
+    ) {
+      store.upsertDisputeAlert(disputeCandidate as PayPalDisputeCase);
+      if (gridApi) {
+        const latestExec = useCockpitStore.getState().executions[0];
+        if (latestExec) {
+          gridApi.applyTransactionAsync({ add: [latestExec] });
+        }
       }
     }
     return;
   }
 
   if (event.eventType === "policy_hold") {
-    const heldRow = event.payload as AgentToolExecution;
-    if (gridApi) {
-      gridApi.applyTransactionAsync({ add: [heldRow] });
+    const heldCandidate = (
+      inner && typeof inner === "object" && "row" in inner && inner.row
+        ? inner.row
+        : inner
+    ) as Partial<AgentToolExecution> | undefined;
+
+    if (
+      heldCandidate &&
+      typeof heldCandidate.executionId === "string" &&
+      typeof heldCandidate.toolName === "string" &&
+      typeof heldCandidate.gnnRiskScore === "number"
+    ) {
+      const heldRow = heldCandidate as AgentToolExecution;
+      if (gridApi) {
+        gridApi.applyTransactionAsync({ add: [heldRow] });
+      }
+      store.prependExecution(heldRow);
+      store.openHitlApproval(heldRow);
     }
-    store.prependExecution(heldRow);
-    store.openHitlApproval(heldRow);
     return;
   }
 
@@ -97,18 +166,31 @@ export function useSseExecutionStream(
       setConnected(true);
     };
 
+    const unwrapSseFrameData = (rawText: string): Record<string, unknown> => {
+      const parsed = JSON.parse(rawText) as Record<string, unknown>;
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "payload" in parsed &&
+        "eventType" in parsed &&
+        parsed.payload &&
+        typeof parsed.payload === "object"
+      ) {
+        return parsed.payload as Record<string, unknown>;
+      }
+      return parsed;
+    };
+
     source.addEventListener("execution_delta", (event) => {
       try {
-        const parsed = JSON.parse((event as MessageEvent).data) as
-          | AgentToolExecution
-          | { type?: "ADD" | "UPDATE"; row?: AgentToolExecution };
+        const payload = unwrapSseFrameData((event as MessageEvent).data);
         const nowIso = new Date().toISOString();
         setLastEventIso(nowIso);
         dispatchSyntheticSseEvent(
           {
             eventType: "execution_delta",
             timestampIso: nowIso,
-            payload: parsed as Record<string, unknown>,
+            payload,
           },
           gridApi
         );
@@ -119,14 +201,14 @@ export function useSseExecutionStream(
 
     source.addEventListener("dispute_alert", (event) => {
       try {
-        const dispute = JSON.parse((event as MessageEvent).data) as PayPalDisputeCase;
+        const payload = unwrapSseFrameData((event as MessageEvent).data);
         const nowIso = new Date().toISOString();
         setLastEventIso(nowIso);
         dispatchSyntheticSseEvent(
           {
             eventType: "dispute_alert",
             timestampIso: nowIso,
-            payload: dispute,
+            payload,
           },
           gridApi
         );
@@ -137,14 +219,14 @@ export function useSseExecutionStream(
 
     source.addEventListener("policy_hold", (event) => {
       try {
-        const heldExec = JSON.parse((event as MessageEvent).data) as AgentToolExecution;
+        const payload = unwrapSseFrameData((event as MessageEvent).data);
         const nowIso = new Date().toISOString();
         setLastEventIso(nowIso);
         dispatchSyntheticSseEvent(
           {
             eventType: "policy_hold",
             timestampIso: nowIso,
-            payload: heldExec,
+            payload,
           },
           gridApi
         );

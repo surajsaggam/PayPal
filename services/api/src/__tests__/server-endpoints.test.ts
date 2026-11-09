@@ -412,4 +412,72 @@ describe("Fastify 5 Server — All 14 REST Endpoints (API-01..API-14), SSE-01, H
       expect(result.paypalRequestId.length).toBeGreaterThan(8);
     }
   });
+
+  it("supports full-stack apps/web <-> services/api seed fixture ID parity and dynamic UI HITL execution approvals", async () => {
+    const app = await buildApp({ logger: false });
+    await app.ready();
+
+    // Frontend Bryntum invoice ID INV2-F19A-7704-6612-4002 remind returns invoice + status
+    const remindRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/invoices/INV2-F19A-7704-6612-4002/remind",
+      payload: {
+        newTriggerDate: "2026-11-12",
+      },
+    });
+    expect(remindRes.statusCode).toBe(200);
+    const remindBody = remindRes.json();
+    expect(remindBody.invoiceId).toBe("INV2-F19A-7704-6612-4002");
+    expect(remindBody.status).toBe("REMINDER_SCHEDULED_72H_GUARD_OK");
+    expect(remindBody.invoice.invoiceId).toBe("INV2-F19A-7704-6612-4002");
+
+    // Frontend Dispute War-Room IDs PP-D-4490 and PP-D-3988 resolve with top-level status & paypalRequestId
+    const dispContestRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/disputes/PP-D-4490/resolve",
+      payload: {
+        disputeId: "PP-D-4490",
+        action: "CONTEST_WITH_COMPELLING_EVIDENCE",
+        carrierTrackingNumber: "789102938102",
+      },
+    });
+    expect(dispContestRes.statusCode).toBe(200);
+    expect(dispContestRes.json().disputeId).toBe("PP-D-4490");
+    expect(dispContestRes.json().status).toBe("EVIDENCE_SUBMITTED_TO_PAYPAL_SANDBOX");
+    expect(dispContestRes.json().paypalRequestId).toBeTruthy();
+
+    // Frontend Fastlane Order ID 5O190127TN364715T refund returns top-level orderId
+    const refundRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/orders/5O190127TN364715T/refund",
+      payload: {
+        amountValue: "120.00",
+        currencyCode: "USD",
+      },
+    });
+    expect(refundRes.statusCode).toBe(200);
+    expect(refundRes.json().orderId).toBe("5O190127TN364715T");
+
+    // Dynamic UI-created held execution ex_sim_hold_9900 can be approved via API-02
+    const approveRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/agent/approve/ex_sim_hold_9900",
+      headers: {
+        "x-payops-role": "OWNER",
+      },
+      payload: {
+        executionId: "ex_sim_hold_9900",
+        operatorUserId: "usr_owner_01",
+        decision: "APPROVE",
+        webauthnSignatureBase64: "webauthn_assertion_sig_ed25519_demo_99102a_valid_passkey",
+        operatorReason: "Approved simulated hold from Command Center",
+      },
+    });
+    expect(approveRes.statusCode).toBe(200);
+    expect(approveRes.json().status).toBe("RELEASED_AND_EXECUTED");
+    expect(approveRes.json().executionId).toBe("ex_sim_hold_9900");
+
+    await app.close();
+  });
 });
+

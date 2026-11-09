@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { validatePyusdToken2022Memo } from "@payops/shared/mock-fixtures";
 import { formatDualCurrency } from "../../lib/formatters";
+import { settleInvoicePyusd } from "../../lib/api-client";
 import { useCockpitStore } from "../../stores/useCockpitStore";
 
 export function PyusdSolanaBridgeModal() {
@@ -97,7 +98,18 @@ export function PyusdSolanaBridgeModal() {
     setSettling(true);
     await new Promise((r) => setTimeout(r, 220));
     const solanaSig = `5xPyusdSolanaToken2022Sig99102a${Date.now().toString(16)}`;
-    settleInvoiceWithPyusd(pyusdModalInvoice.invoiceId, solanaSig, effectiveMemo);
+    const res = await settleInvoicePyusd({
+      workspaceId: pyusdModalInvoice.workspaceId,
+      invoiceId: pyusdModalInvoice.invoiceId,
+      amountValue: pyusdModalInvoice.amountValue,
+      memo: effectiveMemo,
+      solanaTxSignature: solanaSig,
+    });
+    settleInvoiceWithPyusd(
+      pyusdModalInvoice.invoiceId,
+      res.solanaTxSignature ?? solanaSig,
+      effectiveMemo
+    );
     setSettling(false);
   };
 

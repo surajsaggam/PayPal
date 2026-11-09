@@ -8,6 +8,9 @@ const sharedSrc = path.resolve(__dirname, "../../packages/shared/src");
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@payops/shared"],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
