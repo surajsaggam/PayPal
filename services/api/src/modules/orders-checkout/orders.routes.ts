@@ -525,9 +525,14 @@ export async function registerOrdersRoutes(app: FastifyInstance): Promise<void> 
 
   /**
    * Extension Routes for Channel3 B2B Catalog Bridge (F-12):
-   * GET /api/v1/catalog/channel3 & POST /api/v1/integrations/channel3/search
+   * GET /api/v1/catalog/channel3, GET /api/v1/catalog/channel3/search & POST /api/v1/integrations/channel3/search
    */
   app.get("/api/v1/catalog/channel3", async (req) => {
+    const query = (req.query ?? {}) as Record<string, string | undefined>;
+    return searchChannel3Catalog(query.q ?? query.query);
+  });
+
+  app.get("/api/v1/catalog/channel3/search", async (req) => {
     const query = (req.query ?? {}) as Record<string, string | undefined>;
     return searchChannel3Catalog(query.q ?? query.query);
   });

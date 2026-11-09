@@ -3,6 +3,10 @@
  * Automatically detects live credentials vs. zero-config Sandbox / offline replay fallbacks.
  */
 
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 export interface PayOpsEnvConfig {
   nodeEnv: string;
   port: number;
@@ -45,8 +49,51 @@ export interface PayOpsEnvConfig {
   isLiveRedisConfigured: boolean;
   isLivePayPalConfigured: boolean;
   isLiveLlmConfigured: boolean;
+  isLiveGeminiConfigured: boolean;
   isLiveElasticConfigured: boolean;
   isLiveChannel3Configured: boolean;
+}
+
+function hydrateDotEnvFiles(): void {
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  const candidatePaths = [
+    path.resolve(process.cwd(), ".env"),
+    path.resolve(process.cwd(), "../../.env"),
+    path.resolve(currentDir, "../../.env"),
+    path.resolve(currentDir, "../../../../.env"),
+  ];
+
+  for (const envPath of candidatePaths) {
+    try {
+      if (!fs.existsSync(envPath)) {
+        continue;
+      }
+      const raw = fs.readFileSync(envPath, "utf8");
+      for (const line of raw.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) {
+          continue;
+        }
+        const eqIdx = trimmed.indexOf("=");
+        if (eqIdx <= 0) {
+          continue;
+        }
+        const key = trimmed.slice(0, eqIdx).trim();
+        let val = trimmed.slice(eqIdx + 1).trim();
+        if (
+          (val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))
+        ) {
+          val = val.slice(1, -1);
+        }
+        if (process.env[key] === undefined || process.env[key] === "") {
+          process.env[key] = val;
+        }
+      }
+    } catch {
+      // Ignore unreadable candidate .env paths
+    }
+  }
 }
 
 function isPlaceholderOrEmpty(value: string | undefined, placeholders: string[]): boolean {
@@ -58,12 +105,15 @@ function isPlaceholderOrEmpty(value: string | undefined, placeholders: string[])
 }
 
 export function loadEnvConfig(): PayOpsEnvConfig {
+  hydrateDotEnvFiles();
+
   const databaseUrl = process.env.DATABASE_URL ?? "";
   const redisUrl = process.env.REDIS_URL ?? "";
   const paypalClientId = process.env.PAYPAL_CLIENT_ID ?? "";
   const paypalClientSecret = process.env.PAYPAL_CLIENT_SECRET ?? "";
   const anthropicApiKey = process.env.ANTHROPIC_API_KEY ?? "";
   const openaiApiKey = process.env.OPENAI_API_KEY ?? "";
+  const geminiApiKey = process.env.GEMINI_API_KEY ?? "";
   const elasticCloudId = process.env.ELASTIC_CLOUD_ID ?? "";
   const elasticApiKey = process.env.ELASTIC_API_KEY ?? "";
   const channel3ApiKey = process.env.CHANNEL3_API_KEY ?? "sandbox_channel3_demo_key";
@@ -89,9 +139,16 @@ export function loadEnvConfig(): PayOpsEnvConfig {
       "example",
     ]);
 
+  const isLiveGeminiConfigured = !isPlaceholderOrEmpty(geminiApiKey, [
+    "AIzaSyExample",
+    "your_",
+    "example",
+  ]);
+
   const isLiveLlmConfigured =
     !isPlaceholderOrEmpty(anthropicApiKey, ["sk-ant-api03-example", "your_"]) ||
-    !isPlaceholderOrEmpty(openaiApiKey, ["sk-proj-example", "your_"]);
+    !isPlaceholderOrEmpty(openaiApiKey, ["sk-proj-example", "your_"]) ||
+    isLiveGeminiConfigured;
 
   const isLiveElasticConfigured =
     !isPlaceholderOrEmpty(elasticCloudId, ["your_elastic_cloud_id_here", "example"]) &&
@@ -121,7 +178,7 @@ export function loadEnvConfig(): PayOpsEnvConfig {
     openaiApiKey,
     m02RouterModel: process.env.M02_ROUTER_MODEL ?? "gpt-4o-mini-2024-07-18",
     m05EmbeddingModel: process.env.M05_EMBEDDING_MODEL ?? "text-embedding-3-small",
-    geminiApiKey: process.env.GEMINI_API_KEY ?? "",
+    geminiApiKey,
     m03VisionModel: process.env.M03_VISION_MODEL ?? "gemini-1.5-pro-002",
     m04OnnxModelPath:
       process.env.M04_ONNX_MODEL_PATH ?? "./ai/models/payops-graphsage-lgbm-v1.2.onnx",
@@ -158,6 +215,7 @@ export function loadEnvConfig(): PayOpsEnvConfig {
     isLiveRedisConfigured,
     isLivePayPalConfigured,
     isLiveLlmConfigured,
+    isLiveGeminiConfigured,
     isLiveElasticConfigured,
     isLiveChannel3Configured,
   };

@@ -22,6 +22,7 @@ import { scrubPanAndSensitiveText } from "../lib/pii-scrubber.js";
 import { sseBus } from "../lib/sse-bus.js";
 import { paypalToolkitHost } from "../modules/agent-orchestrator/paypal-toolkit-host.js";
 import { routeIntentAndScreenInjection } from "./m02-router-guard.js";
+import { callGeminiGenerateContent } from "./m03-ocr-extractor.js";
 import { scoreFriendlyFraudGnn } from "./m04-gnn-scorer.js";
 import { elasticRagService } from "./m05-elastic-rag.js";
 
@@ -511,12 +512,15 @@ export async function executeM01AgentOrchestration(params: {
   );
 
   if (policyVerdict.verdict === "APPROVED_L3_AUTO" && !params.dryRun) {
-    const toolResult = await paypalToolkitHost.executeTool({
-      toolName: primaryCall.toolName,
-      args: primaryCall.args,
-      workspaceId,
-      paypalRequestId,
-    });
+    const [toolResult] = await Promise.all([
+      paypalToolkitHost.executeTool({
+        toolName: primaryCall.toolName,
+        args: primaryCall.args,
+        workspaceId,
+        paypalRequestId,
+      }),
+      callGeminiGenerateContent(scrubbedPrompt),
+    ]);
     paypalResponseJson = toolResult.responsePayload;
     paypalHttpStatus = toolResult.httpStatus;
     sdkSnippets = {

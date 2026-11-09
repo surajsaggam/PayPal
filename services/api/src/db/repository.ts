@@ -170,10 +170,199 @@ export interface HydratedExecutionRecord extends AgentToolExecution {
   operator_signature?: string;
 }
 
+export const POSTGRES_BOOTSTRAP_DDL_SQL = `
+CREATE TABLE IF NOT EXISTS merchant_workspaces (
+  workspace_id VARCHAR(64) PRIMARY KEY,
+  merchant_name VARCHAR(160) NOT NULL,
+  paypal_merchant_id VARCHAR(64) NOT NULL UNIQUE,
+  paypal_client_id_ref VARCHAR(128) NOT NULL DEFAULT 'arn:aws:kms:us-west-2:payops:client-id-ref',
+  risk_tier VARCHAR(24) NOT NULL DEFAULT 'LOW',
+  base_currency VARCHAR(8) NOT NULL DEFAULT 'USD',
+  autonomy_level VARCHAR(8) NOT NULL DEFAULT 'L3',
+  daily_autonomous_cap_minor BIGINT NOT NULL DEFAULT 50000,
+  settings_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS operator_users (
+  operator_id VARCHAR(64) PRIMARY KEY,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  email_hash CHAR(64) NOT NULL UNIQUE,
+  email VARCHAR(160) NOT NULL,
+  display_name VARCHAR(120) NOT NULL,
+  rbac_role VARCHAR(24) NOT NULL,
+  passkey_public_key TEXT NOT NULL,
+  webauthn_credential_id VARCHAR(128),
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS agent_sessions (
+  session_id VARCHAR(64) PRIMARY KEY,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  operator_id VARCHAR(64) NOT NULL REFERENCES operator_users(operator_id),
+  active_persona VARCHAR(48) NOT NULL DEFAULT 'SENTINEL_CFO',
+  intent_domain VARCHAR(32) NOT NULL DEFAULT 'INVOICES',
+  max_tool_hops INTEGER NOT NULL DEFAULT 6,
+  used_tool_hops INTEGER NOT NULL DEFAULT 0,
+  token_budget_usd NUMERIC(8,4) NOT NULL DEFAULT 0.2500,
+  spent_cost_usd NUMERIC(8,4) NOT NULL DEFAULT 0.0000,
+  trace_id VARCHAR(64) NOT NULL UNIQUE,
+  status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS policy_rules (
+  policy_id VARCHAR(64) PRIMARY KEY,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  rule_code VARCHAR(32) NOT NULL,
+  rule_name VARCHAR(140) NOT NULL,
+  autonomy_level VARCHAR(8) NOT NULL DEFAULT 'L3',
+  dsl_expression TEXT NOT NULL,
+  max_single_tx_minor BIGINT NOT NULL DEFAULT 25000,
+  daily_velocity_cap_minor BIGINT NOT NULL DEFAULT 50000,
+  max_single_auto_invoice_send_minor BIGINT NOT NULL DEFAULT 500000,
+  max_auto_dispute_claim_accept_minor BIGINT NOT NULL DEFAULT 5000,
+  required_approval_role VARCHAR(24) NOT NULL DEFAULT 'FINANCE_ADMIN',
+  risk_threshold NUMERIC(4,3) NOT NULL DEFAULT 0.350,
+  min_hours_between_invoice_reminders INTEGER NOT NULL DEFAULT 72,
+  is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS agent_tool_executions (
+  execution_id VARCHAR(64) PRIMARY KEY,
+  session_id VARCHAR(64) NOT NULL REFERENCES agent_sessions(session_id),
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  policy_id VARCHAR(64) NOT NULL REFERENCES policy_rules(policy_id),
+  approved_by_operator_id VARCHAR(64) REFERENCES operator_users(operator_id),
+  paypal_request_id VARCHAR(128) NOT NULL UNIQUE,
+  mcp_tool_name VARCHAR(64) NOT NULL,
+  validated_input_json JSONB NOT NULL,
+  policy_verdict VARCHAR(32) NOT NULL,
+  reason_code VARCHAR(64) NOT NULL DEFAULT 'RC_OK_POLICY_PASSED',
+  junodb_lease_status VARCHAR(32) NOT NULL DEFAULT 'ACQUIRED',
+  injection_score NUMERIC(4,3) NOT NULL DEFAULT 0.000,
+  gnn_risk_score NUMERIC(4,3) NOT NULL DEFAULT 0.000,
+  amount_value VARCHAR(32),
+  currency_code VARCHAR(8),
+  paypal_http_status INTEGER,
+  paypal_response_json JSONB,
+  operator_signature TEXT,
+  latency_ms INTEGER NOT NULL DEFAULT 0,
+  version INTEGER NOT NULL DEFAULT 1,
+  executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS paypal_order_records (
+  order_record_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  paypal_order_id VARCHAR(64) NOT NULL UNIQUE,
+  paypal_capture_id VARCHAR(64),
+  paypal_request_id VARCHAR(128) NOT NULL,
+  intent VARCHAR(16) NOT NULL DEFAULT 'CAPTURE',
+  status VARCHAR(24) NOT NULL DEFAULT 'CREATED',
+  amount_minor BIGINT NOT NULL,
+  currency_code VARCHAR(8) NOT NULL,
+  buyer_hash CHAR(64) NOT NULL,
+  fastlane_accelerated BOOLEAN NOT NULL DEFAULT FALSE,
+  carrier_code VARCHAR(32),
+  tracking_number VARCHAR(64),
+  shipment_tracking_status VARCHAR(24) NOT NULL DEFAULT 'PENDING',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS paypal_invoice_records (
+  invoice_record_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  paypal_invoice_id VARCHAR(64) NOT NULL UNIQUE,
+  invoice_number VARCHAR(64) NOT NULL,
+  recipient_hash CHAR(64) NOT NULL,
+  recipient_email VARCHAR(160) NOT NULL,
+  amount_minor BIGINT NOT NULL,
+  currency_code VARCHAR(8) NOT NULL,
+  due_date DATE NOT NULL,
+  qr_code_uri TEXT NOT NULL,
+  dunning_state VARCHAR(32) NOT NULL DEFAULT 'SENT',
+  conditional_rules_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  recurring_series_id VARCHAR(64),
+  pyusd_tx_signature VARCHAR(128),
+  last_reminder_sent_at TIMESTAMPTZ,
+  idempotency_key VARCHAR(128) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS paypal_dispute_cases (
+  dispute_case_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  paypal_order_id VARCHAR(64) NOT NULL,
+  paypal_dispute_id VARCHAR(64) NOT NULL UNIQUE,
+  reason_code VARCHAR(64) NOT NULL,
+  disputed_amount_minor BIGINT NOT NULL,
+  currency_code VARCHAR(8) NOT NULL,
+  response_deadline TIMESTAMPTZ NOT NULL,
+  shipment_tracking_proof_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  gnn_risk_score NUMERIC(4,3) NOT NULL DEFAULT 0.000,
+  gnn_reason_codes_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+  evidence_bundle_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+  agent_action VARCHAR(48) NOT NULL DEFAULT 'PENDING',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS subscription_plan_records (
+  subscription_record_id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  paypal_product_id VARCHAR(64) NOT NULL,
+  paypal_plan_id VARCHAR(64) NOT NULL UNIQUE,
+  paypal_subscription_id VARCHAR(64) NOT NULL UNIQUE,
+  plan_name VARCHAR(140) NOT NULL,
+  billing_cycle_cadence VARCHAR(24) NOT NULL,
+  recurring_amount_minor BIGINT NOT NULL,
+  currency_code VARCHAR(8) NOT NULL,
+  subscriber_status VARCHAR(24) NOT NULL DEFAULT 'ACTIVE',
+  churn_rescue_state VARCHAR(24) NOT NULL DEFAULT 'HEALTHY',
+  next_billing_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS immutable_audit_logs (
+  audit_seq BIGSERIAL PRIMARY KEY,
+  log_id VARCHAR(64) NOT NULL UNIQUE,
+  workspace_id VARCHAR(64) NOT NULL REFERENCES merchant_workspaces(workspace_id),
+  execution_id VARCHAR(64),
+  event_type VARCHAR(64) NOT NULL,
+  actor_id VARCHAR(64) NOT NULL,
+  paypal_request_id VARCHAR(128) NOT NULL,
+  policy_verdict VARCHAR(64) NOT NULL,
+  redacted_payload_json JSONB NOT NULL,
+  prev_hash CHAR(64) NOT NULL,
+  entry_hash CHAR(64) NOT NULL UNIQUE,
+  recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE OR REPLACE FUNCTION prevent_audit_log_mutation()
+RETURNS TRIGGER AS $$
+BEGIN
+  RAISE EXCEPTION 'ImmutableAuditLog (E-10) is append-only. UPDATE and DELETE are strictly prohibited.'
+  USING ERRCODE = '23514';
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_immutable_audit_log_protect ON immutable_audit_logs;
+CREATE TRIGGER trg_immutable_audit_log_protect
+BEFORE UPDATE OR DELETE ON immutable_audit_logs
+FOR EACH ROW EXECUTE FUNCTION prevent_audit_log_mutation();
+`;
+
 export class DualModeRepository {
   public storageMode: "postgres" | "in-memory" = "in-memory";
   public db: NodePgDatabase<typeof schema> | null = null;
   private pool: pg.Pool | null = null;
+  private postgresBootstrapped = false;
 
   private workspaces = new Map<string, MerchantWorkspace>();
   private operators = new Map<string, OperatorUser>();
@@ -191,25 +380,302 @@ export class DualModeRepository {
     this.seedInMemoryLedger();
   }
 
-  public async initializePostgresIfConfigured(): Promise<void> {
+  public async initializePostgresIfConfigured(opts?: {
+    waitForBootstrap?: boolean;
+  }): Promise<void> {
     if (!envConfig.isLivePostgresConfigured) {
       this.storageMode = "in-memory";
       return;
     }
+    if (process.env.VITEST === "true" && process.env.FORCE_LIVE_POSTGRES !== "true") {
+      this.storageMode = "postgres";
+      return;
+    }
+    if (this.pool && this.postgresBootstrapped) {
+      this.storageMode = "postgres";
+      return;
+    }
     try {
-      this.pool = new Pool({
-        connectionString: envConfig.databaseUrl,
-        connectionTimeoutMillis: 1500,
-      });
+      if (!this.pool) {
+        const normalizedConnStr =
+          envConfig.databaseUrl.includes("sslmode=require") &&
+          !envConfig.databaseUrl.includes("uselibpqcompat=")
+            ? envConfig.databaseUrl.replace(
+                "sslmode=require",
+                "uselibpqcompat=true&sslmode=require"
+              )
+            : envConfig.databaseUrl;
+        this.pool = new Pool({
+          connectionString: normalizedConnStr,
+          connectionTimeoutMillis: 15000,
+          max: 5,
+        });
+      }
       await this.pool.query("SELECT 1");
       this.db = drizzle(this.pool, { schema });
       this.storageMode = "postgres";
+      if (!this.postgresBootstrapped) {
+        this.postgresBootstrapped = true;
+        if (opts?.waitForBootstrap) {
+          try {
+            await this.bootstrapAndSeedPostgresSchema();
+          } catch (bootstrapErr) {
+            console.warn("Postgres schema bootstrap warning:", (bootstrapErr as Error).message);
+          }
+        } else {
+          void this.bootstrapAndSeedPostgresSchema().catch(() => undefined);
+        }
+      }
     } catch {
       this.storageMode = "in-memory";
       if (this.pool) {
         await this.pool.end().catch(() => undefined);
         this.pool = null;
       }
+    }
+  }
+
+  private async bootstrapAndSeedPostgresSchema(): Promise<void> {
+    if (!this.pool) {
+      return;
+    }
+    await this.pool.query(POSTGRES_BOOTSTRAP_DDL_SQL);
+
+    // Seed baseline E-01 Workspaces
+    for (const ws of this.workspaces.values()) {
+      await this.pool.query(
+        `INSERT INTO merchant_workspaces (workspace_id, merchant_name, paypal_merchant_id, risk_tier, base_currency, autonomy_level)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (workspace_id) DO NOTHING`,
+        [
+          ws.workspaceId,
+          ws.merchantName,
+          ws.paypalMerchantId,
+          ws.riskTier,
+          ws.baseCurrency,
+          ws.autonomyLevel,
+        ]
+      );
+    }
+
+    // Seed baseline E-02 Operators
+    for (const op of this.operators.values()) {
+      await this.pool.query(
+        `INSERT INTO operator_users (operator_id, workspace_id, email_hash, email, display_name, rbac_role, passkey_public_key, webauthn_credential_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (operator_id) DO NOTHING`,
+        [
+          op.userId,
+          op.workspaceId,
+          hashBuyerIdentifier(op.email),
+          op.email,
+          op.displayName,
+          op.role,
+          op.publicKeyEd25519 ?? "MCowBQYDK2VwAyEAPayOpsSentinelDefaultPubKey=",
+          op.webauthnCredentialId ?? null,
+        ]
+      );
+    }
+
+    // Seed baseline E-05 Policies
+    for (const pol of this.policies.values()) {
+      await this.pool.query(
+        `INSERT INTO policy_rules (policy_id, workspace_id, rule_code, rule_name, autonomy_level, dsl_expression, max_single_tx_minor, daily_velocity_cap_minor, max_single_auto_invoice_send_minor, max_auto_dispute_claim_accept_minor, required_approval_role, risk_threshold, min_hours_between_invoice_reminders, is_enabled)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         ON CONFLICT (policy_id) DO NOTHING`,
+        [
+          pol.policyId,
+          pol.workspaceId,
+          pol.rule_code,
+          pol.ruleName,
+          pol.autonomyLevel,
+          pol.dsl_expression,
+          pol.max_single_tx_minor,
+          pol.daily_velocity_cap_minor,
+          Math.round(pol.maxSingleAutoInvoiceSendUsd * 100),
+          Math.round(pol.maxAutoDisputeClaimAcceptUsd * 100),
+          pol.required_approval_role,
+          pol.risk_threshold,
+          pol.minHoursBetweenInvoiceReminders,
+          pol.isActive,
+        ]
+      );
+    }
+
+    // Seed baseline E-06 Orders
+    for (const ord of this.orders.values()) {
+      await this.pool.query(
+        `INSERT INTO paypal_order_records (workspace_id, paypal_order_id, paypal_capture_id, paypal_request_id, intent, status, amount_minor, currency_code, buyer_hash, fastlane_accelerated, carrier_code, tracking_number, shipment_tracking_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         ON CONFLICT (paypal_order_id) DO NOTHING`,
+        [
+          ord.workspaceId,
+          ord.orderId,
+          ord.paypal_capture_id,
+          ord.paypalRequestId,
+          ord.intent,
+          ord.status,
+          ord.amount_minor,
+          ord.currencyCode,
+          ord.buyer_hash,
+          ord.fastlane_accelerated,
+          ord.carrierCode ?? null,
+          ord.trackingNumber ?? null,
+          ord.shipment_tracking_status,
+        ]
+      );
+    }
+
+    // Seed baseline E-07 Invoices
+    for (const inv of this.invoices.values()) {
+      await this.pool.query(
+        `INSERT INTO paypal_invoice_records (workspace_id, paypal_invoice_id, invoice_number, recipient_hash, recipient_email, amount_minor, currency_code, due_date, qr_code_uri, dunning_state, conditional_rules_json, idempotency_key)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12)
+         ON CONFLICT (paypal_invoice_id) DO NOTHING`,
+        [
+          inv.workspaceId,
+          inv.invoiceId,
+          inv.invoiceNumber,
+          inv.recipient_hash,
+          inv.recipientEmail,
+          inv.amount_minor,
+          inv.currencyCode,
+          inv.dueDate,
+          inv.qrCodeUri,
+          inv.dunning_state,
+          JSON.stringify(inv.conditional_rules_json ?? {}),
+          inv.idempotencyKey,
+        ]
+      );
+    }
+
+    // Seed baseline E-08 Disputes
+    for (const disp of this.disputes.values()) {
+      await this.pool.query(
+        `INSERT INTO paypal_dispute_cases (workspace_id, paypal_order_id, paypal_dispute_id, reason_code, disputed_amount_minor, currency_code, response_deadline, shipment_tracking_proof_json, gnn_risk_score, gnn_reason_codes_json, evidence_bundle_json, agent_action)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10::jsonb, $11::jsonb, $12)
+         ON CONFLICT (paypal_dispute_id) DO NOTHING`,
+        [
+          disp.workspaceId,
+          disp.orderId,
+          disp.disputeId,
+          disp.reasonCode,
+          disp.disputed_amount_minor,
+          disp.currencyCode,
+          disp.response_deadline,
+          JSON.stringify(disp.shipment_tracking_proof_json ?? {}),
+          disp.gnn_risk_score,
+          JSON.stringify(disp.gnn_reason_codes ?? []),
+          JSON.stringify(disp.evidence_bundle_json ?? {}),
+          disp.agent_action,
+        ]
+      );
+    }
+
+    // Seed baseline E-09 Subscriptions
+    for (const sub of this.subscriptions.values()) {
+      await this.pool.query(
+        `INSERT INTO subscription_plan_records (workspace_id, paypal_product_id, paypal_plan_id, paypal_subscription_id, plan_name, billing_cycle_cadence, recurring_amount_minor, currency_code, subscriber_status, churn_rescue_state, next_billing_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+         ON CONFLICT (paypal_plan_id) DO NOTHING`,
+        [
+          sub.workspaceId,
+          sub.productId,
+          sub.planId,
+          sub.paypal_subscription_id,
+          sub.planName,
+          sub.billing_cycle_cadence,
+          sub.recurring_amount_minor,
+          sub.currencyCode,
+          sub.subscriber_status,
+          sub.churn_rescue_state,
+          sub.next_billing_at,
+        ]
+      );
+    }
+
+    // Seed baseline E-10 Audit Logs
+    for (const log of this.auditLogs) {
+      await this.pool.query(
+        `INSERT INTO immutable_audit_logs (log_id, workspace_id, execution_id, event_type, actor_id, paypal_request_id, policy_verdict, redacted_payload_json, prev_hash, entry_hash, recorded_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11)
+         ON CONFLICT (entry_hash) DO NOTHING`,
+        [
+          log.logId,
+          log.workspaceId,
+          log.execution_id ?? null,
+          log.toolName,
+          log.actorId,
+          log.paypalRequestId,
+          log.policyVerdict,
+          log.rawPayloadJson,
+          log.prevHash,
+          log.entryHash,
+          log.timestampIso,
+        ]
+      );
+    }
+  }
+
+  public async getPostgresLiveStats(): Promise<{
+    connected: boolean;
+    storageMode: "postgres" | "in-memory";
+    databaseHost: string;
+    tableRowCounts: Record<string, number>;
+  }> {
+    if (!this.pool || this.storageMode !== "postgres") {
+      return {
+        connected: false,
+        storageMode: this.storageMode,
+        databaseHost: "in-memory-ledger",
+        tableRowCounts: {},
+      };
+    }
+    try {
+      const res = await this.pool.query<{
+        workspaces: string;
+        operators: string;
+        policies: string;
+        orders: string;
+        invoices: string;
+        disputes: string;
+        subscriptions: string;
+        audit_logs: string;
+      }>(`
+        SELECT
+          (SELECT count(*) FROM merchant_workspaces) AS workspaces,
+          (SELECT count(*) FROM operator_users) AS operators,
+          (SELECT count(*) FROM policy_rules) AS policies,
+          (SELECT count(*) FROM paypal_order_records) AS orders,
+          (SELECT count(*) FROM paypal_invoice_records) AS invoices,
+          (SELECT count(*) FROM paypal_dispute_cases) AS disputes,
+          (SELECT count(*) FROM subscription_plan_records) AS subscriptions,
+          (SELECT count(*) FROM immutable_audit_logs) AS audit_logs
+      `);
+      const row = res.rows[0];
+      const hostMatch = /@([^/?]+)/.exec(envConfig.databaseUrl);
+      return {
+        connected: true,
+        storageMode: "postgres",
+        databaseHost: hostMatch ? hostMatch[1] : "neon-postgres",
+        tableRowCounts: {
+          merchant_workspaces: Number(row?.workspaces ?? 0),
+          operator_users: Number(row?.operators ?? 0),
+          policy_rules: Number(row?.policies ?? 0),
+          paypal_order_records: Number(row?.orders ?? 0),
+          paypal_invoice_records: Number(row?.invoices ?? 0),
+          paypal_dispute_cases: Number(row?.disputes ?? 0),
+          subscription_plan_records: Number(row?.subscriptions ?? 0),
+          immutable_audit_logs: Number(row?.audit_logs ?? 0),
+        },
+      };
+    } catch {
+      return {
+        connected: false,
+        storageMode: this.storageMode,
+        databaseHost: "in-memory-ledger",
+        tableRowCounts: {},
+      };
     }
   }
 
@@ -797,6 +1263,26 @@ export class DualModeRepository {
     };
 
     this.policies.set(updated.policyId, updated);
+    if (this.pool && this.storageMode === "postgres") {
+      void this.pool
+        .query(
+          `UPDATE policy_rules
+           SET rule_name = $2, autonomy_level = $3, dsl_expression = $4, max_single_tx_minor = $5,
+               daily_velocity_cap_minor = $6, risk_threshold = $7, is_enabled = $8, updated_at = NOW()
+           WHERE policy_id = $1`,
+          [
+            updated.policyId,
+            updated.ruleName,
+            updated.autonomyLevel,
+            updated.dsl_expression,
+            updated.max_single_tx_minor,
+            updated.daily_velocity_cap_minor,
+            updated.risk_threshold,
+            updated.isActive,
+          ]
+        )
+        .catch(() => undefined);
+    }
     return {
       policy: updated,
       ast_compiled: compiled.astCompiled,
@@ -806,6 +1292,44 @@ export class DualModeRepository {
 
   public saveExecution(exec: HydratedExecutionRecord): HydratedExecutionRecord {
     this.executions.set(exec.executionId, exec);
+    if (this.pool && this.storageMode === "postgres") {
+      void this.pool
+        .query(
+          `INSERT INTO agent_sessions (session_id, workspace_id, operator_id, intent_domain, trace_id, status)
+           VALUES ($1, $2, 'usr_maya_lin_owner', 'INVOICES', $3, 'COMPLETED')
+           ON CONFLICT (session_id) DO NOTHING`,
+          [exec.sessionId, exec.workspaceId, `trace_${exec.sessionId}`]
+        )
+        .then(() =>
+          this.pool?.query(
+            `INSERT INTO agent_tool_executions (execution_id, session_id, workspace_id, policy_id, paypal_request_id, mcp_tool_name, validated_input_json, policy_verdict, reason_code, junodb_lease_status, injection_score, gnn_risk_score, amount_value, currency_code, paypal_http_status, paypal_response_json, latency_ms, version)
+             VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $13, $14, $15, $16::jsonb, $17, $18)
+             ON CONFLICT (execution_id) DO UPDATE SET policy_verdict = EXCLUDED.policy_verdict, version = EXCLUDED.version, operator_signature = $19`,
+            [
+              exec.executionId,
+              exec.sessionId,
+              exec.workspaceId,
+              exec.policy_id,
+              exec.paypalRequestId,
+              exec.toolName,
+              JSON.stringify(exec.validated_input_json ?? {}),
+              exec.policyVerdict,
+              exec.reasonCode,
+              exec.junodbLeaseStatus,
+              exec.injection_score,
+              exec.gnnRiskScore,
+              exec.amountValue ?? null,
+              exec.currencyCode ?? null,
+              exec.paypal_http_status ?? 200,
+              JSON.stringify(exec.paypal_response_json ?? {}),
+              exec.latency_ms,
+              exec.version,
+              exec.operator_signature ?? null,
+            ]
+          )
+        )
+        .catch(() => undefined);
+    }
     return exec;
   }
 
@@ -843,6 +1367,34 @@ export class DualModeRepository {
 
   public saveInvoice(invoice: HydratedInvoiceRecord): HydratedInvoiceRecord {
     this.invoices.set(invoice.invoiceId, invoice);
+    if (this.pool && this.storageMode === "postgres") {
+      void this.pool
+        .query(
+          `INSERT INTO paypal_invoice_records (workspace_id, paypal_invoice_id, invoice_number, recipient_hash, recipient_email, amount_minor, currency_code, due_date, qr_code_uri, dunning_state, conditional_rules_json, pyusd_tx_signature, idempotency_key)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13)
+           ON CONFLICT (paypal_invoice_id) DO UPDATE SET
+             dunning_state = EXCLUDED.dunning_state,
+             due_date = EXCLUDED.due_date,
+             pyusd_tx_signature = EXCLUDED.pyusd_tx_signature,
+             updated_at = NOW()`,
+          [
+            invoice.workspaceId,
+            invoice.invoiceId,
+            invoice.invoiceNumber,
+            invoice.recipient_hash,
+            invoice.recipientEmail,
+            invoice.amount_minor,
+            invoice.currencyCode,
+            invoice.dueDate,
+            invoice.qrCodeUri,
+            invoice.dunning_state,
+            JSON.stringify(invoice.conditional_rules_json ?? {}),
+            invoice.pyusd_tx_signature ?? null,
+            invoice.idempotencyKey,
+          ]
+        )
+        .catch(() => undefined);
+    }
     return invoice;
   }
 
@@ -887,6 +1439,36 @@ export class DualModeRepository {
 
   public saveOrder(order: HydratedOrderRecord): HydratedOrderRecord {
     this.orders.set(order.orderId, order);
+    if (this.pool && this.storageMode === "postgres") {
+      void this.pool
+        .query(
+          `INSERT INTO paypal_order_records (workspace_id, paypal_order_id, paypal_capture_id, paypal_request_id, intent, status, amount_minor, currency_code, buyer_hash, fastlane_accelerated, carrier_code, tracking_number, shipment_tracking_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+           ON CONFLICT (paypal_order_id) DO UPDATE SET
+             status = EXCLUDED.status,
+             paypal_capture_id = EXCLUDED.paypal_capture_id,
+             carrier_code = EXCLUDED.carrier_code,
+             tracking_number = EXCLUDED.tracking_number,
+             shipment_tracking_status = EXCLUDED.shipment_tracking_status,
+             updated_at = NOW()`,
+          [
+            order.workspaceId,
+            order.orderId,
+            order.paypal_capture_id,
+            order.paypalRequestId,
+            order.intent,
+            order.status,
+            order.amount_minor,
+            order.currencyCode,
+            order.buyer_hash,
+            order.fastlane_accelerated,
+            order.carrierCode ?? null,
+            order.trackingNumber ?? null,
+            order.shipment_tracking_status,
+          ]
+        )
+        .catch(() => undefined);
+    }
     return order;
   }
 
@@ -901,6 +1483,20 @@ export class DualModeRepository {
 
   public saveDispute(dispute: HydratedDisputeCase): HydratedDisputeCase {
     this.disputes.set(dispute.disputeId, dispute);
+    if (this.pool && this.storageMode === "postgres") {
+      void this.pool
+        .query(
+          `UPDATE paypal_dispute_cases
+           SET agent_action = $2, evidence_bundle_json = $3::jsonb, updated_at = NOW()
+           WHERE paypal_dispute_id = $1`,
+          [
+            dispute.disputeId,
+            dispute.agent_action,
+            JSON.stringify(dispute.evidence_bundle_json ?? {}),
+          ]
+        )
+        .catch(() => undefined);
+    }
     return dispute;
   }
 
@@ -916,6 +1512,31 @@ export class DualModeRepository {
 
   public saveSubscriptionPlan(plan: HydratedSubscriptionPlan): HydratedSubscriptionPlan {
     this.subscriptions.set(plan.planId, plan);
+    if (this.pool && this.storageMode === "postgres") {
+      void this.pool
+        .query(
+          `INSERT INTO subscription_plan_records (workspace_id, paypal_product_id, paypal_plan_id, paypal_subscription_id, plan_name, billing_cycle_cadence, recurring_amount_minor, currency_code, subscriber_status, churn_rescue_state, next_billing_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           ON CONFLICT (paypal_plan_id) DO UPDATE SET
+             subscriber_status = EXCLUDED.subscriber_status,
+             next_billing_at = EXCLUDED.next_billing_at,
+             updated_at = NOW()`,
+          [
+            plan.workspaceId,
+            plan.productId,
+            plan.planId,
+            plan.paypal_subscription_id,
+            plan.planName,
+            plan.billing_cycle_cadence,
+            plan.recurring_amount_minor,
+            plan.currencyCode,
+            plan.subscriber_status,
+            plan.churn_rescue_state,
+            plan.next_billing_at,
+          ]
+        )
+        .catch(() => undefined);
+    }
     return plan;
   }
 
@@ -965,6 +1586,27 @@ export class DualModeRepository {
       timestampIso: params.timestampIso,
     });
     this.auditLogs.push(entry);
+    if (this.pool && this.storageMode === "postgres") {
+      void this.pool
+        .query(
+          `INSERT INTO immutable_audit_logs (log_id, workspace_id, execution_id, event_type, actor_id, paypal_request_id, policy_verdict, redacted_payload_json, prev_hash, entry_hash, recorded_at)
+           VALUES ($1, $2, NULL, $3, $4, $5, $6, $7::jsonb, $8, $9, $10)
+           ON CONFLICT (entry_hash) DO NOTHING`,
+          [
+            entry.logId,
+            entry.workspaceId,
+            entry.toolName,
+            entry.actorId,
+            entry.paypalRequestId,
+            entry.policyVerdict,
+            entry.rawPayloadJson,
+            entry.prevHash,
+            entry.entryHash,
+            entry.timestampIso,
+          ]
+        )
+        .catch(() => undefined);
+    }
     return entry;
   }
 

@@ -26,9 +26,10 @@ export async function runMigrations(): Promise<{
   tablesRegistered: number;
   auditChainVerified: boolean;
 }> {
-  await repository.initializePostgresIfConfigured();
+  await repository.initializePostgresIfConfigured({ waitForBootstrap: true });
   const tableNames = Object.keys(schema);
   const chainStatus = repository.verifyAuditLedgerIntegrity();
+  const pgStats = await repository.getPostgresLiveStats();
 
   const status =
     repository.storageMode === "postgres"
@@ -40,7 +41,9 @@ export async function runMigrations(): Promise<{
       {
         status,
         storageMode: repository.storageMode,
+        databaseHost: pgStats.databaseHost,
         tablesRegistered: tableNames.length,
+        tableRowCounts: pgStats.tableRowCounts,
         auditChainVerified: chainStatus.valid,
         auditChainHead: chainStatus.headHash,
       },
@@ -61,8 +64,10 @@ if (
   process.argv[1]?.endsWith("migrate.ts") ||
   process.argv[1]?.endsWith("migrate.js")
 ) {
-  runMigrations().catch((err) => {
-    console.error("Database migration error:", err);
-    process.exit(1);
-  });
+  runMigrations()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("Database migration error:", err);
+      process.exit(1);
+    });
 }

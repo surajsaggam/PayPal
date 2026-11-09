@@ -15,9 +15,37 @@ describe("Fastify 5 Server — All 14 REST Endpoints (API-01..API-14), SSE-01, H
     junoIdempotencyStore.clearAll();
   });
 
-  it("GET /api/v1/health & GET /health return 200 OK with 35 core tools, 8 aliases, and 9/9 /paypal:doctor checks", async () => {
+  it("GET /, GET /api/v1/live-status, GET /api/v1/health & GET /health return 200 OK with 35 core tools, 8 aliases, and 9/9 /paypal:doctor checks", async () => {
     const app = await buildApp({ logger: false });
     await app.ready();
+
+    const rootHtmlRes = await app.inject({
+      method: "GET",
+      url: "/",
+      headers: { accept: "text/html" },
+    });
+    expect(rootHtmlRes.statusCode).toBe(200);
+    expect(rootHtmlRes.headers["content-type"]).toContain("text/html");
+    expect(rootHtmlRes.body).toContain("PayOps AI (PayPal Sentinel) — Dev 1 Backend Live Console");
+
+    const liveStatusRes = await app.inject({ method: "GET", url: "/api/v1/live-status" });
+    expect(liveStatusRes.statusCode).toBe(200);
+    expect(liveStatusRes.json().mcpTools.total).toBe(43);
+
+    const cfoAliasRes = await app.inject({ method: "GET", url: "/api/v1/insights/cfo-summary" });
+    expect(cfoAliasRes.statusCode).toBe(200);
+    expect(cfoAliasRes.json().dsoDaysCurrent).toBe(16);
+
+    const c3AliasRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/catalog/channel3/search?q=mailer",
+    });
+    expect(c3AliasRes.statusCode).toBe(200);
+    expect(c3AliasRes.json().items.length).toBeGreaterThanOrEqual(1);
+
+    const ledgerAliasRes = await app.inject({ method: "GET", url: "/api/v1/audit/ledger" });
+    expect(ledgerAliasRes.statusCode).toBe(200);
+    expect(ledgerAliasRes.json().chainIntegrity.valid).toBe(true);
 
     const res = await app.inject({ method: "GET", url: "/api/v1/health" });
     expect(res.statusCode).toBe(200);

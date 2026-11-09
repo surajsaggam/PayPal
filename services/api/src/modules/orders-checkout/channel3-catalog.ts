@@ -58,16 +58,18 @@ export async function searchChannel3Catalog(query?: string): Promise<{
   query: string;
   items: Channel3SkuItem[];
   source: "channel3-live" | "channel3-sandbox-catalog";
+  apiKeyConfigured: boolean;
 }> {
   const q = (query ?? "").trim().toLowerCase();
 
-  if (envConfig.isLiveChannel3Configured) {
+  if (envConfig.isLiveChannel3Configured && process.env.VITEST !== "true") {
     try {
       const res = await fetch(
         `https://api.channel3.ai/v1/products/search?q=${encodeURIComponent(q)}`,
         {
           headers: {
             Authorization: `Bearer ${envConfig.channel3ApiKey}`,
+            "X-API-Key": envConfig.channel3ApiKey,
             Accept: "application/json",
           },
           signal: AbortSignal.timeout(2000),
@@ -80,6 +82,7 @@ export async function searchChannel3Catalog(query?: string): Promise<{
             query: query ?? "",
             items: data.items,
             source: "channel3-live",
+            apiKeyConfigured: true,
           };
         }
       }
@@ -101,5 +104,6 @@ export async function searchChannel3Catalog(query?: string): Promise<{
     query: query ?? "",
     items: filtered.length > 0 ? filtered : [...SANDBOX_CHANNEL3_CATALOG],
     source: "channel3-sandbox-catalog",
+    apiKeyConfigured: envConfig.isLiveChannel3Configured,
   };
 }
