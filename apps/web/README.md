@@ -4,68 +4,69 @@
 
 ---
 
-## 1. Architecture & Sponsor Track Coverage (`F-01`..`F-12`, `US-01`..`US-16`)
+## 1. Design System & Editorial UI/UX Architecture
 
-Built on **Next.js 15 (App Router)**, **React 18/19**, **Tailwind CSS (OKLCH Dark/Light Tokens)**, and **Zustand**, `@payops/web` implements the 5-screen Executive Financial Command Center for **PayOps AI (`PayPal Sentinel`, `PS-01`)**:
+Built on **Next.js 15 (App Router)**, **React 18/19**, **Tailwind CSS**, and **Zustand**, `@payops/web` implements an **Increase.com-inspired light-first editorial fintech interface** across all 5 screens of **PayOps AI (`PayPal Sentinel`, `PS-01`)**:
+
+- **Light-First Editorial Surface Hierarchy (`globals.css`, `tailwind.config.ts`)**:
+  - Crisp `#FFFFFF` canvas (`--bg-canvas`), `#F8FAFC` subtle Bento containers (`--bg-surface`), `1px` `#E2E8F0` hairline borders (`--border-hairline`), `#E2FF66` acid-lime announcement badges, `#6EE7B7` mint primary action buttons, and `#18181B` carbon-dark secondary CTAs.
+  - Spring-snappy micro-interactions (`cubic-bezier(0.22, 1, 0.36, 1)`), staggered pop-in card transitions (`.animate-pop-in`), tab-switch animations (`.animate-tab-switch`), and zero-clipping responsive tables.
+- **Human-Readable Business Copy (`Inter` Typography)**:
+  - All 5 dashboards present clear, executive-friendly financial copy rather than raw backend enums, hashes, or internal ticket IDs, while preserving optional developer SDK inspection drawers.
+- **Single-Line Sticky Top Navbar (`CockpitShell.tsx`)**:
+  - Geometric `|SENTINEL` brand wordmark, hover-pill navigation across all 5 screens (`⌘1`–`⌘5`), collapsible **Environment** mega-menu popover (Sandbox mode, Currency, Locale, UI State, and live status cards), workspace selector, theme toggle, and 1-click **Guided Pitch** trigger.
+
+---
+
+## 2. 5-Screen Functional & Sponsor Track Coverage (`F-01`..`F-12`, `US-01`..`US-16`)
 
 | Screen | Route & Shortcut | Sponsor & PayPal Tracks Covered | Key Components & Features |
 | :--- | :--- | :--- | :--- |
-| **Screen 1: Command Center** | `/command-center` (`Cmd+1`) | **AG Grid Enterprise 32.3.2 + AG Charts ($10,000 Track, `F-07`)**, `API-14` Insights (`TKT-027`), `SSE-01` (`applyTransactionAsync`) | `LedgerCommandGrid.tsx` (10k row benchmark `<800ms`, grouping/pivot, natural-language filter bar), `PolicyVerdictCell.tsx`, `GnnRiskSparklineCell.tsx`, `HitlInlineActionCell.tsx`, `DisputeDetailRenderer.tsx`, dynamic `computeLiveMerchantInsights` North-Star `ANMPR` counter, 30-day Cash Inflow Waterfall + GNN Risk Distribution charts |
-| **Screen 2: Policy Firewall Studio** | `/policy-studio` (`Cmd+2`) | **`Cosmos.AI` DSL Policy Firewall (`F-02`)**, **APIMatic SDK Validator & Exporter ($3,000 Track, `F-09`, `US-14`)** | `policy-studio/page.tsx` (Karpathy `L0–L4` Autonomy Slider, interactive spend/velocity/GNN thresholds, counterfactual Dry-Run Simulator `US-02` with 3 scenario presets), `ApimaticSdkCodeDrawer.tsx` (live TS/Python `@paypal/paypal-server-sdk` export across all domains), `HitlApprovalCard.tsx` (`API-02` FIDO2 WebAuthn Passkey) |
-| **Screen 3: Invoicing & Scheduler** | `/invoicing-scheduler` (`Cmd+3`) | **Bryntum Scheduler Pro 6.1.2 ($3,000 Track, `F-08`, `TKT-029`, `US-13`)**, **PayPal Smart Invoicing v2 & Subscriptions (`F-03`, `API-04`..`API-06`, `API-12`, `TKT-021`)** | `ReceivablesTimeline.tsx` (`next/dynamic({ ssr: false })`, two-way `onEventDrop` + `onEventResizeEnd`, 72h FDCPA/RBI dunning velocity guard `R-11`, SVG dependency chain, Recurring Invoice Series `#16`–`#19`, interactive Subscription lanes `API-12` (`create_subscription`, `update_subscription`, L2 Passkey-gated `cancel_subscription`), Dispute SLA Deadlines lane `E-08`), `DunningHistogram.tsx`, `InvoiceQrModal.tsx` |
-| **Screen 4: Dispute War-Room** | `/dispute-war-room` (`Cmd+4`) | **Autonomous Dispute Defense (`F-04`, `TKT-026`, `US-07`..`US-09`)**, **`M-04` 3-Hop GNN Scorer (`F-10`, `payops-graphsage-lgbm-v1.2.onnx`)**, `M-03` Vision OCR, `M-05` Elastic RAG | `dispute-war-room/page.tsx` (interactive 3-hop Buyer–Device–Carrier Risk Graph node inspector `HOP_1_BUYER`..`HOP_3B_RING`, TreeSHAP attribution bars, manual Carrier POD upload & `M-03` OCR fallback dropzone, `EVIDENCE_SUBMITTED` stamp, Compelling Evidence 3.0 JSON/PDF export), `WebhookSimulatorToolbar.tsx` (`API-13`) |
-| **Screen 5: Fastlane & PYUSD Bridge** | `/checkout-bridge` (`Cmd+5`) | **Channel3 MCP B2B Discovery ($1,500 Track, `F-12`, `US-16`)**, **PayPal Fastlane & Orders v2 (`F-05`, `F-06`, `TKT-020`)**, **PYUSD Solana Token-2022 Bridge (`F-11`, `TKT-022`, `US-15`)** | `FastlaneCheckoutIsland.tsx` (`@paypal/react-paypal-js` Zoid isolation `ADR-0005`, `R-07` HMAC-SHA256 recognition for `maya@lumina.io`, `10x` `JunoDB` retry deduplication stress test `R-02`, post-capture `create_shipment_tracking` `#28` & policy-guarded refund testing `API-09`), `PyusdSolanaBridgeModal.tsx` (mint `2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo`, `R-08` non-custodial badge, `R-09` `Memo Required` simulator & validator), Elastic 180-day SHA-256 hash-chain verifier (`E-10`) & Zapier `HOLD_APPROVAL` payload inspector (`F-12`) |
+| **Screen 1: Command Center** | `/command-center` (`Cmd+1`) | **AG Grid Enterprise 32.3.2 + AG Charts ($10,000 Track, `F-07`)**, `API-14` Insights (`TKT-027`), `SSE-01` (`applyTransactionAsync`) | Asymmetric Increase-style Hero with full-bleed 3D ribbon art (`command-center/page.tsx`), 4 architectural KPI cards, **Autonomous workflows on every PayPal rail** showcase (`WebhookSimulatorToolbar.tsx`), 2-column Bento analytics (30-Day Cash Inflow Waterfall + Fraud Risk Distribution), and zero-clipping 5-column **Autonomous Execution & Dispute Ledger** (`LedgerCommandGrid.tsx`, `DisputeDetailRenderer.tsx`) with tabbed 3-gate inspection & 10,000-row `<800ms` benchmark |
+| **Screen 2: Policy Studio** | `/policy-studio` (`Cmd+2`) | **`Cosmos.AI` Policy Firewall (`F-02`)**, **APIMatic SDK Validator & Exporter ($3,000 Track, `F-09`, `US-14`)** | Interactive **Autonomy Level (`L0`–`L4`)** tier cards (`policy-studio/page.tsx`) where switching `L0` to `L4` dynamically updates the Active Tier Summary banner, 4 operational workflow metrics, spending/risk thresholds (`Single Refund Limit`, `24-Hour Refund Cap`, `Max Fraud Risk Score`), 3 readable Protection Rule cards, and the tier-aware **Interactive Policy Simulator** + collapsible `@paypal/paypal-server-sdk` code preview |
+| **Screen 3: Smart Invoicing** | `/invoicing-scheduler` (`Cmd+3`) | **Bryntum Scheduler Pro 6.1.2 ($3,000 Track, `F-08`, `TKT-029`, `US-13`)**, **PayPal Smart Invoicing v2 & Subscriptions (`F-03`, `API-04`..`API-06`, `API-12`, `TKT-021`)** | 30-Day Working Capital Forecast (`DunningHistogram.tsx`), zero-overflow **Receivables & Reminders Schedule** (`ReceivablesTimeline.tsx` with 72h reminder spacing guard, Recurring Billing Series, Subscription Plans, and Dispute Deadlines tabs), Smart Invoice generator, and the enlarged **Instant QR Invoice Card** (`InvoiceQrModal.tsx`) |
+| **Screen 4: Dispute Defense** | `/dispute-war-room` (`Cmd+4`) | **Autonomous Dispute Defense (`F-04`, `TKT-026`, `US-07`..`US-09`)**, **`M-04` 3-Hop GNN Scorer (`F-10`)**, `M-03` Vision OCR, `M-05` Elastic RAG | Active Customer Disputes queue (`dispute-war-room/page.tsx`), interactive **3-Hop Buyer–Device–Carrier Relationship Map** (`svg[aria-label="3-Hop Buyer Device Carrier Fraud Graph"]`), plain-English Fraud Signal Breakdown bars, Carrier Delivery Receipt OCR uploader, and **Evidence Package Preview** with English/Hindi receipt translation |
+| **Screen 5: Fastlane & PYUSD** | `/checkout-bridge` (`Cmd+5`) | **Channel3 MCP B2B Discovery ($1,500 Track, `F-12`, `US-16`)**, **PayPal Fastlane & Orders v2 (`F-05`, `F-06`, `TKT-020`)**, **PYUSD Solana Token-2022 Bridge (`F-11`, `TKT-022`, `US-15`)** | Wholesale Supplier Catalog (`checkout-bridge/page.tsx`), **PayPal Fastlane Express Checkout** (`FastlaneCheckoutIsland.tsx` with 10x duplicate-charge protection test, shipment tracking, and refund checks), **Instant Cross-Border PYUSD Settlement** (`PyusdSolanaBridgeModal.tsx`), and **Tamper-Proof Activity & Compliance Log** |
 
 ---
 
-## 2. Dual-Mode API Client, SSE Stream & Demo-Day Replay Safety Net (`R-06`, `SSE-01`, `TKT-035`)
+## 3. Enlarged QR Invoice Card & Companion Modals
 
-- **3 Operating Modes (`apps/web/src/lib/api-client.ts`):**
-  1. **`mock`**: Deterministic shared fixtures from `packages/shared/src/mock-fixtures.ts` (`MOCK_WORKSPACES`, `MOCK_INVOICES`, `MOCK_DISPUTES`, `MOCK_EXECUTIONS`, `MOCK_RECURRING_SERIES`, `MOCK_SUBSCRIPTION_PLANS`).
-  2. **`live`**: Connects to `Dev 1`'s Fastify Control Plane (`http://localhost:4000/api/v1/...`) and real-time Server-Sent Events stream (`/api/v1/stream/events`).
-  3. **`replay`**: Instant circuit-breaker fallback (`DEMO_REPLAY_MODE`, `R-06`) if `api-m.sandbox.paypal.com` returns `HTTP 429` or exceeds `2,500ms` during live judging.
-- **Real-Time SSE Event Stream (`useSseExecutionStream.ts`, `SSE-01`):**
-  - Subscribes to `execution_delta`, `dispute_alert`, and `policy_hold` events and updates both the AG Grid Enterprise viewport (`gridApi.applyTransactionAsync`) and the Zustand cockpit store without page reloads or hydration mismatches.
-- **1-Click Pitch Choreography Bar (`WebhookSimulatorToolbar.tsx`, `TKT-035`, `TKT-036`, `R-06`, `H41`):**
-  - Provides 1-click triggers for all 4 live browser scenes in `docs/00-overview/PITCH.md` plus full `2:52` choreography, `R-06` circuit-breaker simulation, and `H41` clean state reset:
-    1. `▶ Run Full 4-Click Guided Pitch Walkthrough (2:52 Choreography)` (`SCENARIO_1_INVOICE`..`SCENARIO_4_PYUSD` with Sandbox IDs & 13 Devpost judge attribution badges)
-    2. `1. Smart Invoice + QR ($1,850)` (`DEMO_1_SMART_INVOICE` / `SCENARIO_1_INVOICE`)
-    3. `2. Bryntum Dunning Drag (API-06)` (`send_invoice_reminder` with 72h FDCPA/RBI guard)
-    4. `3. Dispute Webhook + GNN Defense ($340)` (`DEMO_2_DISPUTE_DEFENSE` / `SCENARIO_2_DISPUTE`)
-    5. `4. Prompt Injection Block + Passkey ($2,400)` (`DEMO_3_INJECTION_BLOCK` / `SCENARIO_3_INJECTION`)
-    6. `PYUSD Solana Bridge ($650)` (`DEMO_4_PYUSD_BRIDGE` / `SCENARIO_4_PYUSD`)
-    7. `Simulate HTTP 429 Upstream Rate-Limit -> Auto-Failover (R-06)` (`<50ms` switchover to `DEMO_REPLAY_MODE` signed transcripts)
-    8. `Reset / Re-Seed Clean Demo State (H41 Pitch Reset)` (1-click clean restoration of all workspaces, invoices, disputes, orders, policies, and audit logs)
+- **Instant QR Invoice Card (`InvoiceQrModal.tsx`)**:
+  - Enlarged `rounded-3xl` editorial modal featuring a deterministic **25×25 scannable QR code matrix** (`224px × 224px`), animated corner scan brackets, and a vector shield/checkmark center emblem.
+  - Displays formatted customer organization name, email, due date, semantic status badge (`Awaiting Payment` / `Paid in Full` / `Overdue`), dual-currency total, and early-payment discount validity pill.
+  - Interactive action footer with **Copy Link** (live `"Link Copied"` checkmark state), **Send Reminder** (live `"Reminder Sent"` confirmation), and **Pay with PYUSD** (`PyusdSolanaBridgeModal.tsx`).
+- **Passkey Authorization Modal (`HitlApprovalCard.tsx`)**:
+  - Clean human-readable approval card for held refunds or unauthorized override attempts, supporting team-member role switching and `Alt+A` / `Alt+R` keyboard shortcuts.
 
 ---
 
-## 3. Accessibility (WCAG 2.2 AA), 5 Interactive UI States & Localization (`TKT-031`, `TKT-033`)
+## 4. Dual-Mode API Client, SSE Stream & Demo-Day Replay Safety Net (`R-06`, `SSE-01`, `TKT-035`)
 
-- **All 5 Interactive UI States (`UI_SPEC.md`):** Every screen supports `success`, `loading`, `empty`, `offline` (`PENDING_SYNC` queue with 1-click `Flush Queue Now`), and `error` (RFC 7807 / Carrier API timeout fallback with manual POD OCR dropzone and Bryntum drag snap-back).
-- **Multi-Currency & Dual-Currency (`formatters.ts`):** Supports `USD ($)`, `INR (₹ Lakh/Crore)`, `EUR (€)`, `GBP (£)`, and `PYUSD (Solana)` with primary native currency + secondary cross-border equivalent and multi-timezone SLA countdown tooltips (`UTC`, `IST`, `CST`, `GMT`).
-- **Multilingual & Hinglish Command Routing:** Interface dictionary supports `en`, `hi`, `es`, and `de`, while `normalizeMultilingualAgentPrompt` routes Hinglish (`hi-Latn`), Hindi (`hi`), Spanish (`es`), and German (`de`) natural-language commands to PayPal MCP tools.
-- **WCAG 2.2 AA Compliance (`ACCESSIBILITY.md`):** Semantic `role="treegrid"` on AG Grid (`Criterion 1.3.1`), keyboard-accessible dunning slot selector on Bryntum Scheduler (`Criterion 2.5.7`), keyboard-focusable 3-Hop SVG Risk Graph nodes (`role="button"`, `tabIndex={0}`), accessible chart/graph table toggles (`Criterion 1.1.1`), `Cmd/Ctrl+Shift+D` dry-run shortcut (`US-02`), and `Escape` dismissal across all modals/drawers.
+- **3 Operating Modes (`apps/web/src/lib/api-client.ts`)**:
+  1. **`mock`**: Deterministic shared fixtures from `packages/shared/src/mock-fixtures.ts`.
+  2. **`live`**: Connects to Fastify Control Plane (`http://localhost:4000/api/v1/...`) and real-time Server-Sent Events stream (`/api/v1/stream/events`).
+  3. **`replay`**: Instant `<50ms` circuit-breaker fallback (`DEMO_REPLAY_MODE`, `R-06`) if upstream sandbox returns `HTTP 429` or times out.
+- **WCAG 2.2 AA & Multilingual Support (`TKT-031`, `TKT-033`)**:
+  - Supports `USD ($)`, `INR (₹ Lakh/Crore)`, `EUR (€)`, `GBP (£)`, and `PYUSD` across `en`, `hi`, `es`, and `de` locales, plus Hinglish (`hi-Latn`) natural-language prompt normalization in the bottom **Sentinel Assistant (`Cmd+K`)** bar (`GlobalCommandBar.tsx`).
 
 ---
 
-## 4. Local Development & Verification Commands
+## 5. Local Development & Verification Commands
 
 ```powershell
 # 1. Start Next.js 15 Dev Server on Port 3000
-Set-Location "d:\PayPal\apps\web"
-node "..\..\node_modules\next\dist\bin\next" dev --port 3000
+npm --prefix apps/web run dev
 
-# 2. Run Dev 2 Frontend Cockpit Unit & Integration Tests (13/13 tests)
-Set-Location "d:\PayPal"
-npx --yes vitest run --config "d:\PayPal\apps\web\vitest.config.ts"
+# 2. Run Frontend Unit & Integration Tests (13/13 tests)
+npx vitest run -c apps/web/vitest.config.ts
 
 # 3. Run Shared E2E Verification Suite (6/6 tests)
-npx --yes vitest run "d:\PayPal\tests\e2e\checkout-dispute.spec.ts"
+npx vitest run tests/e2e/checkout-dispute.spec.ts
 
-# 4. Typecheck packages/shared and apps/web (0 errors)
-node "d:\PayPal\node_modules\typescript\bin\tsc" -p "d:\PayPal\packages\shared\tsconfig.json" --noEmit
-node "d:\PayPal\node_modules\typescript\bin\tsc" -p "d:\PayPal\apps\web\tsconfig.json" --noEmit
+# 4. Typecheck apps/web (0 errors)
+npm --prefix apps/web run typecheck
 
 # 5. Run 4-Tier Deliverable Verifier (162/162 checks, Exit Code 0)
-python "d:\PayPal\tests\verify_deliverables.py"
+python tests/verify_deliverables.py
 ```
