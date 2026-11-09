@@ -37,6 +37,11 @@ export default {
       "@payops/shared": path.resolve(__dirname, "../../packages/shared/src/index.ts"),
     },
   },
+  oxc: {
+    jsx: {
+      runtime: "automatic",
+    },
+  },
   test: {
     environment: "node",
     include: ["apps/web/src/**/*.test.ts", "apps/web/src/**/__tests__/*.test.ts", "src/**/*.test.ts", "src/**/__tests__/*.test.ts"],

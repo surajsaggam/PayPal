@@ -17,9 +17,12 @@ import {
   MOCK_CHANNEL3_CATALOG,
   MOCK_DISPUTES,
   MOCK_EXECUTIONS,
+  MOCK_GUIDED_DEMO_SCENARIOS,
   MOCK_INVOICES,
   MOCK_RECURRING_SERIES,
+  MOCK_SIGNED_SANDBOX_TRANSCRIPTS,
   MOCK_SUBSCRIPTION_PLANS,
+  resolveSignedSandboxTranscript,
   validatePyusdToken2022Memo,
   verifyAuditHashChain,
 } from "@payops/shared/mock-fixtures";
@@ -40,15 +43,18 @@ import {
   createAutonomousSmartInvoice,
   createSubscriptionPlan,
   executeAgentPrompt,
+  getSignedSandboxTranscriptForPath,
   refundOrder,
   resolveDispute,
   simulatePayPalWebhook,
+  simulateUpstreamHttp429CircuitBreaker,
 } from "../lib/api-client";
 import {
   computeLiveMerchantInsights,
   useCockpitStore,
 } from "../stores/useCockpitStore";
 import {
+  COCKPIT_KEYBOARD_SHORTCUTS,
   COCKPIT_SCREEN_ROUTES,
   verifyFiveScreenCockpitJourney,
 } from "../../../../tests/e2e/cockpit-screens.playwright";
@@ -260,6 +266,15 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
           if (selector.includes("3-Hop") && attr === "aria-label") {
             return "3-Hop Buyer Device Carrier Fraud Graph";
           }
+          if (selector.includes("R-06 Circuit Breaker Replay Active") && attr === "aria-label") {
+            return "R-06 Circuit Breaker Replay Active";
+          }
+          if (
+            selector.includes("Guided Pitch Choreography & Sandbox Resource ID Callout Strip") &&
+            attr === "aria-label"
+          ) {
+            return "Guided Pitch Choreography & Sandbox Resource ID Callout Strip";
+          }
           return null;
         },
         innerText: async () => "PayOps AI",
@@ -274,6 +289,10 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
     expect(result.treegridVerified).toBe(true);
     expect(result.wcag257KeyboardDunningVerified).toBe(true);
     expect(result.disputeGraphVerified).toBe(true);
+    expect(result.keyboardShortcutsVerified).toBe(true);
+    expect(result.pressedShortcuts).toEqual([...COCKPIT_KEYBOARD_SHORTCUTS]);
+    expect(result.r06CircuitBreakerVerified).toBe(true);
+    expect(result.guidedPitchChoreographyVerified).toBe(true);
   });
 
   it("recalculates Bryntum Resource Histogram inflows dynamically on onEventDrop & onEventResizeEnd and queues PENDING_SYNC offline (F-08, TKT-029, US-05, US-13)", () => {
@@ -489,5 +508,138 @@ describe("Dev 2 Frontend Cockpit — Store, Localization, Bryntum 72h Guard & AG
     const zapierPayload = buildZapierHoldApprovalWebhookPayload(MOCK_EXECUTIONS[0]);
     expect(zapierPayload.webhookEvent).toBe("PAYOPS.POLICY.HOLD_APPROVAL");
     expect(zapierPayload.targetZapierHookUrl).toContain("hooks.zapier.com");
+  });
+
+  it("verifies Phase 5 R-06 HTTP 429 Circuit-Breaker Auto-Failover (<50ms) and Signed Sandbox Transcript Cache (TKT-035)", async () => {
+    useCockpitStore.getState().resetDemoStateToCleanSeed();
+    expect(useCockpitStore.getState().apiMode).toBe("mock");
+    expect(useCockpitStore.getState().circuitBreakerTripped).toBe(false);
+
+    // Verify MOCK_SIGNED_SANDBOX_TRANSCRIPTS coverage and 64-char SHA-256 signatures
+    const transcriptKeys = Object.keys(MOCK_SIGNED_SANDBOX_TRANSCRIPTS);
+    expect(transcriptKeys.length).toBeGreaterThanOrEqual(8);
+    for (const key of transcriptKeys) {
+      const tx = MOCK_SIGNED_SANDBOX_TRANSCRIPTS[key];
+      expect(tx.sha256TranscriptSignature).toMatch(/^[0-9a-f]{64}$/);
+      expect(tx.replayFailoverLatencyMs).toBeLessThan(50);
+    }
+
+    // Trigger 1-click HTTP 429 upstream rate-limit failover -> DEMO_REPLAY_MODE (<50ms)
+    const startMs = performance.now();
+    const failoverTx = await simulateUpstreamHttp429CircuitBreaker("/api/v1/invoices/autonomous");
+    const elapsedMs = performance.now() - startMs;
+
+    expect(elapsedMs).toBeLessThan(50);
+    expect(failoverTx.transcriptId).toBe("tx_sbx_api04_autonomous_invoice");
+    expect(useCockpitStore.getState().apiMode).toBe("replay");
+    expect(useCockpitStore.getState().uiState).toBe("offline");
+    expect(useCockpitStore.getState().circuitBreakerTripped).toBe(true);
+    expect(useCockpitStore.getState().lastFailoverLatencyMs).toBeLessThan(50);
+
+    // Execute API calls while in replay mode and verify transcript hit counter increments
+    const countBefore = useCockpitStore.getState().replayedTranscriptCount;
+    const replayInv = await createAutonomousSmartInvoice({
+      workspaceId: "ws_99102a",
+      recipientEmail: "accounts@acmerobotics.example.io",
+      amountValue: "1850.00",
+      currencyCode: "USD",
+      dueDate: "2026-11-22",
+      earlyPaymentDiscountPct: "2.00",
+      enableRecurringSeries: true,
+    });
+    expect(replayInv.amountValue).toBe("1850.00");
+    expect(useCockpitStore.getState().replayedTranscriptCount).toBeGreaterThan(countBefore);
+    expect(getSignedSandboxTranscriptForPath("/api/v1/disputes/PP-D-90412/resolve").transcriptId).toBe(
+      "tx_sbx_api10_disputes"
+    );
+    expect(resolveSignedSandboxTranscript("/api/v1/agent/approve/ex_9041").transcriptId).toBe(
+      "tx_sbx_api02_hitl_approve"
+    );
+
+    // Also verify live fetch HTTP 429 & network disconnect automatic failover in fetchWithReplayFallback
+    const originalFetch = globalThis.fetch;
+    try {
+      useCockpitStore.getState().resetDemoStateToCleanSeed();
+      useCockpitStore.getState().setApiMode("live");
+      globalThis.fetch = async () => new Response("Too Many Requests", { status: 429 });
+
+      const live429Fallback = await executeAgentPrompt({
+        workspaceId: "ws_99102a",
+        prompt: "Generate Smart Invoice for $1,850",
+        dryRun: false,
+      });
+      expect(live429Fallback.execution.policyVerdict).toBe("APPROVED_L3_AUTO");
+      expect(useCockpitStore.getState().apiMode).toBe("replay");
+      expect(useCockpitStore.getState().uiState).toBe("offline");
+      expect(useCockpitStore.getState().circuitBreakerTripped).toBe(true);
+      expect(useCockpitStore.getState().circuitBreakerReason).toContain("HTTP 429");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("verifies Phase 6 2:52 Guided Pitch Walkthrough (SCENARIO_1_INVOICE..SCENARIO_4_PYUSD), Judge Attribution Badges, and H41 1-Click Clean Demo Reset (TKT-035, TKT-036)", () => {
+    useCockpitStore.getState().resetDemoStateToCleanSeed();
+
+    // Verify all 4 guided scenarios include PayPal Sandbox resource IDs and all 13 Devpost judges
+    const allJudgeBadges = MOCK_GUIDED_DEMO_SCENARIOS.flatMap((s) => s.judgeCallouts).join(" | ");
+    const expectedJudges = [
+      "Jo Franchetti",
+      "Eddie Jaoude",
+      "Marco Podien",
+      "Karthik Ravi",
+      "Himraj Singh",
+      "Nathaniel Olson",
+      "Ishan Shah",
+      "Sylwia Vargas",
+      "Ameer Hassan",
+      "Mats Bryntse",
+      "Ignacio Valdez Bicard",
+      "Carly Richmond",
+      "Pooja Mistry",
+      "Shifra Williams",
+    ];
+    for (const judgeName of expectedJudges) {
+      expect(allJudgeBadges).toContain(judgeName);
+    }
+
+    const allResourceIds = MOCK_GUIDED_DEMO_SCENARIOS.flatMap((s) => s.sandboxResourceIds);
+    expect(allResourceIds).toContain("INV2-X89A-4412-9012-7731");
+    expect(allResourceIds).toContain("PP-D-90412");
+
+    // Run full 4-click guided pitch walkthrough (<45s SLA)
+    const walkthroughResult = useCockpitStore.getState().runFullGuidedPitchWalkthrough();
+    expect(walkthroughResult.scenariosCompleted).toEqual([
+      "SCENARIO_1_INVOICE",
+      "SCENARIO_2_DISPUTE",
+      "SCENARIO_3_INJECTION",
+      "SCENARIO_4_PYUSD",
+    ]);
+    expect(walkthroughResult.totalElapsedMs).toBeLessThan(45000);
+    expect(parseFloat(walkthroughResult.finalAnmprUsd)).toBeGreaterThan(26960);
+    expect(walkthroughResult.auditChainValid).toBe(true);
+    expect(walkthroughResult.totalAuditEntries).toBeGreaterThan(MOCK_AUDIT_LOGS.length + 4);
+
+    // Verify tampered audit log detection (E-10)
+    const validLogs = useCockpitStore.getState().auditLogs;
+    expect(verifyAuditHashChain(validLogs).valid).toBe(true);
+    const tamperedLogs = validLogs.map((entry, idx) =>
+      idx === 2 ? { ...entry, prevHash: "f".repeat(64) } : entry
+    );
+    const tamperedCheck = verifyAuditHashChain(tamperedLogs);
+    expect(tamperedCheck.valid).toBe(false);
+    expect(tamperedCheck.tamperedCount).toBeGreaterThanOrEqual(1);
+
+    // Verify 1-click H41 Pitch Reset restores exact initial seed state
+    useCockpitStore.getState().resetDemoStateToCleanSeed();
+    const resetState = useCockpitStore.getState();
+    expect(resetState.invoices).toHaveLength(MOCK_INVOICES.length);
+    expect(resetState.disputes).toHaveLength(MOCK_DISPUTES.length);
+    expect(resetState.executions).toHaveLength(MOCK_EXECUTIONS.length);
+    expect(resetState.auditLogs).toHaveLength(MOCK_AUDIT_LOGS.length);
+    expect(resetState.anmprBonusUsd).toBe(0);
+    expect(resetState.circuitBreakerTripped).toBe(false);
+    expect(resetState.pitchWalkthroughStep).toBeNull();
+    expect(resetState.statusBannerMessage).toContain("H41 Clean Demo Seed Restored");
   });
 });

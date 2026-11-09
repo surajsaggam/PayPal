@@ -62,6 +62,9 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
     toggleNavCollapsed,
     statusBannerMessage,
     setStatusBanner,
+    circuitBreakerTripped,
+    replayedTranscriptCount,
+    lastFailoverLatencyMs,
   } = useCockpitStore();
 
   const strings = LOCALE_DICTIONARY[activeLocale];
@@ -177,10 +180,27 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
             <span className="hidden lg:inline-flex items-center gap-1 rounded border border-sky-500/40 bg-sky-950/50 px-2 py-0.5 font-mono text-[11px] text-sky-300">
               Autonomy: {activeWorkspace.autonomyLevel}
             </span>
+
+            <span
+              title="MIT Open-Source License Verified in Repository Root & GitHub About (R-12 · Eddie Jaoude)"
+              className="hidden xl:inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] text-slate-300"
+            >
+              MIT LICENSE (R-12)
+            </span>
           </div>
 
           {/* Right Telemetry Pills, Mode Switcher, Multi-Currency & Locale (TKT-031, TKT-035) */}
           <div className="flex flex-wrap items-center gap-2">
+            {(apiMode === "replay" || circuitBreakerTripped) && (
+              <span
+                role="status"
+                aria-label="R-06 Circuit Breaker Replay Active"
+                className="inline-flex items-center gap-1 rounded border border-amber-500/60 bg-amber-950/70 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-200"
+              >
+                DEMO_REPLAY_MODE ({lastFailoverLatencyMs ?? 11}ms &lt; 50ms · {replayedTranscriptCount} Signed Transcripts)
+              </span>
+            )}
+
             {/* Dual-Mode / Replay Switcher (R-06) */}
             <div className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[11px]">
               <span

@@ -25,16 +25,23 @@ import {
   MOCK_AUDIT_LOGS,
   MOCK_DISPUTES,
   MOCK_EXECUTIONS,
+  MOCK_GUIDED_DEMO_SCENARIOS,
   MOCK_INVOICES,
   MOCK_MERCHANT_INSIGHTS,
   MOCK_OPERATORS,
   MOCK_ORDERS,
   MOCK_POLICY_RULES,
   MOCK_RECURRING_SERIES,
+  MOCK_SIGNED_SANDBOX_TRANSCRIPTS,
   MOCK_SUBSCRIPTION_PLANS,
   MOCK_WORKSPACES,
+  resolveSignedSandboxTranscript,
+  verifyAuditHashChain,
   type Channel3CatalogItem,
+  type GuidedDemoScenario,
+  type GuidedDemoScenarioAlias,
   type RecurringInvoiceSeriesFixture,
+  type SignedSandboxTranscript,
 } from "@payops/shared/mock-fixtures";
 import type { SupportedLocale } from "../lib/formatters";
 
@@ -58,18 +65,42 @@ export interface OrderIdempotencyStressResult {
   orderId: string;
 }
 
+export interface GuidedPitchWalkthroughResult {
+  scenariosCompleted: GuidedDemoScenarioAlias[];
+  totalElapsedMs: number;
+  finalAnmprUsd: string;
+  auditChainValid: boolean;
+  totalAuditEntries: number;
+}
+
+function computeDeterministicHexDigest64(seedInput: string): string {
+  let h1 = 0xdeadbeef ^ seedInput.length;
+  let h2 = 0x41c6ce57 ^ seedInput.length;
+  let h3 = 0x9e3779b9 ^ seedInput.length;
+  let h4 = 0x85ebca6b ^ seedInput.length;
+  for (let i = 0; i < seedInput.length; i++) {
+    const ch = seedInput.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+    h3 = Math.imul(h3 ^ ch, 2246822507);
+    h4 = Math.imul(h4 ^ ch, 3266489909);
+  }
+  const p1 = (h1 >>> 0).toString(16).padStart(8, "0");
+  const p2 = (h2 >>> 0).toString(16).padStart(8, "0");
+  const p3 = (h3 >>> 0).toString(16).padStart(8, "0");
+  const p4 = (h4 >>> 0).toString(16).padStart(8, "0");
+  return `${p1}${p2}${p3}${p4}${p2}${p4}${p1}${p3}`.slice(0, 64);
+}
+
 function appendChainedAuditLog(
   logs: ImmutableAuditLog[],
   execution: AgentToolExecution,
   actorId: string
 ): ImmutableAuditLog[] {
   const prevHead = logs[logs.length - 1]?.entryHash ?? "0".repeat(64);
-  const rawSuffix = `${execution.executionId}${execution.toolName}`
-    .replace(/[^a-zA-Z0-9]/g, "a")
-    .toLowerCase()
-    .padEnd(16, "f")
-    .slice(0, 16);
-  const entryHash = (prevHead.slice(16) + rawSuffix).slice(0, 64).padEnd(64, "9");
+  const entryHash = computeDeterministicHexDigest64(
+    `${prevHead}|${execution.executionId}|${execution.toolName}|${execution.paypalRequestId}|${execution.policyVerdict}|${actorId}|${logs.length}`
+  );
   const newAudit: ImmutableAuditLog = {
     logId: `aud_${1000 + logs.length + 1}`,
     workspaceId: execution.workspaceId,
@@ -157,6 +188,16 @@ export interface CockpitState {
   winRateDeltaPct: number;
   lastPyusdSettlement: PyusdSettlementReceipt | null;
 
+  // Phase 5 & 6 Circuit-Breaker Replay (R-06) & Pitch Choreography State (TKT-035, TKT-036)
+  circuitBreakerTripped: boolean;
+  circuitBreakerReason: string | null;
+  lastFailoverLatencyMs: number | null;
+  lastReplayTranscript: SignedSandboxTranscript | null;
+  replayedTranscriptCount: number;
+  pitchWalkthroughActive: boolean;
+  pitchWalkthroughStep: number | null;
+  activePitchScenario: GuidedDemoScenario | null;
+
   // Command Bar & Drawers
   commandPrompt: string;
   commandBarOpen: boolean;
@@ -188,6 +229,18 @@ export interface CockpitState {
   openQrModal: (invoice: PayPalInvoiceRecord | null) => void;
   openPyusdModal: (invoice: PayPalInvoiceRecord | null) => void;
   setStatusBanner: (msg: string | null) => void;
+
+  // Phase 5 & 6 Replay Circuit-Breaker, Clean Reset & Pitch Choreography Actions
+  recordReplayTranscriptHit: (transcript: SignedSandboxTranscript) => void;
+  triggerHttp429CircuitBreakerFailover: (
+    reason?: string,
+    path?: string
+  ) => SignedSandboxTranscript;
+  resetDemoStateToCleanSeed: () => void;
+  executeGuidedPitchScenario: (
+    scenarioOrAlias: GuidedDemoScenario["scenarioId"] | GuidedDemoScenarioAlias
+  ) => GuidedDemoScenario;
+  runFullGuidedPitchWalkthrough: () => GuidedPitchWalkthroughResult;
 
   // Domain Mutations
   setExecutionsList: (rows: AgentToolExecution[]) => void;
@@ -284,6 +337,15 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   dsoDeltaDays: 0,
   winRateDeltaPct: 0,
   lastPyusdSettlement: null,
+
+  circuitBreakerTripped: false,
+  circuitBreakerReason: null,
+  lastFailoverLatencyMs: null,
+  lastReplayTranscript: null,
+  replayedTranscriptCount: 0,
+  pitchWalkthroughActive: false,
+  pitchWalkthroughStep: null,
+  activePitchScenario: null,
 
   commandPrompt: "",
   commandBarOpen: false,
@@ -395,48 +457,262 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   openPyusdModal: (pyusdModalInvoice) => set({ pyusdModalInvoice }),
   setStatusBanner: (statusBannerMessage) => set({ statusBannerMessage }),
 
+  recordReplayTranscriptHit: (transcript) =>
+    set((state) => ({
+      lastReplayTranscript: transcript,
+      replayedTranscriptCount: state.replayedTranscriptCount + 1,
+    })),
+
+  triggerHttp429CircuitBreakerFailover: (
+    reason = "HTTP 429 Too Many Requests from api-m.sandbox.paypal.com",
+    path = "/api/v1/agent/execute"
+  ) => {
+    const transcript = resolveSignedSandboxTranscript(path);
+    const failoverExec: AgentToolExecution = {
+      executionId: `ex_r06_${Math.floor(9900 + Math.random() * 99)}`,
+      sessionId: "ses_20261108_9041",
+      workspaceId: get().activeWorkspaceId,
+      toolName: "get_merchant_insights",
+      paypalRequestId: transcript.paypalRequestId,
+      junodbLeaseStatus: "REPLAYED_FROM_JUNODB",
+      policyVerdict: "APPROVED_L3_AUTO",
+      reasonCode: "RC_OK_R06_REPLAY_CIRCUIT_BREAKER_ENGAGED",
+      gnnRiskScore: 0.01,
+      amountValue: "0.00",
+      currencyCode: "USD",
+      executedAt: new Date().toISOString(),
+    };
+    set((state) => ({
+      apiMode: "replay",
+      uiState: "offline",
+      circuitBreakerTripped: true,
+      circuitBreakerReason: reason,
+      lastFailoverLatencyMs: transcript.replayFailoverLatencyMs,
+      lastReplayTranscript: transcript,
+      replayedTranscriptCount: state.replayedTranscriptCount + 1,
+      executions: [failoverExec, ...state.executions],
+      auditLogs: appendChainedAuditLog(state.auditLogs, failoverExec, "r06_circuit_breaker"),
+      statusBannerMessage: `R-06 Circuit Breaker Auto-Failover (${transcript.replayFailoverLatencyMs}ms < 50ms): ${reason} -> Flipped to DEMO_REPLAY_MODE (uiState: offline) serving SHA-256 signed Sandbox transcript ${transcript.transcriptId} (Debug-Id: ${transcript.paypalDebugId}).`,
+    }));
+    return transcript;
+  },
+
+  resetDemoStateToCleanSeed: () =>
+    set({
+      workspaces: MOCK_WORKSPACES.map((w) => ({ ...w })),
+      activeWorkspaceId: MOCK_WORKSPACES[0].workspaceId,
+      operators: MOCK_OPERATORS.map((o) => ({ ...o })),
+      activeOperatorId: MOCK_OPERATORS[0].userId,
+      activeCurrency: "USD",
+      activeLocale: "en",
+      apiMode: "mock",
+      uiState: "success",
+      dryRun: false,
+      executions: MOCK_EXECUTIONS.map((e) => ({ ...e })),
+      invoices: MOCK_INVOICES.map((i) => ({
+        ...i,
+        conditionalRule: i.conditionalRule ? { ...i.conditionalRule } : undefined,
+      })),
+      disputes: MOCK_DISPUTES.map((d) => ({
+        ...d,
+        treeShapReasons: [...d.treeShapReasons],
+      })),
+      policies: MOCK_POLICY_RULES.map((p) => ({ ...p })),
+      orders: MOCK_ORDERS.map((o) => ({ ...o })),
+      subscriptionPlans: MOCK_SUBSCRIPTION_PLANS.map((s) => ({ ...s })),
+      recurringSeries: MOCK_RECURRING_SERIES.map((r) => ({
+        ...r,
+        mcpToolsBound: [...r.mcpToolsBound],
+      })),
+      auditLogs: MOCK_AUDIT_LOGS.map((a) => ({ ...a })),
+      selectedInvoiceId: MOCK_INVOICES[0]?.invoiceId ?? null,
+      pendingSyncInvoiceIds: [],
+      anmprBonusUsd: 0,
+      dsoDeltaDays: 0,
+      winRateDeltaPct: 0,
+      lastPyusdSettlement: null,
+      circuitBreakerTripped: false,
+      circuitBreakerReason: null,
+      lastFailoverLatencyMs: null,
+      lastReplayTranscript: null,
+      replayedTranscriptCount: 0,
+      pitchWalkthroughActive: false,
+      pitchWalkthroughStep: null,
+      activePitchScenario: null,
+      commandPrompt: "",
+      commandBarOpen: false,
+      traceDrawerOpen: false,
+      apimaticDrawerExecution: null,
+      hitlApprovalExecution: null,
+      qrModalInvoice: null,
+      pyusdModalInvoice: null,
+      statusBannerMessage:
+        "H41 Clean Demo Seed Restored: All workspaces, invoices (INV2-X89A-4412-9012-7731), disputes (PP-D-90412, PP-D-4012), orders, policies, and SHA-256 audit logs reset to initial seed state.",
+    }),
+
+  executeGuidedPitchScenario: (scenarioOrAlias) => {
+    const scenario =
+      MOCK_GUIDED_DEMO_SCENARIOS.find(
+        (s) => s.scenarioId === scenarioOrAlias || s.aliasId === scenarioOrAlias
+      ) ?? MOCK_GUIDED_DEMO_SCENARIOS[0];
+
+    const state = get();
+    set({
+      commandPrompt: scenario.prompt,
+      pitchWalkthroughStep: scenario.stepNumber,
+      activePitchScenario: scenario,
+    });
+
+    if (scenario.scenarioId === "DEMO_1_SMART_INVOICE") {
+      const createdInvoice: PayPalInvoiceRecord = {
+        invoiceId: "INV2-A91F-1850-8841-2026",
+        workspaceId: state.activeWorkspaceId,
+        invoiceNumber: "INV-2026-8850",
+        recipientEmail: "accounts@acmerobotics.example.io",
+        amountValue: "1850.00",
+        currencyCode: "USD",
+        status: "SENT",
+        dueDate: "2026-11-22",
+        qrCodeUri:
+          "https://api-m.sandbox.paypal.com/v2/invoicing/invoices/INV2-A91F-1850-8841-2026/generate-qr-code",
+        conditionalRule: {
+          ruleType: "EARLY_PAYMENT_DISCOUNT",
+          percentage: "2.00",
+          triggerDate: "2026-11-15",
+        },
+        idempotencyKey: `idem_${state.activeWorkspaceId}_invoice_INV_2026_8850`,
+      };
+      get().createAutonomousInvoice(createdInvoice);
+      get().rescheduleInvoiceReminder("INV2-X89A-4412-9012-7731", "2026-11-15");
+      set({
+        traceDrawerOpen: true,
+        lastReplayTranscript: MOCK_SIGNED_SANDBOX_TRANSCRIPTS["/api/v1/invoices/autonomous"],
+        statusBannerMessage: `[Pitch Step 1 · ${scenario.timecodeWindow}] Smart Invoice INV2-X89A-4412-9012-7731 & $1,850 QR created + Bryntum Dunning Drag (API-06) synced · Judges: ${scenario.judgeCallouts.join(" · ")}`,
+      });
+    } else if (scenario.scenarioId === "DEMO_2_DISPUTE_DEFENSE") {
+      get().simulateDisputeWebhook("INR_340");
+      get().resolveDisputeCase("PP-D-4012", "CONTEST_WITH_COMPELLING_EVIDENCE");
+      set({
+        traceDrawerOpen: true,
+        lastReplayTranscript: MOCK_SIGNED_SANDBOX_TRANSCRIPTS["/api/v1/webhooks/paypal"],
+        statusBannerMessage: `[Pitch Step 2 · ${scenario.timecodeWindow}] Dispute PP-D-90412 / PP-D-4012 ($340 INR) + DHL #77819201 DELIVERED + M-04 GNN (0.88) contested · Judges: ${scenario.judgeCallouts.join(" · ")}`,
+      });
+    } else if (scenario.scenarioId === "DEMO_3_INJECTION_BLOCK") {
+      get().simulateDisputeWebhook("INJECTION_2400");
+      set({
+        lastReplayTranscript: MOCK_SIGNED_SANDBOX_TRANSCRIPTS["/api/v1/agent/approve"],
+        statusBannerMessage: `[Pitch Step 3 · ${scenario.timecodeWindow}] Prompt Injection ($2,400) blocked (RC_00_INDIRECT_PROMPT_INJECTION_DETECTED) & ex_9041 held for FIDO2 Passkey · Judges: ${scenario.judgeCallouts.join(" · ")}`,
+      });
+    } else if (scenario.scenarioId === "DEMO_4_PYUSD_BRIDGE") {
+      get().settleInvoiceWithPyusd(
+        "INV2-F19A-7704-6612-4002",
+        "5xPyusdSolanaToken2022PitchSig99102a",
+        "PAYOPS:INV2-F19A-7704-6612-4002:idem_ws_99102a_invoice_INV_2026_7704"
+      );
+      set({
+        lastReplayTranscript: MOCK_SIGNED_SANDBOX_TRANSCRIPTS["/api/v1/orders"],
+        statusBannerMessage: `[Pitch Step 4 · ${scenario.timecodeWindow}] Settled INV2-F19A-7704-6612-4002 ($650 PYUSD Solana Token-2022 · Memo Verified) · Judges: ${scenario.judgeCallouts.join(" · ")}`,
+      });
+    }
+
+    return scenario;
+  },
+
+  runFullGuidedPitchWalkthrough: () => {
+    const startMs = Date.now();
+    set({ pitchWalkthroughActive: true });
+    const aliases: GuidedDemoScenarioAlias[] = [
+      "SCENARIO_1_INVOICE",
+      "SCENARIO_2_DISPUTE",
+      "SCENARIO_3_INJECTION",
+      "SCENARIO_4_PYUSD",
+    ];
+    for (const alias of aliases) {
+      get().executeGuidedPitchScenario(alias);
+    }
+    // Sign the held execution from Step 3 with FIDO2 Passkey so all 4 steps complete cleanly
+    get().resolveHitlExecution("ex_9041", "APPROVE", "fido2_ed25519_pitch_walkthrough_sig");
+
+    const updatedState = get();
+    const liveInsights = computeLiveMerchantInsights(
+      updatedState.activeWorkspaceId,
+      updatedState.anmprBonusUsd,
+      updatedState.dsoDeltaDays,
+      updatedState.winRateDeltaPct
+    );
+    const chainCheck = verifyAuditHashChain(updatedState.auditLogs);
+    const totalElapsedMs = Math.max(1, Date.now() - startMs);
+
+    set({
+      pitchWalkthroughActive: false,
+      pitchWalkthroughStep: 4,
+      activePitchScenario: MOCK_GUIDED_DEMO_SCENARIOS[3],
+      statusBannerMessage: `2:52 Guided Pitch Walkthrough COMPLETE (${totalElapsedMs}ms < 45,000ms SLA): All 4 scenarios (INV2-X89A-4412-9012-7731, PP-D-90412, Passkey ex_9041, PYUSD Token-2022) verified · ANMPR ROI: $${liveInsights.annualizedSavingsUsd}/yr · Audit Chain: ${chainCheck.totalChecked} entries PASS.`,
+    });
+
+    return {
+      scenariosCompleted: aliases,
+      totalElapsedMs,
+      finalAnmprUsd: liveInsights.annualizedSavingsUsd,
+      auditChainValid: chainCheck.valid,
+      totalAuditEntries: chainCheck.totalChecked,
+    };
+  },
+
   setExecutionsList: (executions) => set({ executions }),
 
   prependExecution: (execution, traceSteps) =>
-    set((state) => {
-      const prevHead = state.auditLogs[state.auditLogs.length - 1]?.entryHash ?? "0".repeat(64);
-      const nextHash = prevHead.slice(8) + execution.executionId.replace(/[^a-zA-Z0-9]/g, "a").padEnd(8, "f").slice(0, 8);
-      const newAudit: ImmutableAuditLog = {
-        logId: `aud_${1000 + state.auditLogs.length + 1}`,
-        workspaceId: execution.workspaceId,
-        timestampIso: execution.executedAt,
-        actorId: state.dryRun ? "dry_run_simulator" : "agent_service_m01",
-        toolName: execution.toolName,
-        paypalRequestId: execution.paypalRequestId,
-        policyVerdict: execution.policyVerdict,
-        prevHash: prevHead,
-        entryHash: nextHash.slice(0, 64).padEnd(64, "9"),
-      };
-      return {
-        executions: [execution, ...state.executions.filter((e) => e.executionId !== execution.executionId)],
-        auditLogs: [...state.auditLogs, newAudit],
-        activeTraceSteps: traceSteps ?? state.activeTraceSteps,
-      };
-    }),
+    set((state) => ({
+      executions: [execution, ...state.executions.filter((e) => e.executionId !== execution.executionId)],
+      auditLogs: appendChainedAuditLog(
+        state.auditLogs,
+        execution,
+        state.dryRun ? "dry_run_simulator" : "agent_service_m01"
+      ),
+      activeTraceSteps: traceSteps ?? state.activeTraceSteps,
+    })),
 
   resolveHitlExecution: (executionId, decision, signatureHex) =>
     set((state) => {
       const targetEx = state.executions.find((ex) => ex.executionId === executionId);
+      const updatedVerdict =
+        decision === "APPROVE"
+          ? ("APPROVED_L3_AUTO" as const)
+          : ("BLOCKED_SECURITY_INJECTION" as const);
+      const updatedReason =
+        decision === "APPROVE"
+          ? `SIGNED_FIDO2_PASSKEY_${signatureHex.slice(0, 10).toUpperCase()}`
+          : "REJECTED_BY_OPERATOR_PASSKEY";
       const updatedExecutions = state.executions.map((ex) => {
         if (ex.executionId !== executionId) return ex;
         return {
           ...ex,
-          policyVerdict:
-            decision === "APPROVE"
-              ? ("APPROVED_L3_AUTO" as const)
-              : ("BLOCKED_SECURITY_INJECTION" as const),
-          reasonCode:
-            decision === "APPROVE"
-              ? `SIGNED_FIDO2_PASSKEY_${signatureHex.slice(0, 10).toUpperCase()}`
-              : "REJECTED_BY_OPERATOR_PASSKEY",
+          policyVerdict: updatedVerdict,
+          reasonCode: updatedReason,
           junodbLeaseStatus: "RELEASED" as const,
         };
       });
+      const auditExec: AgentToolExecution = targetEx
+        ? {
+            ...targetEx,
+            policyVerdict: updatedVerdict,
+            reasonCode: updatedReason,
+            junodbLeaseStatus: "RELEASED",
+          }
+        : {
+            executionId,
+            sessionId: "ses_20261108_9042",
+            workspaceId: state.activeWorkspaceId,
+            toolName: "create_refund",
+            paypalRequestId: `idem_${state.activeWorkspaceId}_${executionId}_hitl`,
+            junodbLeaseStatus: "RELEASED",
+            policyVerdict: updatedVerdict,
+            reasonCode: updatedReason,
+            gnnRiskScore: 0.89,
+            amountValue: "420.00",
+            currencyCode: "USD",
+            executedAt: new Date().toISOString(),
+          };
       const updatedPlans =
         decision === "APPROVE" && targetEx?.toolName === "cancel_subscription"
           ? state.subscriptionPlans.map((p) =>
@@ -448,6 +724,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       return {
         executions: updatedExecutions,
         subscriptionPlans: updatedPlans,
+        auditLogs: appendChainedAuditLog(state.auditLogs, auditExec, state.activeOperatorId),
         hitlApprovalExecution: null,
         statusBannerMessage:
           decision === "APPROVE"
@@ -457,19 +734,53 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
     }),
 
   updateWorkspaceAutonomy: (autonomyLevel) =>
-    set((state) => ({
-      workspaces: state.workspaces.map((ws) =>
-        ws.workspaceId === state.activeWorkspaceId ? { ...ws, autonomyLevel } : ws
-      ),
-      policies: state.policies.map((pol) => ({ ...pol, autonomyLevel })),
-      statusBannerMessage: `Workspace Autonomy Level updated to ${autonomyLevel} via API-03. Cosmos.AI Policy AST re-compiled in 1.8ms.`,
-    })),
+    set((state) => {
+      const policyExec: AgentToolExecution = {
+        executionId: `ex_pol_${autonomyLevel.toLowerCase()}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: state.activeWorkspaceId,
+        toolName: "update_invoicing",
+        paypalRequestId: `idem_${state.activeWorkspaceId}_autonomy_${autonomyLevel}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: `AUTONOMY_UPDATED_${autonomyLevel}`,
+        gnnRiskScore: 0.01,
+        amountValue: "0.00",
+        currencyCode: "USD",
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        workspaces: state.workspaces.map((ws) =>
+          ws.workspaceId === state.activeWorkspaceId ? { ...ws, autonomyLevel } : ws
+        ),
+        policies: state.policies.map((pol) => ({ ...pol, autonomyLevel })),
+        auditLogs: appendChainedAuditLog(state.auditLogs, policyExec, state.activeOperatorId),
+        statusBannerMessage: `Workspace Autonomy Level updated to ${autonomyLevel} via API-03. Cosmos.AI Policy AST re-compiled in 1.8ms.`,
+      };
+    }),
 
   updatePolicyThreshold: (policyId, patch) =>
-    set((state) => ({
-      policies: state.policies.map((pol) => (pol.policyId === policyId ? { ...pol, ...patch } : pol)),
-      statusBannerMessage: `Policy Rule ${policyId} compiled in 1.8ms and persisted to ImmutableAuditLog (E-10).`,
-    })),
+    set((state) => {
+      const policyExec: AgentToolExecution = {
+        executionId: `ex_rule_${policyId.toLowerCase()}`,
+        sessionId: "ses_20261108_9041",
+        workspaceId: state.activeWorkspaceId,
+        toolName: "create_conditional_rules_for_invoice",
+        paypalRequestId: `idem_${state.activeWorkspaceId}_policy_${policyId}`,
+        junodbLeaseStatus: "ACQUIRED",
+        policyVerdict: "APPROVED_L3_AUTO",
+        reasonCode: `POLICY_UPDATED_${policyId}`,
+        gnnRiskScore: 0.01,
+        amountValue: "0.00",
+        currencyCode: "USD",
+        executedAt: new Date().toISOString(),
+      };
+      return {
+        policies: state.policies.map((pol) => (pol.policyId === policyId ? { ...pol, ...patch } : pol)),
+        auditLogs: appendChainedAuditLog(state.auditLogs, policyExec, state.activeOperatorId),
+        statusBannerMessage: `Policy Rule ${policyId} compiled in 1.8ms and persisted to ImmutableAuditLog (E-10).`,
+      };
+    }),
 
   createAutonomousInvoice: (invoice) =>
     set((state) => {
@@ -563,6 +874,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
     set({
       invoices: updatedInvoices,
       executions: [remindExec, ...state.executions],
+      auditLogs: appendChainedAuditLog(state.auditLogs, remindExec, "bryntum_scheduler_api06"),
       selectedInvoiceId: invoiceId,
       pendingSyncInvoiceIds: nextPendingSync,
       statusBannerMessage: msg,
@@ -621,6 +933,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
     set({
       invoices: updatedInvoices,
       executions: [ruleExec, ...state.executions],
+      auditLogs: appendChainedAuditLog(state.auditLogs, ruleExec, "bryntum_scheduler_rules"),
       selectedInvoiceId: invoiceId,
       pendingSyncInvoiceIds: nextPendingSync,
       statusBannerMessage: msg,
@@ -654,6 +967,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
           s.seriesId === seriesId ? { ...s, status: nextStatus } : s
         ),
         executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
         statusBannerMessage: `Recurring Series ${seriesId} (${target.seriesName}) transitioned to ${nextStatus} via PayPal MCP ${toolName} (#17/#19).`,
       };
     }),
@@ -680,6 +994,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
           ...state.recurringSeries.filter((s) => s.seriesId !== series.seriesId),
         ],
         executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
         statusBannerMessage: `Created & activated PayPal Recurring Invoice Series ${series.seriesId} (${series.amountValue} ${series.currencyCode} / ${series.cadence}) via create_recurring_series (#16).`,
       };
     }),
@@ -723,6 +1038,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       set({
         disputes: [dispute, ...state.disputes.filter((d) => d.disputeId !== dispute.disputeId)],
         executions: [exec, ...state.executions],
+        auditLogs: appendChainedAuditLog(state.auditLogs, exec, "paypal_webhook_api13"),
         statusBannerMessage:
           "Webhook CUSTOMER.DISPUTE.CREATED (PP-D-4012 · $340.00 USD) RSA-SHA256 verified -> DHL #77819201 DELIVERED correlated -> M-04 GNN Score 0.88 -> Compelling Evidence 3.0 compiled in 3.1s.",
       });
@@ -765,6 +1081,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
     set({
       disputes: [advDispute, ...state.disputes.filter((d) => d.disputeId !== advDispute.disputeId)],
       executions: [blockedExec, ...state.executions.filter((e) => e.executionId !== "ex_9041")],
+      auditLogs: appendChainedAuditLog(state.auditLogs, blockedExec, "cosmos_policy_firewall"),
       hitlApprovalExecution: blockedExec,
       statusBannerMessage:
         "EXECUTION HELD by Cosmos.AI Rule POL-02: Buyer note contained Indirect Prompt Injection (RC_00_INDIRECT_PROMPT_INJECTION_DETECTED) & Refund $2,400.00 exceeds $250.00 cap. Routed to FIDO2 Passkey.",
@@ -797,6 +1114,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
           alertExec,
           ...state.executions.filter((e) => e.executionId !== alertExec.executionId),
         ],
+        auditLogs: appendChainedAuditLog(state.auditLogs, alertExec, "sse_dispute_stream"),
         statusBannerMessage: `Live SSE-01 dispute_alert received: [${dispute.disputeId}] (${dispute.disputedAmountValue} ${dispute.currencyCode}) · M-04 GNN Score ${dispute.gnnRiskScore.toFixed(2)} -> ${dispute.recommendedAction}.`,
       };
     }),

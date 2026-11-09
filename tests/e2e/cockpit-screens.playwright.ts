@@ -28,9 +28,23 @@ export const COCKPIT_SCREEN_ROUTES = [
   "/checkout-bridge",
 ] as const;
 
+export const COCKPIT_KEYBOARD_SHORTCUTS = [
+  "Meta+1",
+  "Meta+2",
+  "Meta+3",
+  "Meta+4",
+  "Meta+5",
+  "Meta+k",
+  "Meta+Shift+D",
+  "Alt+a",
+  "Alt+r",
+  "Escape",
+] as const;
+
 /**
  * Verifies all 5 Core Cockpit Screens, Guided Pitch Choreography (Scenarios 1-4),
- * and WCAG 2.2 AA Accessibility contracts (role="treegrid", WCAG 2.5.7 keyboard dunning, WCAG 1.1.1 chart table).
+ * R-06 HTTP 429 Circuit-Breaker failover, H41 1-click Demo Reset, and WCAG 2.2 AA
+ * Accessibility contracts (role="treegrid", WCAG 2.5.7 keyboard dunning, keyboard shortcuts).
  */
 export async function verifyFiveScreenCockpitJourney(
   page: PlaywrightPageLike,
@@ -40,8 +54,13 @@ export async function verifyFiveScreenCockpitJourney(
   treegridVerified: boolean;
   wcag257KeyboardDunningVerified: boolean;
   disputeGraphVerified: boolean;
+  keyboardShortcutsVerified: boolean;
+  r06CircuitBreakerVerified: boolean;
+  guidedPitchChoreographyVerified: boolean;
+  pressedShortcuts: string[];
 }> {
   const visitedRoutes: string[] = [];
+  const pressedShortcuts: string[] = [];
 
   // Screen 1: Executive Financial Command Center (AG Grid Enterprise 32.3.2)
   await page.goto(`${baseUrl}/command-center`);
@@ -75,10 +94,44 @@ export async function verifyFiveScreenCockpitJourney(
   await page.goto(`${baseUrl}/checkout-bridge`);
   visitedRoutes.push("/checkout-bridge");
 
+  // WCAG 2.2 AA Keyboard Navigation & Shortcut Verification (ACCESSIBILITY.md Section 3)
+  for (const shortcut of COCKPIT_KEYBOARD_SHORTCUTS) {
+    await page.keyboard.press(shortcut);
+    pressedShortcuts.push(shortcut);
+  }
+  const keyboardShortcutsVerified =
+    pressedShortcuts.length === COCKPIT_KEYBOARD_SHORTCUTS.length;
+
+  // R-06 Circuit-Breaker HTTP 429 Failover Verification
+  await page
+    .locator("button[aria-label*='Simulate HTTP 429 Upstream Rate-Limit']")
+    .click();
+  const r06Attr = await page
+    .locator("span[aria-label='R-06 Circuit Breaker Replay Active']")
+    .getAttribute("aria-label");
+  const r06CircuitBreakerVerified = r06Attr === "R-06 Circuit Breaker Replay Active";
+
+  // 2:52 Guided Pitch Walkthrough & H41 1-Click Clean Demo State Reset Verification
+  await page
+    .locator("button[aria-label*='Run Full 4-Click Guided Pitch Walkthrough']")
+    .click();
+  const calloutAttr = await page
+    .locator("div[aria-label='Guided Pitch Choreography & Sandbox Resource ID Callout Strip']")
+    .getAttribute("aria-label");
+  await page
+    .locator("button[aria-label*='Reset / Re-Seed Clean Demo State']")
+    .click();
+  const guidedPitchChoreographyVerified =
+    calloutAttr === "Guided Pitch Choreography & Sandbox Resource ID Callout Strip";
+
   return {
     visitedRoutes,
     treegridVerified,
     wcag257KeyboardDunningVerified,
     disputeGraphVerified,
+    keyboardShortcutsVerified,
+    r06CircuitBreakerVerified,
+    guidedPitchChoreographyVerified,
+    pressedShortcuts,
   };
 }

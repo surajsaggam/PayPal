@@ -34,6 +34,9 @@ import {
   MOCK_INVOICES,
   MOCK_MERCHANT_INSIGHTS,
   MOCK_POLICY_RULES,
+  MOCK_SIGNED_SANDBOX_TRANSCRIPTS,
+  resolveSignedSandboxTranscript,
+  type SignedSandboxTranscript,
 } from "@payops/shared/mock-fixtures";
 import { normalizeMultilingualAgentPrompt } from "./formatters";
 import { useCockpitStore } from "../stores/useCockpitStore";
@@ -43,6 +46,27 @@ const API_BASE_URL =
   "http://localhost:4000";
 
 const LIVE_TIMEOUT_MS = 2500;
+const REPLAY_CACHE_LATENCY_MS = 8;
+
+export function getSignedSandboxTranscriptForPath(path: string): SignedSandboxTranscript {
+  return resolveSignedSandboxTranscript(path);
+}
+
+/**
+ * R-06 & TKT-035: Simulates an upstream PayPal Developer Sandbox HTTP 429 rate-limit response
+ * and triggers deterministic <50ms circuit-breaker failover to DEMO_REPLAY_MODE (uiState: "offline").
+ */
+export async function simulateUpstreamHttp429CircuitBreaker(
+  endpointPath = "/api/v1/agent/execute"
+): Promise<SignedSandboxTranscript> {
+  await new Promise((r) => setTimeout(r, REPLAY_CACHE_LATENCY_MS));
+  return useCockpitStore
+    .getState()
+    .triggerHttp429CircuitBreakerFailover(
+      `HTTP 429 Upstream Rate-Limit on ${endpointPath} (api-m.sandbox.paypal.com)`,
+      endpointPath
+    );
+}
 
 async function fetchWithReplayFallback<T>(
   path: string,
@@ -50,8 +74,13 @@ async function fetchWithReplayFallback<T>(
   fallbackFactory: () => Promise<T> | T
 ): Promise<T> {
   const store = useCockpitStore.getState();
+  const transcript = resolveSignedSandboxTranscript(path);
+
   if (store.apiMode === "mock" || store.apiMode === "replay") {
-    await new Promise((r) => setTimeout(r, 90));
+    await new Promise((r) => setTimeout(r, REPLAY_CACHE_LATENCY_MS));
+    if (store.apiMode === "replay") {
+      store.recordReplayTranscriptHit(transcript);
+    }
     return fallbackFactory();
   }
 
@@ -63,6 +92,7 @@ async function fetchWithReplayFallback<T>(
       ...init,
       headers: {
         "Content-Type": "application/json",
+        "X-PayOps-Signed-Transcript-Fallback": transcript.transcriptId,
         ...(init?.headers ?? {}),
       },
       signal: controller.signal,
@@ -70,8 +100,13 @@ async function fetchWithReplayFallback<T>(
     clearTimeout(timer);
 
     if (response.status === 429 || response.status >= 500) {
-      // R-06 Automatic Circuit Breaker -> engage deterministic replay fallback
-      useCockpitStore.getState().setApiMode("replay");
+      // R-06 Automatic Circuit Breaker -> engage deterministic replay fallback in <50ms
+      useCockpitStore
+        .getState()
+        .triggerHttp429CircuitBreakerFailover(
+          `HTTP ${response.status} upstream response on ${path}`,
+          path
+        );
       return fallbackFactory();
     }
 
@@ -83,10 +118,17 @@ async function fetchWithReplayFallback<T>(
   } catch {
     clearTimeout(timer);
     // R-06 Automatic Circuit Breaker on network disconnect or >2.5s timeout
-    useCockpitStore.getState().setApiMode("replay");
+    useCockpitStore
+      .getState()
+      .triggerHttp429CircuitBreakerFailover(
+        `Upstream network disconnect / >2.5s timeout on ${path}`,
+        path
+      );
     return fallbackFactory();
   }
 }
+
+export { MOCK_SIGNED_SANDBOX_TRANSCRIPTS };
 
 /** API-01: POST /api/v1/agent/execute */
 export async function executeAgentPrompt(req: AgentExecuteRequest): Promise<AgentExecuteResponse> {

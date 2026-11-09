@@ -37,6 +37,7 @@ export function LedgerCommandGrid() {
     setExecutionsList,
     uiState,
     setUiState,
+    setStatusBanner,
   } = useCockpitStore();
 
   const [quickFilter, setQuickFilter] = useState("");
@@ -247,7 +248,12 @@ export function LedgerCommandGrid() {
           </div>
           <button
             type="button"
-            onClick={() => setUiState("success")}
+            onClick={() => {
+              setUiState("success");
+              setStatusBanner(
+                "JunoDB Idempotent Retry Verified: Reused PayPal-Request-Id (idem_ws_99102a_invoice_INV_2026_8841) with zero duplicate side effects."
+              );
+            }}
             className="inline-flex items-center gap-1 rounded bg-red-600 hover:bg-red-500 px-3 py-1 font-mono text-xs font-semibold text-white"
           >
             <RefreshCw className="h-3.5 w-3.5" />

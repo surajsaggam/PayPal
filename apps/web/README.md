@@ -26,12 +26,16 @@ Built on **Next.js 15 (App Router)**, **React 18/19**, **Tailwind CSS (OKLCH Dar
   3. **`replay`**: Instant circuit-breaker fallback (`DEMO_REPLAY_MODE`, `R-06`) if `api-m.sandbox.paypal.com` returns `HTTP 429` or exceeds `2,500ms` during live judging.
 - **Real-Time SSE Event Stream (`useSseExecutionStream.ts`, `SSE-01`):**
   - Subscribes to `execution_delta`, `dispute_alert`, and `policy_hold` events and updates both the AG Grid Enterprise viewport (`gridApi.applyTransactionAsync`) and the Zustand cockpit store without page reloads or hydration mismatches.
-- **1-Click Pitch Choreography Bar (`WebhookSimulatorToolbar.tsx`, `TKT-035`, `TKT-036`):**
-  - Provides 1-click triggers for all 4 live browser scenes in `docs/00-overview/PITCH.md`:
-    1. `1. Smart Invoice ($1,850 + QR)` (`DEMO_1_SMART_INVOICE`)
-    2. `2. INR Dispute Defense ($340)` (`DEMO_2_DISPUTE_DEFENSE`)
-    3. `3. Block Prompt Injection ($2,400)` (`DEMO_3_INJECTION_BLOCK`)
-    4. `4. PYUSD Solana Bridge ($1,850)` (`DEMO_4_PYUSD_BRIDGE`)
+- **1-Click Pitch Choreography Bar (`WebhookSimulatorToolbar.tsx`, `TKT-035`, `TKT-036`, `R-06`, `H41`):**
+  - Provides 1-click triggers for all 4 live browser scenes in `docs/00-overview/PITCH.md` plus full `2:52` choreography, `R-06` circuit-breaker simulation, and `H41` clean state reset:
+    1. `▶ Run Full 4-Click Guided Pitch Walkthrough (2:52 Choreography)` (`SCENARIO_1_INVOICE`..`SCENARIO_4_PYUSD` with Sandbox IDs & 13 Devpost judge attribution badges)
+    2. `1. Smart Invoice + QR ($1,850)` (`DEMO_1_SMART_INVOICE` / `SCENARIO_1_INVOICE`)
+    3. `2. Bryntum Dunning Drag (API-06)` (`send_invoice_reminder` with 72h FDCPA/RBI guard)
+    4. `3. Dispute Webhook + GNN Defense ($340)` (`DEMO_2_DISPUTE_DEFENSE` / `SCENARIO_2_DISPUTE`)
+    5. `4. Prompt Injection Block + Passkey ($2,400)` (`DEMO_3_INJECTION_BLOCK` / `SCENARIO_3_INJECTION`)
+    6. `PYUSD Solana Bridge ($650)` (`DEMO_4_PYUSD_BRIDGE` / `SCENARIO_4_PYUSD`)
+    7. `Simulate HTTP 429 Upstream Rate-Limit -> Auto-Failover (R-06)` (`<50ms` switchover to `DEMO_REPLAY_MODE` signed transcripts)
+    8. `Reset / Re-Seed Clean Demo State (H41 Pitch Reset)` (1-click clean restoration of all workspaces, invoices, disputes, orders, policies, and audit logs)
 
 ---
 
@@ -51,7 +55,7 @@ Built on **Next.js 15 (App Router)**, **React 18/19**, **Tailwind CSS (OKLCH Dar
 Set-Location "d:\PayPal\apps\web"
 node "..\..\node_modules\next\dist\bin\next" dev --port 3000
 
-# 2. Run Dev 2 Frontend Cockpit Unit & Integration Tests (11/11 tests)
+# 2. Run Dev 2 Frontend Cockpit Unit & Integration Tests (13/13 tests)
 Set-Location "d:\PayPal"
 npx --yes vitest run --config "d:\PayPal\apps\web\vitest.config.ts"
 
