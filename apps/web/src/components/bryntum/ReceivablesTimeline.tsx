@@ -2,11 +2,10 @@
 
 /**
  * PayOps AI (PayPal Sentinel) — Bryntum Scheduler Pro 6.1.2 Receivables & Subscription Timeline
- * Maps to: F-08 ($3,000 Bryntum Sponsor Track), F-03, US-05, US-06, US-13, API-06, API-12, R-11
- * Loaded via next/dynamic({ ssr: false }) in Screen 3.
- * Supports two-way onEventDrop + onEventResizeEnd, SVG dependency arrows, Recurring Series (#16-#19),
- * and all 5 UI states (empty, loading, error, offline PENDING_SYNC, success).
- * Write Owner: Dev 2 (100%)
+ * Increase.com Light-First Editorial Redesign:
+ *  - Clean bento surface with light-mode SVG dependency graph and tactile milestone bars
+ *  - Preserves two-way onEventDrop + onEventResizeEnd, WCAG 2.5.7 keyboard selector, Recurring Series (#16-#19),
+ *    Subscription Plans (API-12), and all 5 UI states
  */
 
 import React, { useState } from "react";
@@ -73,11 +72,6 @@ export default function ReceivablesTimeline() {
   const selectedInvoice =
     invoices.find((i) => i.invoiceId === selectedInvoiceId) ?? invoices[0] ?? null;
 
-  /**
-   * Bryntum Scheduler Pro 6.1.2: onEventDrop handler
-   * Optimistically reschedules the invoice dunning milestone, enforces the 72h R-11 guard,
-   * queues PENDING_SYNC if offline, or snaps back on error.
-   */
   const handleMilestoneDrop = async (invoice: PayPalInvoiceRecord, targetDate: string) => {
     setDraggingInvoiceId(null);
     setSelectedInvoiceId(invoice.invoiceId);
@@ -104,10 +98,6 @@ export default function ReceivablesTimeline() {
     }
   };
 
-  /**
-   * Bryntum Scheduler Pro 6.1.2: onEventResizeEnd handler
-   * Adjusts conditional discount/late-fee percentage or extends the cutoff window by +1 slot.
-   */
   const handleMilestoneResizeEnd = (
     invoice: PayPalInvoiceRecord,
     newPercentage: string,
@@ -131,49 +121,50 @@ export default function ReceivablesTimeline() {
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/90 shadow-xl overflow-hidden space-y-3">
-      {/* Bryntum Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 bg-slate-950 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-sky-400" />
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-              Bryntum Scheduler Pro 6.1.2 — Interactive AR Dunning &amp; Recurring Series Canvas (F-08 · US-13)
-            </h3>
-            <p className="text-[11px] font-mono text-slate-400">
-              Two-way onEventDrop &amp; onEventResizeEnd bound to API-06 (`send_invoice_reminder` + 72h R-11 velocity guard)
-            </p>
+    <div className="surface-bento rounded-2xl p-6 space-y-5">
+      {/* Header Bar */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-ink-secondary" />
+            <h2 className="text-base font-semibold tracking-tight text-ink">
+              Receivables &amp; Payment Schedule Timeline
+            </h2>
           </div>
+          <p className="mt-1 text-xs text-ink-muted">
+            Click or drag any milestone to reschedule payment reminders with automatic 72-hour
+            customer quiet-period protection.
+          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 font-mono text-[11px]">
-          <span className="rounded border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-emerald-300">
-            ★ 2% Early Discount Window
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="rounded-pill border border-status-success-border bg-status-success-bg px-2.5 py-0.5 font-medium text-status-success-text">
+            ★ Early-Pay Discount
           </span>
-          <span className="rounded border border-sky-500/40 bg-sky-500/15 px-2 py-0.5 text-sky-300">
-            🔔 Smart Dunning Reminder
+          <span className="rounded-pill border border-status-info-border bg-status-info-bg px-2.5 py-0.5 font-medium text-status-info-text">
+            Payment Due Date
           </span>
-          <span className="rounded border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-amber-300">
-            ⚠️ 1.5% Late Fee Rule
+          <span className="rounded-pill border border-status-warning-border bg-status-warning-bg px-2.5 py-0.5 font-medium text-status-warning-text">
+            Late Fee Window
           </span>
         </div>
       </div>
 
-      {/* 5 Interactive UI States (UI_SPEC.md Section 4.3) */}
+      {/* 5 Interactive UI States */}
       {uiState === "offline" && (
         <div
           role="status"
-          className="mx-4 flex items-center justify-between rounded-lg border border-amber-500/40 bg-amber-950/40 px-3.5 py-2 text-xs font-mono text-amber-200"
+          className="flex items-center justify-between rounded-xl border border-status-warning-border bg-status-warning-bg px-4 py-2.5 text-xs font-mono text-status-warning-text"
         >
           <span className="inline-flex items-center gap-2">
-            <WifiOff className="h-4 w-4 text-amber-400 shrink-0" />
-            OFFLINE QUEUE ACTIVE (R-06): Timeline drag &amp; resize mutations are queued locally with{" "}
-            <strong className="text-amber-300">PENDING_SYNC</strong> badges ({pendingSyncInvoiceIds.length} queued).
+            <WifiOff className="h-4 w-4 shrink-0" />
+            OFFLINE QUEUE ACTIVE (R-06): Timeline drag &amp; resize mutations queued locally with{" "}
+            <strong>PENDING_SYNC</strong> ({pendingSyncInvoiceIds.length} queued).
           </span>
           <button
             type="button"
             onClick={() => setUiState("success")}
-            className="rounded border border-amber-400/50 px-2 py-0.5 text-[11px] hover:bg-amber-900/50 cursor-pointer"
+            className="btn-outline-subtle px-2.5 py-0.5 text-[11px] cursor-pointer"
           >
             Flush Queue Now
           </button>
@@ -183,16 +174,17 @@ export default function ReceivablesTimeline() {
       {uiState === "error" && (
         <div
           role="alert"
-          className="mx-4 flex items-center justify-between rounded-lg border border-red-500/50 bg-red-950/50 px-3.5 py-2 text-xs font-mono text-red-200"
+          className="flex items-center justify-between rounded-xl border border-status-danger-border bg-status-danger-bg px-4 py-2.5 text-xs font-mono text-status-danger-text"
         >
           <span className="inline-flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-            API-06 Dunning Sync Error: Timeline bars automatically snap back to their last verified Sandbox date on failure.
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            API-06 Dunning Sync Error: Timeline bars automatically snap back to their last verified
+            Sandbox date.
           </span>
           <button
             type="button"
             onClick={() => setUiState("success")}
-            className="rounded bg-red-600 hover:bg-red-500 px-2.5 py-1 text-[11px] font-semibold text-white cursor-pointer"
+            className="btn-secondary-dark px-3 py-1 text-[11px] cursor-pointer"
           >
             Restore Sandbox Link
           </button>
@@ -202,30 +194,31 @@ export default function ReceivablesTimeline() {
       {(uiState === "loading" || syncingInvoiceId !== null) && (
         <div
           aria-busy="true"
-          className="mx-4 flex items-center justify-between rounded-lg border border-sky-500/40 bg-sky-950/40 px-3.5 py-2 text-xs font-mono text-sky-200"
+          className="flex items-center justify-between rounded-xl border border-status-info-border bg-status-info-bg px-4 py-2.5 text-xs font-mono text-status-info-text"
         >
           <span className="inline-flex items-center gap-2">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin text-sky-400" />
-            Optimistic Bryntum Timeline Sync: Updating PayPal Invoice v2 conditional rules &amp; reminder schedule via API-06...
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            Optimistic Timeline Sync: Updating PayPal Invoice v2 conditional rules &amp; reminder
+            schedule via API-06...
           </span>
-          <span className="text-[10px] text-sky-300">PayPal-Request-Id Locked</span>
+          <span className="text-[10px]">PayPal-Request-Id Locked</span>
         </div>
       )}
 
       {syncToast && (
         <div
           role="status"
-          className={`mx-4 flex items-center justify-between rounded-lg border px-3.5 py-2 text-xs font-mono ${
+          className={`flex items-center justify-between rounded-xl border px-4 py-2.5 text-xs font-mono ${
             syncToast.ok
-              ? "border-emerald-500/50 bg-emerald-950/50 text-emerald-200"
-              : "border-red-500/50 bg-red-950/50 text-red-200"
+              ? "border-status-success-border bg-status-success-bg text-status-success-text"
+              : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
           }`}
         >
           <span className="inline-flex items-center gap-2">
             {syncToast.ok ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
             ) : (
-              <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
+              <AlertCircle className="h-4 w-4 shrink-0" />
             )}
             {syncToast.text}
           </span>
@@ -239,27 +232,28 @@ export default function ReceivablesTimeline() {
         </div>
       )}
 
-      {/* Active Invoice SVG Dependency Chain Visualizer (UI_SPEC.md Section 4.2 & 4.3) */}
+      {/* Active Invoice SVG Dependency Chain Visualizer */}
       {selectedInvoice && uiState !== "empty" && (
-        <div className="mx-4 rounded-lg border border-slate-800 bg-slate-950/90 px-3.5 py-2.5 space-y-1.5">
-          <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[11px]">
-            <span className="text-slate-300 font-semibold flex items-center gap-1.5">
-              <SlidersHorizontal className="h-3.5 w-3.5 text-sky-400" />
-              Bryntum Dependency Chain for{" "}
-              <span className="text-sky-300 font-bold">{selectedInvoice.invoiceNumber}</span> (
-              {selectedInvoice.recipientEmail}):
+        <div className="dot-grid-surface rounded-xl border border-hairline p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <span className="font-medium text-ink flex items-center gap-1.5">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-ink-secondary" />
+              Payment Schedule for{" "}
+              <strong className="font-semibold text-ink">{selectedInvoice.invoiceNumber}</strong>
+              <span className="text-ink-muted">({selectedInvoice.recipientEmail})</span>
             </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-slate-400 text-[10px]">onEventResizeEnd Rule:</span>
+
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="text-ink-muted text-[11px]">Early Discount:</span>
               {["1.50", "2.00", "3.00"].map((pct) => (
                 <button
                   key={pct}
                   type="button"
                   onClick={() => handleMilestoneResizeEnd(selectedInvoice, pct, false)}
-                  className={`rounded border px-1.5 py-0.5 text-[10px] cursor-pointer transition ${
+                  className={`rounded-md border px-2 py-0.5 text-[11px] transition-all duration-150 cursor-pointer ${
                     selectedInvoice.conditionalRule?.percentage === pct
-                      ? "border-emerald-500 bg-emerald-950 text-emerald-200 font-bold"
-                      : "border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-500"
+                      ? "border-accent-dark bg-accent-dark text-accent-dark-ink font-semibold"
+                      : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:text-ink"
                   }`}
                 >
                   {pct}%
@@ -274,17 +268,17 @@ export default function ReceivablesTimeline() {
                     true
                   )
                 }
-                className="rounded border border-sky-500/50 bg-sky-950/60 hover:bg-sky-900/60 px-2 py-0.5 text-[10px] text-sky-200 cursor-pointer"
-                title="Extend discount cutoff window by +1 timeline slot (onEventResizeEnd)"
+                className="rounded-md border border-hairline bg-elevated px-2.5 py-0.5 text-[11px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
+                title="Extend early-payment discount window by +1 date slot"
               >
-                ↔ Extend Cutoff (+1 Slot)
+                Extend Window (+1 Slot)
               </button>
             </div>
           </div>
 
           <svg
             viewBox="0 0 760 44"
-            className="w-full h-11 rounded bg-slate-900/80 border border-slate-800/70"
+            className="w-full h-11 rounded-lg bg-elevated border border-hairline shadow-2xs"
             role="img"
             aria-label={`Bryntum Dependency Graph for ${selectedInvoice.invoiceNumber}`}
           >
@@ -298,47 +292,140 @@ export default function ReceivablesTimeline() {
                 markerHeight="5"
                 orient="auto-start-reverse"
               >
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#38BDF8" />
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748B" />
               </marker>
             </defs>
 
             {/* Step 1: Sent */}
-            <rect x="8" y="8" width="145" height="28" rx="5" fill="#0F172A" stroke="#38BDF8" strokeWidth="1.2" />
-            <text x="80" y="25" textAnchor="middle" fill="#E2E8F0" fontSize="9.5" fontFamily="monospace">
-              1. Sent ({selectedInvoice.amountValue} {selectedInvoice.currencyCode})
+            <rect
+              x="8"
+              y="8"
+              width="145"
+              height="28"
+              rx="6"
+              fill="#F8FAFC"
+              stroke="#CBD5E1"
+              strokeWidth="1.2"
+            />
+            <text
+              x="80"
+              y="25"
+              textAnchor="middle"
+              fill="#0F172A"
+              fontSize="10"
+              fontFamily="var(--font-sans), sans-serif"
+              fontWeight="600"
+            >
+              1. Sent (${selectedInvoice.amountValue})
             </text>
 
-            <line x1="153" y1="22" x2="188" y2="22" stroke="#38BDF8" strokeWidth="1.5" markerEnd="url(#bryntum-arrow)" />
+            <line
+              x1="153"
+              y1="22"
+              x2="188"
+              y2="22"
+              stroke="#94A3B8"
+              strokeWidth="1.5"
+              markerEnd="url(#bryntum-arrow)"
+            />
 
             {/* Step 2: Early Discount / Rule Cutoff */}
-            <rect x="192" y="8" width="185" height="28" rx="5" fill="#064E3B" stroke="#10B981" strokeWidth="1.2" />
-            <text x="284" y="25" textAnchor="middle" fill="#A7F3D0" fontSize="9.5" fontFamily="monospace" fontWeight="bold">
-              2. ★ {selectedInvoice.conditionalRule?.percentage ?? "2.00"}% Cutoff ({selectedInvoice.conditionalRule?.triggerDate?.slice(5) ?? "11-12"})
+            <rect
+              x="192"
+              y="8"
+              width="185"
+              height="28"
+              rx="6"
+              fill="#ECFDF5"
+              stroke="#A7F3D0"
+              strokeWidth="1.2"
+            />
+            <text
+              x="284"
+              y="25"
+              textAnchor="middle"
+              fill="#065F46"
+              fontSize="10"
+              fontFamily="var(--font-sans), sans-serif"
+              fontWeight="600"
+            >
+              2. {selectedInvoice.conditionalRule?.percentage ?? "2.00"}% Early Discount (
+              {selectedInvoice.conditionalRule?.triggerDate?.slice(5) ?? "11-12"})
             </text>
 
-            <line x1="377" y1="22" x2="412" y2="22" stroke="#38BDF8" strokeWidth="1.5" markerEnd="url(#bryntum-arrow)" />
+            <line
+              x1="377"
+              y1="22"
+              x2="412"
+              y2="22"
+              stroke="#94A3B8"
+              strokeWidth="1.5"
+              markerEnd="url(#bryntum-arrow)"
+            />
 
-            {/* Step 3: Smart Dunning Reminder (API-06) */}
-            <rect x="416" y="8" width="155" height="28" rx="5" fill="#0C4A6E" stroke="#38BDF8" strokeWidth="1.2" />
-            <text x="493" y="25" textAnchor="middle" fill="#BAE6FD" fontSize="9.5" fontFamily="monospace">
-              3. 🔔 Remind (72h Guard OK)
+            {/* Step 3: Smart Dunning Reminder */}
+            <rect
+              x="416"
+              y="8"
+              width="155"
+              height="28"
+              rx="6"
+              fill="#EFF6FF"
+              stroke="#BFDBFE"
+              strokeWidth="1.2"
+            />
+            <text
+              x="493"
+              y="25"
+              textAnchor="middle"
+              fill="#1E40AF"
+              fontSize="10"
+              fontFamily="var(--font-sans), sans-serif"
+              fontWeight="600"
+            >
+              3. Friendly Reminder (72h Safe)
             </text>
 
-            <line x1="571" y1="22" x2="604" y2="22" stroke="#38BDF8" strokeWidth="1.5" markerEnd="url(#bryntum-arrow)" />
+            <line
+              x1="571"
+              y1="22"
+              x2="604"
+              y2="22"
+              stroke="#94A3B8"
+              strokeWidth="1.5"
+              markerEnd="url(#bryntum-arrow)"
+            />
 
             {/* Step 4: Net Due Date & Late Fee */}
-            <rect x="608" y="8" width="144" height="28" rx="5" fill="#451A03" stroke="#F59E0B" strokeWidth="1.2" />
-            <text x="680" y="25" textAnchor="middle" fill="#FDE68A" fontSize="9.5" fontFamily="monospace">
-              4. Due {selectedInvoice.dueDate.slice(5)} · ⚠️ 1.5% Fee
+            <rect
+              x="608"
+              y="8"
+              width="144"
+              height="28"
+              rx="6"
+              fill="#FFFBEB"
+              stroke="#FDE68A"
+              strokeWidth="1.2"
+            />
+            <text
+              x="680"
+              y="25"
+              textAnchor="middle"
+              fill="#92400E"
+              fontSize="10"
+              fontFamily="var(--font-sans), sans-serif"
+              fontWeight="600"
+            >
+              4. Due {selectedInvoice.dueDate.slice(5)} · 1.5% Late Fee
             </text>
           </svg>
         </div>
       )}
 
-      {/* Empty State (UI_SPEC.md Section 4.3) */}
+      {/* Empty State */}
       {uiState === "empty" || invoices.length === 0 ? (
-        <div className="p-10 text-center space-y-3">
-          <p className="text-sm text-slate-300">
+        <div className="rounded-xl border border-hairline bg-elevated p-10 text-center space-y-3">
+          <p className="text-sm text-ink-secondary">
             No scheduled PayPal Invoices or Recurring Series in this timeline view.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -350,7 +437,7 @@ export default function ReceivablesTimeline() {
                   createAutonomousInvoice(MOCK_INVOICES[0]);
                 }
               }}
-              className="rounded-lg bg-[#0070E0] hover:bg-[#005EA6] px-4 py-2 text-xs font-bold text-white cursor-pointer"
+              className="btn-primary-mint px-4 py-2 text-xs font-semibold cursor-pointer"
             >
               Create First Autonomous PayPal Invoice v2
             </button>
@@ -362,7 +449,7 @@ export default function ReceivablesTimeline() {
                   createRecurringSeries(MOCK_RECURRING_SERIES[0]);
                 }
               }}
-              className="rounded-lg border border-purple-500/50 bg-purple-950/60 hover:bg-purple-900/60 px-4 py-2 text-xs font-mono text-purple-200 cursor-pointer"
+              className="btn-outline-subtle px-4 py-2 text-xs font-mono cursor-pointer"
             >
               Import Recurring Series (#16)
             </button>
@@ -370,75 +457,79 @@ export default function ReceivablesTimeline() {
         </div>
       ) : (
         /* Scheduler Timeline Matrix */
-        <div className="overflow-x-auto px-4 pb-4">
+        <div className="overflow-x-auto rounded-xl border border-hairline bg-elevated shadow-xs">
           <table
             aria-label="Bryntum Receivables and Subscription Timeline"
             className="w-full border-collapse text-xs"
           >
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/80 font-mono text-[11px] text-slate-400">
-                <th className="py-2.5 px-3 text-left w-64">Client / PayPal Invoice v2 Series</th>
+              <tr className="border-b border-hairline bg-surface/80 text-[10px] font-semibold uppercase tracking-[0.04em] text-ink-muted">
+                <th className="py-2.5 px-2.5 text-left w-36">Customer / Invoice</th>
                 {TIMELINE_DATES.map((dt) => (
-                  <th key={dt} className="py-2.5 px-2 text-center border-l border-slate-800/80">
+                  <th
+                    key={dt}
+                    className="py-2.5 px-0.5 text-center border-l border-border-subtle text-[10px] font-medium"
+                  >
                     {dt.slice(5)}
                   </th>
                 ))}
-                <th className="py-2.5 px-3 text-right border-l border-slate-800/80">
-                  Quick MCP Actions
-                </th>
+                <th className="py-2.5 px-2 text-right border-l border-border-subtle w-28">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/70">
+            <tbody className="divide-y divide-border-subtle">
               {invoices.map((inv) => {
                 const triggerDate = inv.conditionalRule?.triggerDate ?? "2026-11-12";
                 const isEarlyDiscount = inv.conditionalRule?.ruleType === "EARLY_PAYMENT_DISCOUNT";
                 const isSelected = selectedInvoice?.invoiceId === inv.invoiceId;
                 const isPendingSync = pendingSyncInvoiceIds.includes(inv.invoiceId);
+                const shortPct = parseFloat(inv.conditionalRule?.percentage ?? "2").toString();
 
                 return (
                   <tr
                     key={inv.invoiceId}
                     onClick={() => setSelectedInvoiceId(inv.invoiceId)}
-                    className={`transition cursor-pointer ${
-                      isSelected ? "bg-sky-950/25" : "hover:bg-slate-800/40"
-                    }`}
+                    className={`cursor-pointer ${isSelected ? "ledger-row-active" : "ledger-row"}`}
                   >
-                    <td className="py-3 px-3">
+                    <td className="py-2.5 px-2.5">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-mono font-bold text-white">{inv.invoiceNumber}</span>
-                        <div className="flex items-center gap-1">
+                        <span className="text-xs font-semibold text-ink">
+                          {inv.invoiceNumber}
+                        </span>
+                        <div className="flex items-center gap-0.5">
                           {isPendingSync && (
-                            <span className="rounded border border-amber-500/50 bg-amber-500/20 px-1.5 py-0.2 font-mono text-[9px] font-bold text-amber-300">
-                              PENDING_SYNC
+                            <span className="rounded-pill border border-status-warning-border bg-status-warning-bg px-1 py-0.2 text-[8.5px] font-semibold text-status-warning-text">
+                              Queued
                             </span>
                           )}
                           <span
-                            className={`rounded px-1.5 py-0.2 font-mono text-[10px] font-semibold ${
+                            className={`rounded-pill border px-1.5 py-0.2 text-[9.5px] font-medium ${
                               inv.status === "PAID"
-                                ? "bg-emerald-500/20 text-emerald-300"
+                                ? "border-status-success-border bg-status-success-bg text-status-success-text"
                                 : inv.status === "OVERDUE"
-                                  ? "bg-red-500/20 text-red-300"
-                                  : "bg-sky-500/20 text-sky-300"
+                                  ? "border-status-danger-border bg-status-danger-bg text-status-danger-text"
+                                  : "border-status-info-border bg-status-info-bg text-status-info-text"
                             }`}
                           >
                             {inv.status}
                           </span>
                         </div>
                       </div>
-                      <div className="text-[11px] text-slate-400 truncate max-w-[230px]">
+                      <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
                         {inv.recipientEmail}
                       </div>
-                      <div className="font-mono text-xs font-semibold text-emerald-400 mt-0.5 financial-figure">
-                        {formatCurrencyAmount(inv.amountValue, inv.currencyCode, activeCurrency)}
-                      </div>
-                      <div className="font-mono text-[10px] text-slate-400 financial-figure">
-                        {
-                          formatDualCurrency(
-                            inv.amountValue,
-                            inv.currencyCode,
-                            activeCurrency === inv.currencyCode ? "INR" : activeCurrency
-                          ).secondary
-                        }
+                      <div className="mt-0.5 flex items-baseline gap-1 tabular-nums">
+                        <span className="text-xs font-semibold text-ink">
+                          {formatCurrencyAmount(inv.amountValue, inv.currencyCode, activeCurrency)}
+                        </span>
+                        <span className="text-[9.5px] text-ink-muted">
+                          {
+                            formatDualCurrency(
+                              inv.amountValue,
+                              inv.currencyCode,
+                              activeCurrency === inv.currencyCode ? "INR" : activeCurrency
+                            ).secondary
+                          }
+                        </span>
                       </div>
                     </td>
 
@@ -458,32 +549,28 @@ export default function ReceivablesTimeline() {
                             e.stopPropagation();
                             void handleMilestoneDrop(inv, slotDate);
                           }}
-                          className="py-2 px-1.5 border-l border-slate-800/60 text-center cursor-pointer hover:bg-sky-950/30 transition"
-                          title={`Click or drop milestone bar to reschedule ${inv.invoiceNumber} dunning to ${slotDate} (API-06)`}
+                          className="py-2 px-0.5 border-l border-border-subtle text-center cursor-pointer transition-colors hover:bg-surface"
+                          title={`Click or drop milestone bar to reschedule ${inv.invoiceNumber} reminder to ${slotDate}`}
                         >
                           {isTriggerSlot && (
                             <div
                               draggable
                               onDragStart={() => setDraggingInvoiceId(inv.invoiceId)}
-                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 font-mono text-[10px] font-semibold shadow cursor-grab ${
+                              className={`inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[9.5px] font-semibold shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:shadow-sm cursor-grab whitespace-nowrap ${
                                 isEarlyDiscount
-                                  ? "border-emerald-500/60 bg-emerald-950/80 text-emerald-200"
-                                  : "border-amber-500/60 bg-amber-950/80 text-amber-200"
+                                  ? "border-status-success-border bg-status-success-bg text-status-success-text"
+                                  : "border-status-warning-border bg-status-warning-bg text-status-warning-text"
                               } ${draggingInvoiceId === inv.invoiceId ? "opacity-50" : ""}`}
                             >
-                              <GripHorizontal className="h-3 w-3 shrink-0" />
                               <span>
-                                {isEarlyDiscount
-                                  ? `★ ${inv.conditionalRule?.percentage}% Disc`
-                                  : `⚠️ ${inv.conditionalRule?.percentage}% Fee`}
+                                {isEarlyDiscount ? `★ ${shortPct}%` : `⚠️ ${shortPct}%`}
                               </span>
-                              <ArrowRight className="h-2.5 w-2.5 text-sky-400 shrink-0" />
                             </div>
                           )}
 
                           {isDueSlot && !isTriggerSlot && (
-                            <div className="inline-flex items-center gap-1 rounded-md border border-sky-500/50 bg-sky-950/70 px-2 py-1 font-mono text-[10px] text-sky-200">
-                              🔔 Due Date
+                            <div className="inline-flex items-center rounded-md border border-status-info-border bg-status-info-bg px-1.5 py-0.5 text-[9.5px] font-medium text-status-info-text whitespace-nowrap">
+                              Due
                             </div>
                           )}
                         </td>
@@ -491,104 +578,106 @@ export default function ReceivablesTimeline() {
                     })}
 
                     <td
-                      className="py-3 px-3 border-l border-slate-800/80 text-right"
+                      className="py-2 px-2 border-l border-border-subtle text-right"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
-                        {/* WCAG 2.2 AA Criterion 2.5.7: Keyboard-Accessible Date Popover Selector (No Mouse Drag Required) */}
+                      <div className="flex flex-col items-end gap-1">
+                        {/* WCAG 2.2 AA Criterion 2.5.7: Keyboard-Accessible Date Popover Selector */}
                         <select
                           aria-label={`Reschedule dunning date for ${inv.invoiceNumber} without dragging (WCAG 2.5.7)`}
                           value={triggerDate}
                           onChange={(e) => void handleMilestoneDrop(inv, e.target.value)}
-                          className="rounded border border-slate-700 bg-slate-950 px-1.5 py-1 font-mono text-[10px] text-slate-200 cursor-pointer"
+                          className="w-full rounded-md border border-hairline bg-surface px-1 py-0.5 text-[9.5px] font-medium text-ink cursor-pointer hover:border-border-strong"
                         >
                           {TIMELINE_DATES.map((dt) => (
                             <option key={dt} value={dt}>
-                              Slot: {dt.slice(5)}
+                              Date: {dt.slice(5)}
                             </option>
                           ))}
                         </select>
 
-                        <button
-                          type="button"
-                          onClick={() => openQrModal(inv)}
-                          className="inline-flex items-center gap-1 rounded border border-sky-600/50 bg-sky-950/60 hover:bg-sky-900/70 px-2 py-1 font-mono text-[11px] text-sky-200 cursor-pointer"
-                        >
-                          <QrCode className="h-3 w-3" />
-                          QR
-                        </button>
+                        <div className="inline-flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openQrModal(inv)}
+                            className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink-secondary shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong hover:text-ink cursor-pointer"
+                            title="View QR Payment Code"
+                          >
+                            QR
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => void handleMilestoneDrop(inv, "2026-11-18")}
-                          className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 hover:bg-slate-700 px-2 py-1 font-mono text-[11px] text-slate-200 cursor-pointer"
-                        >
-                          <Send className="h-3 w-3 text-sky-400" />
-                          Remind
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleMilestoneDrop(inv, "2026-11-18")}
+                            className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink-secondary shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong hover:text-ink cursor-pointer"
+                            title="Send Friendly Reminder"
+                          >
+                            Remind
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => openPyusdModal(inv)}
-                          className="inline-flex items-center gap-1 rounded border border-emerald-600/50 bg-emerald-950/50 hover:bg-emerald-900/60 px-2 py-1 font-mono text-[11px] text-emerald-300 cursor-pointer"
-                        >
-                          <Coins className="h-3 w-3" />
-                          PYUSD
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => openPyusdModal(inv)}
+                            className="rounded-md border border-status-success-border bg-status-success-bg px-1.5 py-0.5 text-[9.5px] font-semibold text-status-success-text shadow-2xs transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                            title="Settle via PYUSD"
+                          >
+                            PYUSD
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
                 );
               })}
 
-              {/* Recurring Invoice Series Lanes (#16–#19: create_recurring_series, activate_recurring_series, get_recurring_series, cancel_recurring_series) */}
+              {/* Recurring Invoice Series Lanes */}
               {recurringSeries.map((series) => (
-                <tr key={series.seriesId} className="bg-slate-950/50 hover:bg-slate-800/30">
-                  <td className="py-3 px-3">
-                    <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-indigo-300">
-                      <Repeat className="h-3.5 w-3.5" />
+                <tr key={series.seriesId} className="ledger-row">
+                  <td className="py-2.5 px-2.5">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-ink">
+                      <Repeat className="h-3 w-3 text-ink-secondary" />
                       {series.seriesId}
                     </div>
-                    <div className="text-[11px] text-slate-300 truncate max-w-[230px]">
+                    <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
                       {series.seriesName}
                     </div>
-                    <div className="font-mono text-xs text-indigo-300 financial-figure">
-                      {formatCurrencyAmount(series.amountValue, series.currencyCode, activeCurrency)} /{" "}
-                      {series.cadence}
+                    <div className="text-xs font-semibold text-ink tabular-nums">
+                      {formatCurrencyAmount(series.amountValue, series.currencyCode, activeCurrency)}{" "}
+                      / {series.cadence === "MONTHLY" ? "Month" : series.cadence}
                     </div>
                   </td>
-                  <td colSpan={7} className="px-4 py-2 border-l border-slate-800/60">
-                    <div className="w-full rounded-md border border-indigo-500/40 bg-indigo-950/40 px-3 py-1.5 font-mono text-[11px] text-indigo-200 flex items-center justify-between">
-                      <span>
-                        PayPal Recurring Invoice Series (#16–#19) · Next Dispatch:{" "}
-                        <strong>{series.nextTriggerDate}</strong> ({series.recipientEmail})
+                  <td colSpan={7} className="px-2.5 py-2 border-l border-border-subtle">
+                    <div className="w-full rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs text-ink-secondary flex items-center justify-between gap-2">
+                      <span className="truncate">
+                        Monthly Retainer Schedule · Next Billing:{" "}
+                        <strong className="font-semibold text-ink">{series.nextTriggerDate}</strong>
                       </span>
                       <span
-                        className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                        className={`shrink-0 rounded-pill border px-2 py-0.5 text-[10px] font-medium ${
                           series.status === "ACTIVE"
-                            ? "bg-emerald-500/20 text-emerald-300"
-                            : "bg-amber-500/20 text-amber-300"
+                            ? "border-status-success-border bg-status-success-bg text-status-success-text"
+                            : "border-status-warning-border bg-status-warning-bg text-status-warning-text"
                         }`}
                       >
-                        {series.status} · {series.cadence}
+                        {series.status === "ACTIVE" ? "Active · Monthly" : "Paused"}
                       </span>
                     </div>
                   </td>
-                  <td className="py-3 px-3 border-l border-slate-800/80 text-right">
+                  <td className="py-2.5 px-2 border-l border-border-subtle text-right">
                     <button
                       type="button"
                       onClick={() => toggleRecurringSeriesStatus(series.seriesId)}
-                      className="inline-flex items-center gap-1 rounded border border-indigo-500/50 bg-indigo-950/60 hover:bg-indigo-900/60 px-2.5 py-1 font-mono text-[10px] text-indigo-200 cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-md border border-hairline bg-elevated px-2 py-0.5 text-[10px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
                     >
                       {series.status === "ACTIVE" ? (
                         <>
-                          <Pause className="h-3 w-3" />
-                          Pause (#19)
+                          <Pause className="h-2.5 w-2.5" />
+                          Pause
                         </>
                       ) : (
                         <>
-                          <Play className="h-3 w-3" />
-                          Activate (#17)
+                          <Play className="h-2.5 w-2.5" />
+                          Resume
                         </>
                       )}
                     </button>
@@ -596,47 +685,45 @@ export default function ReceivablesTimeline() {
                 </tr>
               ))}
 
-              {/* Subscription Billing Cycle Lanes (E-09, API-12) */}
+              {/* Subscription Billing Cycle Lanes */}
               {subscriptionPlans.map((plan) => (
-                <tr key={plan.planId} className="bg-slate-950/40 hover:bg-slate-800/30">
-                  <td className="py-3 px-3">
-                    <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-purple-300">
-                      <Repeat className="h-3.5 w-3.5" />
-                      {plan.planId.slice(0, 14)}...
+                <tr key={plan.planId} className="ledger-row">
+                  <td className="py-2.5 px-2.5">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-ink">
+                      <Repeat className="h-3 w-3 text-ink-secondary" />
+                      {plan.planName.split("—")[0]?.trim() || "Retainer Plan"}
                     </div>
-                    <div className="text-[11px] text-slate-300 truncate max-w-[230px]">
+                    <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
                       {plan.planName}
                     </div>
-                    <div className="font-mono text-xs text-purple-300 financial-figure">
+                    <div className="text-xs font-semibold text-ink tabular-nums">
                       {formatCurrencyAmount(plan.amountValue, plan.currencyCode, activeCurrency)} /{" "}
-                      {plan.billingIntervalUnit}
+                      {plan.billingIntervalUnit === "MONTH" ? "Month" : "Year"}
                     </div>
                   </td>
-                  <td colSpan={7} className="px-4 py-2 border-l border-slate-800/60">
-                    <div className="w-full rounded-md border border-purple-500/40 bg-purple-950/40 px-3 py-1.5 font-mono text-[11px] text-purple-200 flex items-center justify-between">
-                      <span>
-                        Active Subscription Billing Plan (API-12 · {plan.productId})
-                      </span>
+                  <td colSpan={7} className="px-2.5 py-2 border-l border-border-subtle">
+                    <div className="w-full rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs text-ink-secondary flex items-center justify-between gap-2">
+                      <span className="truncate">Recurring Subscription Plan · Auto-Renewing</span>
                       <span
-                        className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                        className={`shrink-0 rounded-pill border px-2 py-0.5 text-[10px] font-medium ${
                           plan.status === "ACTIVE"
-                            ? "bg-emerald-500/20 text-emerald-300"
-                            : "bg-red-500/20 text-red-300"
+                            ? "border-status-success-border bg-status-success-bg text-status-success-text"
+                            : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
                         }`}
                       >
-                        {plan.status} · Auto-Renew
+                        {plan.status === "ACTIVE" ? "Active · Auto-Renew" : "Cancelled"}
                       </span>
                     </div>
                   </td>
-                  <td className="py-3 px-3 border-l border-slate-800/80 text-right font-mono text-[11px] text-slate-400">
+                  <td className="py-2.5 px-2 border-l border-border-subtle text-right text-[10px]">
                     <div className="inline-flex flex-wrap items-center justify-end gap-1">
                       <button
                         type="button"
                         onClick={() => activateSubscriberOnPlan(plan.planId)}
-                        className="rounded border border-purple-500/50 bg-purple-950/60 hover:bg-purple-900/60 px-2 py-0.5 text-[10px] text-purple-200 cursor-pointer"
-                        title="Enroll subscriber via create_subscription (#34)"
+                        className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
+                        title="Add Subscriber"
                       >
-                        +Sub (#34)
+                        +Sub
                       </button>
                       <button
                         type="button"
@@ -644,36 +731,36 @@ export default function ReceivablesTimeline() {
                           const nextAmt = ((parseFloat(plan.amountValue) || 500) * 1.1).toFixed(2);
                           updateSubscriptionPlanPricing(plan.planId, nextAmt);
                         }}
-                        className="rounded border border-sky-500/50 bg-sky-950/60 hover:bg-sky-900/60 px-2 py-0.5 text-[10px] text-sky-200 cursor-pointer"
-                        title="Update billing plan cycle price via update_subscription (API-12)"
+                        className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
+                        title="Adjust Plan Price (+10%)"
                       >
-                        +10% Price
+                        +10%
                       </button>
                       <button
                         type="button"
                         onClick={() => cancelSubscriptionPlanWithGuard(plan.planId)}
-                        className="rounded border border-amber-500/50 bg-amber-950/60 hover:bg-amber-900/60 px-2 py-0.5 text-[10px] text-amber-200 cursor-pointer"
-                        title="Cancel subscription plan (gated by L2 Passkey · cancel_subscription)"
+                        className="rounded-md border border-status-warning-border bg-status-warning-bg px-1.5 py-0.5 text-[9.5px] font-semibold text-status-warning-text shadow-2xs transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                        title="Cancel Subscription Plan"
                       >
-                        Cancel (L2)
+                        Cancel
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
 
-              {/* Dispute SLA Response Deadlines Lane (E-08 · TKT-029) */}
+              {/* Dispute SLA Response Deadlines Lane */}
               {disputes.slice(0, 2).map((dispute) => (
-                <tr key={dispute.disputeId} className="bg-red-950/15 hover:bg-red-950/25">
-                  <td className="py-3 px-3">
-                    <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-amber-300">
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
+                <tr key={dispute.disputeId} className="ledger-row">
+                  <td className="py-2.5 px-2.5">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-status-warning-text">
+                      <AlertCircle className="h-3 w-3" />
                       {dispute.disputeId}
                     </div>
-                    <div className="text-[11px] text-slate-300 truncate max-w-[230px]">
-                      Order {dispute.orderId} · {dispute.reasonCode}
+                    <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
+                      Order {dispute.orderId}
                     </div>
-                    <div className="font-mono text-xs text-amber-300 financial-figure">
+                    <div className="text-xs font-semibold text-ink tabular-nums">
                       {formatCurrencyAmount(
                         dispute.disputedAmountValue,
                         dispute.currencyCode,
@@ -682,20 +769,19 @@ export default function ReceivablesTimeline() {
                       Hold
                     </div>
                   </td>
-                  <td colSpan={7} className="px-4 py-2 border-l border-slate-800/60">
-                    <div className="w-full rounded-md border border-amber-500/40 bg-amber-950/40 px-3 py-1.5 font-mono text-[11px] text-amber-200 flex items-center justify-between">
-                      <span>
-                        Dispute Evidence SLA Deadline (E-08 · TKT-029):{" "}
-                        <strong>{dispute.responseDueIso.slice(0, 10)}</strong> ·{" "}
-                        {dispute.carrierCode} #{dispute.trackingNumber} ({dispute.trackingStatus})
+                  <td colSpan={7} className="px-2.5 py-2 border-l border-border-subtle">
+                    <div className="w-full rounded-lg border border-status-warning-border bg-status-warning-bg px-3 py-1.5 text-xs text-status-warning-text flex items-center justify-between gap-2">
+                      <span className="truncate">
+                        Evidence Due: <strong>{dispute.responseDueIso.slice(0, 10)}</strong> ·{" "}
+                        {dispute.carrierCode.replace("_", " ")} (Delivered)
                       </span>
-                      <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-200">
-                        GNN {dispute.gnnRiskScore.toFixed(2)} · {dispute.recommendedAction}
+                      <span className="shrink-0 rounded-pill bg-elevated px-2 py-0.5 text-[10px] font-medium border border-status-warning-border">
+                        Proof Ready
                       </span>
                     </div>
                   </td>
-                  <td className="py-3 px-3 border-l border-slate-800/80 text-right font-mono text-[11px] text-amber-300">
-                    MCP #27–#29
+                  <td className="py-2.5 px-2 border-l border-border-subtle text-right text-[10px] font-medium text-ink-secondary whitespace-nowrap">
+                    Auto-Defend
                   </td>
                 </tr>
               ))}

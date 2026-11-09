@@ -1,31 +1,28 @@
 "use client";
 
 /**
- * PayOps AI (PayPal Sentinel) — 3-Zone Executive Cockpit Layout Shell
- * Maps to: DESIGN_SYSTEM.md Section 4.1, UI_SPEC.md Section 1, TKT-028, TKT-031, TKT-035
- * Write Owner: Dev 2 (100%)
+ * PayOps AI (PayPal Sentinel) — Increase.com Exact Header & Navigation Shell
+ * Modeled directly on Increase.com top navbar:
+ *  - Left: |SENTINEL geometric logotype + single-line hover-animated navigation tabs
+ *  - Right: Minimalist ghost Workspace/Environment triggers + crisp dark 'Guided Pitch' button
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutGrid,
-  Shield,
-  CalendarClock,
-  Swords,
-  ShoppingCart,
   Sun,
   Moon,
-  Database,
   CheckCircle2,
   X,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Menu,
+  ChevronDown,
+  ShieldCheck,
+  Database,
   Globe,
+  Cpu,
 } from "lucide-react";
 import type { CurrencyCode } from "@payops/shared";
-import { ALL_35_MCP_TOOLS } from "@payops/shared/mock-fixtures";
 import { LOCALE_DICTIONARY, type SupportedLocale } from "../../lib/formatters";
 import {
   useCockpitStore,
@@ -38,11 +35,11 @@ import { PyusdSolanaBridgeModal } from "../paypal/PyusdSolanaBridgeModal";
 import { GlobalCommandBar } from "./GlobalCommandBar";
 import { HitlApprovalCard } from "./HitlApprovalCard";
 import { McpToolTraceDrawer } from "./McpToolTraceDrawer";
-import { WebhookSimulatorToolbar } from "./WebhookSimulatorToolbar";
 
 export function CockpitShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [envPopoverOpen, setEnvPopoverOpen] = useState(false);
 
   const {
     workspaces,
@@ -65,13 +62,28 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
     circuitBreakerTripped,
     replayedTranscriptCount,
     lastFailoverLatencyMs,
+    runFullGuidedPitchWalkthrough,
   } = useCockpitStore();
 
   const strings = LOCALE_DICTIONARY[activeLocale];
   const activeWorkspace =
     workspaces.find((w) => w.workspaceId === activeWorkspaceId) ?? workspaces[0];
 
-  // Cmd+1..Cmd+5 keyboard shortcuts for the 5 Core Screens (UI_SPEC.md Section 1)
+  // Sync HTML theme class with Zustand store
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      const htmlEl = document.documentElement;
+      if (theme === "light") {
+        htmlEl.classList.remove("dark");
+        htmlEl.classList.add("light");
+      } else {
+        htmlEl.classList.remove("light");
+        htmlEl.classList.add("dark");
+      }
+    }
+  }, [theme]);
+
+  // Cmd+1..Cmd+5 keyboard shortcuts for the 5 Core Screens
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey) {
@@ -100,299 +112,338 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
   const navItems = [
     {
       href: "/command-center",
-      label: strings.navCommandCenter,
+      shortLabel: "Command Center",
+      fullLabel: strings.navCommandCenter,
       shortcut: "⌘1",
-      icon: LayoutGrid,
-      badge: "F-07",
     },
     {
       href: "/policy-studio",
-      label: strings.navPolicyStudio,
+      shortLabel: "Policy Studio",
+      fullLabel: strings.navPolicyStudio,
       shortcut: "⌘2",
-      icon: Shield,
-      badge: "F-02·09",
     },
     {
       href: "/invoicing-scheduler",
-      label: strings.navInvoicingScheduler,
+      shortLabel: "Smart Invoicing",
+      fullLabel: strings.navInvoicingScheduler,
       shortcut: "⌘3",
-      icon: CalendarClock,
-      badge: "F-03·08",
     },
     {
       href: "/dispute-war-room",
-      label: strings.navDisputeWarRoom,
+      shortLabel: "Dispute Defense",
+      fullLabel: strings.navDisputeWarRoom,
       shortcut: "⌘4",
-      icon: Swords,
-      badge: "F-04·10",
     },
     {
       href: "/checkout-bridge",
-      label: strings.navCheckoutBridge,
+      shortLabel: "Fastlane & PYUSD",
+      fullLabel: strings.navCheckoutBridge,
       shortcut: "⌘5",
-      icon: ShoppingCart,
-      badge: "F-05·11",
     },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-payops-canvas text-payops-primary">
-      {/* Zone 1: Top Global Status & Demo Telemetry Bar */}
-      <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950/95 backdrop-blur-md">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs">
-          {/* Brand & Workspace Selector (E-01) */}
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleNavCollapsed}
-              aria-label="Toggle Left Navigation Rail"
-              className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+    <div className="min-h-screen flex flex-col bg-canvas text-ink transition-colors duration-200 overflow-x-hidden">
+      {/* Top Navbar — Modeled directly on Increase.com Header (PDF Page 1 & Page 11) */}
+      <header className="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between gap-4 px-6 sm:px-10">
+          {/* Left: Increase-style Geometric Wordmark + Single-Line Hover-Pill Nav Links */}
+          <div className="flex items-center gap-7">
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={toggleNavCollapsed}
+                aria-label="Toggle Left Navigation Rail"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-subtle hover:text-ink lg:hidden"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+
+              {/* |SENTINEL Geometric Brand Wordmark (Inspired by |NCREASE) */}
+              <Link
+                href="/command-center"
+                className="group flex items-center gap-1 text-[15px] font-extrabold uppercase tracking-[0.07em] text-ink transition-opacity hover:opacity-85 whitespace-nowrap"
+              >
+                <span className="inline-block h-3.5 w-[2.5px] rounded-full bg-ink transition-transform duration-200 ease-spring group-hover:scale-y-125" />
+                <span>SENTINEL</span>
+              </Link>
+            </div>
+
+            {/* Single-Line Navigation Links with Increase Hover Pill Animation */}
+            <nav
+              aria-label="Primary Cockpit Navigation"
+              className="hidden lg:flex items-center gap-1"
             >
-              {navCollapsed ? (
-                <PanelLeftOpen className="h-4 w-4" />
-              ) : (
-                <PanelLeftClose className="h-4 w-4" />
-              )}
-            </button>
+              {navItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (pathname === "/" && item.href === "/command-center");
 
-            <Link href="/command-center" className="flex items-center gap-2">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-[#003087] font-mono text-xs font-bold text-white border border-sky-400/50">
-                PP
-              </span>
-              <span className="font-bold tracking-tight text-sm text-white">
-                {strings.appTitle}
-              </span>
-            </Link>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={`${item.fullLabel} (${item.shortcut})`}
+                    className={`whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-200 ease-spring ${
+                      isActive
+                        ? "bg-subtle/90 text-ink font-semibold"
+                        : "text-ink-muted hover:bg-subtle/70 hover:text-ink"
+                    }`}
+                  >
+                    {item.shortLabel}
+                  </Link>
+                );
+              })}
 
-            <select
-              aria-label="Select Merchant Workspace (E-01)"
-              value={activeWorkspaceId}
-              onChange={(e) => setWorkspaceId(e.target.value)}
-              className="rounded border border-slate-700 bg-slate-900 px-2.5 py-1 text-xs font-mono text-slate-200 max-w-[290px] truncate"
-            >
-              {workspaces.map((ws) => (
-                <option key={ws.workspaceId} value={ws.workspaceId}>
-                  {ws.workspaceId}: {ws.merchantName} ({ws.autonomyLevel})
-                </option>
-              ))}
-            </select>
+              {/* Mega-Menu Trigger (Styled like Increase 'Products' hover/click popover on PDF Page 11) */}
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-expanded={envPopoverOpen}
+                  onClick={() => setEnvPopoverOpen((v) => !v)}
+                  className={`inline-flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium transition-all duration-200 ease-spring cursor-pointer ${
+                    envPopoverOpen
+                      ? "bg-subtle text-ink"
+                      : "text-ink-muted hover:bg-subtle/70 hover:text-ink"
+                  }`}
+                >
+                  <span>Environment</span>
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      envPopoverOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
 
-            <span className="hidden lg:inline-flex items-center gap-1 rounded border border-sky-500/40 bg-sky-950/50 px-2 py-0.5 font-mono text-[11px] text-sky-300">
-              Autonomy: {activeWorkspace.autonomyLevel}
-            </span>
+                {/* Increase.com Page 11 Mega-Menu Popover */}
+                {envPopoverOpen && (
+                  <div className="absolute left-0 mt-2 w-[480px] rounded-2xl border border-hairline bg-elevated p-5 shadow-popover z-50 grid grid-cols-12 gap-4">
+                    {/* Left Column: Controls */}
+                    <div className="col-span-7 space-y-3.5">
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border border-hairline bg-surface text-ink-secondary">
+                          <Cpu className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="flex-1">
+                          <label className="block text-xs font-semibold text-ink">
+                            Sandbox Operating Mode
+                          </label>
+                          <select
+                            aria-label="Select API Mode (Mock / Live / Replay)"
+                            value={apiMode}
+                            onChange={(e) => setApiMode(e.target.value as ApiOperatingMode)}
+                            className="mt-1 h-7 w-full rounded border border-hairline bg-surface px-2 font-mono text-[11px] text-ink"
+                          >
+                            <option value="mock">SANDBOX: MOCK FIXTURES</option>
+                            <option value="live">SANDBOX: LIVE (:4000)</option>
+                            <option value="replay">REPLAY FALLBACK (R-06)</option>
+                          </select>
+                        </div>
+                      </div>
 
-            <span
-              title="MIT Open-Source License Verified in Repository Root & GitHub About (R-12 · Eddie Jaoude)"
-              className="hidden xl:inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[10px] text-slate-300"
-            >
-              MIT LICENSE (R-12)
-            </span>
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border border-hairline bg-surface text-ink-secondary">
+                          <Globe className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="flex-1 grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-ink">
+                              Currency
+                            </label>
+                            <select
+                              aria-label="Select Display Currency"
+                              value={activeCurrency}
+                              onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+                              className="mt-1 h-7 w-full rounded border border-hairline bg-surface px-1.5 font-mono text-[11px] text-ink"
+                            >
+                              <option value="USD">$ USD</option>
+                              <option value="INR">₹ INR</option>
+                              <option value="EUR">€ EUR</option>
+                              <option value="GBP">£ GBP</option>
+                              <option value="PYUSD">PYUSD</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-ink">
+                              Locale
+                            </label>
+                            <select
+                              aria-label="Select Interface Language Locale"
+                              value={activeLocale}
+                              onChange={(e) => setLocale(e.target.value as SupportedLocale)}
+                              className="mt-1 h-7 w-full rounded border border-hairline bg-surface px-1.5 font-mono text-[11px] text-ink"
+                            >
+                              <option value="en">EN</option>
+                              <option value="hi">HI</option>
+                              <option value="es">ES</option>
+                              <option value="de">DE</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded border border-hairline bg-surface text-ink-secondary">
+                          <ShieldCheck className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="flex-1">
+                          <label className="block text-xs font-semibold text-ink">
+                            UI State Inspector
+                          </label>
+                          <select
+                            aria-label="Inspect 5 Interactive UI States"
+                            value={uiState}
+                            onChange={(e) => setUiState(e.target.value as InteractiveUiState)}
+                            className="mt-1 h-7 w-full rounded border border-hairline bg-surface px-2 font-mono text-[11px] text-ink"
+                          >
+                            <option value="success">UI State: success</option>
+                            <option value="loading">UI State: loading</option>
+                            <option value="empty">UI State: empty</option>
+                            <option value="offline">UI State: offline (R-06)</option>
+                            <option value="error">UI State: error (RFC 7807)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Soft Bento Telemetry Cards (like 'Bank Accounts' / 'Cards' on PDF Page 11) */}
+                    <div className="col-span-5 flex flex-col justify-between gap-2.5">
+                      <div className="rounded-xl bg-surface p-3 border border-hairline/80">
+                        <div className="text-xs font-semibold text-ink">JunoDB Quorum</div>
+                        <div className="mt-0.5 text-[11px] text-ink-muted">
+                          2PC Idempotency Active
+                        </div>
+                        <div className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] font-semibold text-status-success-text">
+                          <Database className="h-3 w-3" />
+                          TTL 86,400s · OK
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl bg-surface p-3 border border-hairline/80">
+                        <div className="text-xs font-semibold text-ink">Autonomy Tier</div>
+                        <div className="mt-0.5 text-[11px] text-ink-muted">
+                          {activeWorkspace.autonomyLevel} · 35 MCP Tools
+                        </div>
+                        <div className="mt-2 font-mono text-[10px] text-ink-secondary">
+                          MIT LICENSE (R-12)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </nav>
           </div>
 
-          {/* Right Telemetry Pills, Mode Switcher, Multi-Currency & Locale (TKT-031, TKT-035) */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Right: Minimalist Increase 'Sign in' + 'Sign up' Action Pair */}
+          <div className="flex items-center gap-3">
             {(apiMode === "replay" || circuitBreakerTripped) && (
               <span
                 role="status"
                 aria-label="R-06 Circuit Breaker Replay Active"
-                className="inline-flex items-center gap-1 rounded border border-amber-500/60 bg-amber-950/70 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-200"
+                className="whitespace-nowrap rounded-pill border border-status-warning-border bg-status-warning-bg px-2.5 py-0.5 font-mono text-[10px] font-semibold text-status-warning-text"
               >
-                DEMO_REPLAY_MODE ({lastFailoverLatencyMs ?? 11}ms &lt; 50ms · {replayedTranscriptCount} Signed Transcripts)
+                REPLAY ({lastFailoverLatencyMs ?? 11}ms · {replayedTranscriptCount})
               </span>
             )}
 
-            {/* Dual-Mode / Replay Switcher (R-06) */}
-            <div className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5 font-mono text-[11px]">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  apiMode === "replay"
-                    ? "bg-amber-400"
-                    : apiMode === "live"
-                      ? "bg-emerald-400"
-                      : "bg-sky-400"
-                }`}
-              />
-              <select
-                aria-label="Select API Mode (Mock / Live / Replay)"
-                value={apiMode}
-                onChange={(e) => setApiMode(e.target.value as ApiOperatingMode)}
-                className="bg-transparent text-slate-200 focus:outline-none cursor-pointer"
-              >
-                <option value="mock" className="bg-slate-900">
-                  SANDBOX: MOCK FIXTURES
-                </option>
-                <option value="live" className="bg-slate-900">
-                  SANDBOX: LIVE (:4000)
-                </option>
-                <option value="replay" className="bg-slate-900">
-                  REPLAY FALLBACK (R-06)
-                </option>
-              </select>
-            </div>
-
-            <span className="hidden xl:inline-flex items-center gap-1 rounded border border-emerald-600/40 bg-emerald-950/40 px-2 py-0.5 font-mono text-[11px] text-emerald-300">
-              <Database className="h-3 w-3" />
-              JunoDB Quorum: OK
-            </span>
-
-            {/* Multi-Currency Switcher ($, ₹, €, £, PYUSD — TKT-031) */}
+            {/* Ghost Workspace Selector (Styled like Increase 'Sign in' link) */}
             <select
-              aria-label="Select Display Currency"
-              value={activeCurrency}
-              onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-              className="rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-xs text-emerald-300 font-semibold cursor-pointer"
+              aria-label="Select Merchant Workspace (E-01)"
+              value={activeWorkspaceId}
+              onChange={(e) => setWorkspaceId(e.target.value)}
+              className="hidden sm:inline-block max-w-[165px] truncate rounded-md bg-transparent px-2.5 py-1.5 text-[13px] font-medium text-ink-muted transition-colors duration-150 hover:bg-subtle/70 hover:text-ink focus:outline-none cursor-pointer"
             >
-              <option value="USD">$ USD</option>
-              <option value="INR">₹ INR (Lakh/Cr)</option>
-              <option value="EUR">€ EUR</option>
-              <option value="GBP">£ GBP</option>
-              <option value="PYUSD">PYUSD (Solana)</option>
+              {workspaces.map((ws) => (
+                <option key={ws.workspaceId} value={ws.workspaceId} className="bg-elevated text-ink">
+                  {ws.merchantName}
+                </option>
+              ))}
             </select>
 
-            {/* Multilingual Locale Switcher (en, hi, es — TKT-031) */}
-            <div className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-900 px-2 py-0.5">
-              <Globe className="h-3 w-3 text-sky-400" />
-              <select
-                aria-label="Select Interface Language Locale"
-                value={activeLocale}
-                onChange={(e) => setLocale(e.target.value as SupportedLocale)}
-                className="bg-transparent font-mono text-xs text-slate-200 focus:outline-none cursor-pointer"
-              >
-                <option value="en" className="bg-slate-900">
-                  EN
-                </option>
-                <option value="hi" className="bg-slate-900">
-                  हिन्दी (HI)
-                </option>
-                <option value="es" className="bg-slate-900">
-                  ES
-                </option>
-                <option value="de" className="bg-slate-900">
-                  DE
-                </option>
-              </select>
-            </div>
-
-            {/* 5 Interactive UI States Inspector (UI_SPEC.md) */}
-            <select
-              aria-label="Inspect 5 Interactive UI States"
-              value={uiState}
-              onChange={(e) => setUiState(e.target.value as InteractiveUiState)}
-              className="rounded border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-[11px] text-slate-300 cursor-pointer"
-            >
-              <option value="success">UI State: success</option>
-              <option value="loading">UI State: loading</option>
-              <option value="empty">UI State: empty</option>
-              <option value="offline">UI State: offline (R-06)</option>
-              <option value="error">UI State: error (RFC 7807)</option>
-            </select>
-
+            {/* Subtle Theme Switcher */}
             <button
               type="button"
               onClick={toggleTheme}
               aria-label="Toggle Dark or Light Executive Theme"
-              className="rounded border border-slate-700 bg-slate-900 p-1.5 text-slate-300 hover:text-white"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-muted transition-colors duration-150 hover:bg-subtle/70 hover:text-ink cursor-pointer"
             >
-              {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              {theme === "dark" ? (
+                <Sun className="h-3.5 w-3.5 text-status-warning-bar" />
+              ) : (
+                <Moon className="h-3.5 w-3.5" />
+              )}
+            </button>
+
+            {/* Increase.com 'Sign up' Dark Pill Button */}
+            <button
+              type="button"
+              onClick={() => runFullGuidedPitchWalkthrough()}
+              className="whitespace-nowrap rounded-lg bg-accent-dark px-3.5 py-1.5 text-[13px] font-medium text-accent-dark-ink shadow-xs transition-all duration-200 ease-spring hover:bg-accent-dark-hover hover:-translate-y-0.5 cursor-pointer"
+            >
+              Guided Pitch
             </button>
           </div>
         </div>
 
-        {/* 1-Click Judge Pitch Choreography & Webhook Simulator Bar */}
-        <WebhookSimulatorToolbar />
-
-        {/* Live Action Status Toast Banner */}
-        {statusBannerMessage && (
-          <div
-            role="status"
-            aria-live="polite"
-            className="flex items-center justify-between border-b border-sky-500/40 bg-sky-950/75 px-4 py-1.5 text-xs font-mono text-sky-100"
+        {/* Mobile Navigation Strip */}
+        {!navCollapsed && (
+          <nav
+            aria-label="Mobile Cockpit Navigation"
+            className="flex items-center gap-1.5 overflow-x-auto border-t border-hairline bg-surface px-4 py-2 lg:hidden"
           >
-            <span className="inline-flex items-center gap-2">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-              {statusBannerMessage}
-            </span>
-            <button
-              type="button"
-              onClick={() => setStatusBanner(null)}
-              aria-label="Dismiss Notification Banner"
-              className="rounded p-0.5 text-slate-300 hover:text-white"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        )}
-      </header>
-
-      {/* Zone 2: Main Body with Left Collapsible Navigation Rail + Active Screen */}
-      <div className="flex-1 flex min-h-0">
-        <aside
-          aria-label="Primary Cockpit Navigation"
-          className={`${
-            navCollapsed ? "w-16" : "w-64"
-          } shrink-0 border-r border-slate-800 bg-slate-950/90 flex flex-col justify-between transition-all duration-200`}
-        >
-          <div className="p-2.5 space-y-1">
-            {!navCollapsed && (
-              <div className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                5 Core Cockpit Screens
-              </div>
-            )}
             {navItems.map((item) => {
-              const Icon = item.icon;
               const isActive =
                 pathname === item.href ||
                 (pathname === "/" && item.href === "/command-center");
-
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  title={`${item.label} (${item.shortcut})`}
-                  className={`flex items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition ${
+                  className={`whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${
                     isActive
-                      ? "bg-[#0070E0] text-white shadow-sm"
-                      : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                      ? "bg-elevated text-ink border border-hairline shadow-xs"
+                      : "text-ink-muted hover:text-ink"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 truncate">
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {!navCollapsed && <span className="truncate">{item.label}</span>}
-                  </div>
-                  {!navCollapsed && (
-                    <span className="font-mono text-[10px] opacity-80">{item.badge}</span>
-                  )}
+                  {item.shortLabel}
                 </Link>
               );
             })}
-          </div>
+          </nav>
+        )}
 
-          {/* 35 Active PayPal MCP Tools Summary */}
-          {!navCollapsed && (
-            <div className="p-3 border-t border-slate-800/90 space-y-2 text-[11px]">
-              <div className="flex items-center justify-between font-mono font-bold text-sky-400">
-                <span>ACTIVE MCP TOOLS: 35</span>
-                <span className="text-[10px] text-emerald-400">7 Domains</span>
-              </div>
-              <ul className="space-y-1 font-mono text-[10px] text-slate-400">
-                {ALL_35_MCP_TOOLS.map((dom) => (
-                  <li key={dom.domainId} className="flex items-center justify-between">
-                    <span className="truncate">{dom.domainName}</span>
-                    <span className="text-slate-300">
-                      {dom.toolCount} ({dom.autonomyDefault})
-                    </span>
-                  </li>
-                ))}
-              </ul>
+        {/* Subtle Status Toast Banner */}
+        {statusBannerMessage && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="border-t border-hairline bg-surface px-4 py-2 text-xs text-ink"
+          >
+            <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-2 font-mono text-[11px]">
+                <CheckCircle2 className="h-3.5 w-3.5 text-status-success-bar shrink-0" />
+                {statusBannerMessage}
+              </span>
+              <button
+                type="button"
+                onClick={() => setStatusBanner(null)}
+                aria-label="Dismiss Notification Banner"
+                className="rounded p-0.5 text-ink-muted hover:text-ink"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
-        </aside>
+          </div>
+        )}
+      </header>
 
-        {/* Active Screen Viewport */}
-        <main className="flex-1 min-w-0 overflow-y-auto p-4 lg:p-5">{children}</main>
-      </div>
+      {/* Main Content Container */}
+      <main className="mx-auto w-full max-w-[1240px] flex-1 min-w-0 px-6 pb-12 sm:px-10">
+        {children}
+      </main>
 
-      {/* Zone 3: Floating Modals, Drawers & Global Command Bar (Cmd+K) */}
+      {/* Shared Drawers, Modals & Command Studio */}
       <McpToolTraceDrawer />
       <HitlApprovalCard />
       <ApimaticSdkCodeDrawer />

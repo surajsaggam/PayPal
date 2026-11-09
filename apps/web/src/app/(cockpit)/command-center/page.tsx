@@ -1,22 +1,24 @@
 "use client";
 
 /**
- * PayOps AI (PayPal Sentinel) — Screen 1: Executive Financial Command Center
- * Maps to: F-07 ($10,000 AG Grid + AG Charts Sponsor Track), API-14, US-12, TKT-028
- * Write Owner: Dev 2 (100%)
+ * PayOps AI (PayPal Sentinel) — Screen 1: Increase.com-Inspired Executive Landing & Command Center
+ * Modeled directly on Increase.com reference architecture (PDF Pages 1–4):
+ *  - Section 1: Open Full-Bleed Hero with Lime Pill, 3-Line Dual-Tone Headline, Mint/White CTAs & Full-Scale 3D Folded Ribbon
+ *  - Section 2: Partner Logo Strip + Architectural 4-Column Stat Strip
+ *  - Section 3: Interactive Rail & Scenario Showcase ("Autonomous workflows on every PayPal rail")
+ *  - Section 4: 2-Column Bento Cards (30-Day Cash Inflow Waterfall + Modular GNN Compliance)
+ *  - Section 5: Live AG Grid Enterprise Financial Ledger & Expandable 3-Column Inspection Cards
  */
 
 import React, { useState } from "react";
 import {
-  TrendingUp,
-  Clock,
-  ShieldCheck,
-  Award,
-  BarChart2,
-  PieChart,
+  ArrowUpRight,
   Table,
+  Check,
+  ShieldCheck,
 } from "lucide-react";
 import { LedgerCommandGrid } from "../../../components/ag-grid/LedgerCommandGrid";
+import { WebhookSimulatorToolbar } from "../../../components/agent/WebhookSimulatorToolbar";
 import { formatCurrencyAmount, LOCALE_DICTIONARY } from "../../../lib/formatters";
 import {
   computeLiveMerchantInsights,
@@ -24,10 +26,10 @@ import {
 } from "../../../stores/useCockpitStore";
 
 const WATERFALL_BARS = [
-  { label: "Invoiced (v2)", usd: 48200, pct: 100, color: "bg-sky-500" },
-  { label: "Collected Early (2% Disc)", usd: 31400, pct: 65, color: "bg-emerald-500" },
-  { label: "Auto-Dunning Recovered", usd: 11200, pct: 23, color: "bg-teal-400" },
-  { label: "Disputes Defended (F-04)", usd: 4470, pct: 14, color: "bg-indigo-400" },
+  { label: "Invoiced (v2)", usd: 48200, pct: 100, color: "bg-chart-invoiced" },
+  { label: "Collected Early (2% Disc)", usd: 31400, pct: 65, color: "bg-chart-early" },
+  { label: "Auto-Dunning Recovered", usd: 11200, pct: 23, color: "bg-chart-dunning" },
+  { label: "Disputes Defended (F-04)", usd: 4470, pct: 14, color: "bg-chart-disputes" },
 ];
 
 export default function CommandCenterPage() {
@@ -39,6 +41,7 @@ export default function CommandCenterPage() {
     anmprBonusUsd,
     dsoDeltaDays,
     winRateDeltaPct,
+    runFullGuidedPitchWalkthrough,
   } = useCockpitStore();
   const [showAccessibleChartTable, setShowAccessibleChartTable] = useState(false);
   const strings = LOCALE_DICTIONARY[activeLocale];
@@ -54,204 +57,399 @@ export default function CommandCenterPage() {
   ).length;
 
   return (
-    <div className="mx-auto max-w-[1750px] space-y-4">
-      {/* North-Star KPI Ribbon (API-14: get_merchant_insights) */}
+    <div className="space-y-16">
+      {/* SECTION 1: Increase.com Open Full-Bleed Hero + Immersive 3D Folded Ribbon */}
+      <div>
+        <section className="relative min-h-[500px] sm:min-h-[550px] lg:min-h-[580px] pt-12 sm:pt-16 pb-24">
+          {/* Upper-Left Editorial Copy & Action Pair (Modeled on Increase Hero) */}
+          <div className="relative z-10 max-w-[610px] space-y-6">
+            {/* Signature Acid Lime Announcement Pill */}
+            <div className="inline-flex">
+              <button
+                type="button"
+                onClick={() => runFullGuidedPitchWalkthrough()}
+                className="group inline-flex items-center gap-1.5 rounded-md bg-[#E2FF66] px-3 py-1 text-[12.5px] font-medium text-[#111827] transition-all duration-200 ease-spring hover:bg-[#d8f850] hover:-translate-y-0.5 cursor-pointer"
+              >
+                <span>Introducing PayPal Sentinel, Autonomous CFO</span>
+                <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </button>
+            </div>
+
+            {/* 3-Line Dual-Tone Editorial Headline */}
+            <h1 className="text-[32px] sm:text-[40px] leading-[1.16] tracking-[-0.03em] font-semibold text-ink">
+              Autonomous payment operations{" "}
+              <br className="hidden sm:inline" />
+              for ambitious merchants.{" "}
+              <span className="font-normal text-ink-muted">
+                Build resilient cashflow with an MCP-first bank rail.
+              </span>
+            </h1>
+
+            {/* Mint & White CTA Pair (Exact Match to Increase 'Contact sales' + 'Sign up') */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => runFullGuidedPitchWalkthrough()}
+                className="rounded-lg bg-[#77E6B6] px-4 py-2 text-[13.5px] font-medium text-[#064E3B] shadow-2xs transition-all duration-200 ease-spring hover:bg-[#5EDBA5] hover:-translate-y-0.5 cursor-pointer"
+              >
+                Start walkthrough
+              </button>
+              <a
+                href="#live-execution-ledger"
+                className="rounded-lg border border-hairline bg-elevated px-4 py-2 text-[13.5px] font-medium text-ink shadow-2xs transition-all duration-200 ease-spring hover:border-border-strong hover:bg-surface hover:-translate-y-0.5"
+              >
+                Inspect ledger
+              </a>
+            </div>
+          </div>
+
+          {/* Immersive Full-Scale 3D Folded Accordion Ribbon (Flushes into bottom floor line & bleeds right) */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none select-none absolute bottom-0 left-[-4%] sm:left-[6%] lg:left-[12%] right-[-18%] sm:right-[-14%] lg:right-[-16%] z-0 flex items-end justify-end overflow-visible"
+          >
+            <svg
+              viewBox="0 0 1200 560"
+              className="w-full max-w-[1180px] h-auto overflow-visible transition-transform duration-700 ease-spring"
+              preserveAspectRatio="xMaxYMax meet"
+            >
+              <defs>
+                {/* Front Face 1: Acid Lime to Fresh Mint */}
+                <linearGradient id="ribbonFace1" x1="15%" y1="15%" x2="85%" y2="95%">
+                  <stop offset="0%" stopColor="#DDF969" />
+                  <stop offset="55%" stopColor="#8CE99A" />
+                  <stop offset="100%" stopColor="#6EE7B7" />
+                </linearGradient>
+
+                {/* Fold Shadow 1: Shaded Mint-Emerald */}
+                <linearGradient id="ribbonFold1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#72DF9C" />
+                  <stop offset="100%" stopColor="#56CFA5" />
+                </linearGradient>
+
+                {/* Front Face 2: Mint to Cyan-Sky */}
+                <linearGradient id="ribbonFace2" x1="15%" y1="10%" x2="85%" y2="95%">
+                  <stop offset="0%" stopColor="#7AE7B9" />
+                  <stop offset="50%" stopColor="#63E2C6" />
+                  <stop offset="100%" stopColor="#5BC8F7" />
+                </linearGradient>
+
+                {/* Fold Shadow 2: Shaded Cyan-Azure */}
+                <linearGradient id="ribbonFold2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#56C8EE" />
+                  <stop offset="100%" stopColor="#469CE8" />
+                </linearGradient>
+
+                {/* Front Face 3: Sky Blue to Vivid Azure */}
+                <linearGradient id="ribbonFace3" x1="15%" y1="5%" x2="85%" y2="95%">
+                  <stop offset="0%" stopColor="#67C3F8" />
+                  <stop offset="55%" stopColor="#54A8F7" />
+                  <stop offset="100%" stopColor="#4389F5" />
+                </linearGradient>
+
+                {/* Fold Shadow 3: Deep Cobalt Fold */}
+                <linearGradient id="ribbonFold3" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#4895EF" />
+                  <stop offset="100%" stopColor="#2F6FE4" />
+                </linearGradient>
+
+                {/* Front Face 4: Far-Right Ascending Wing */}
+                <linearGradient id="ribbonFace4" x1="10%" y1="0%" x2="90%" y2="100%">
+                  <stop offset="0%" stopColor="#63B4F9" />
+                  <stop offset="100%" stopColor="#3E82F7" />
+                </linearGradient>
+              </defs>
+
+              {/* Back Fold Planes (Rendered behind the front ascending ribbons) */}
+              <polygon
+                points="325,345 555,515 568,560 392,560"
+                fill="url(#ribbonFold1)"
+              />
+              <polygon
+                points="612,165 895,382 952,560 735,560"
+                fill="url(#ribbonFold2)"
+              />
+              <polygon
+                points="905,-10 1190,220 1190,495 1045,435"
+                fill="url(#ribbonFold3)"
+              />
+
+              {/* Primary Ascending Front Ribbon Planes */}
+              <polygon
+                points="170,415 325,345 392,560 225,560"
+                fill="url(#ribbonFace1)"
+              />
+              <polygon
+                points="450,240 612,165 735,560 568,560"
+                fill="url(#ribbonFace2)"
+              />
+              <polygon
+                points="740,65 905,-10 1085,560 915,560"
+                fill="url(#ribbonFace3)"
+              />
+              <polygon
+                points="1030,-80 1210,-150 1355,420 1190,495"
+                fill="url(#ribbonFace4)"
+              />
+            </svg>
+          </div>
+        </section>
+
+        {/* Full-Width Hairline Floor Divider + Typographic Partner Logo Strip (Exact Match to Increase Bottom Hero Bar) */}
+        <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen border-t border-b border-hairline bg-canvas/95 py-7">
+          <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-8 px-6 sm:px-10 text-ink">
+            <span className="text-[17px] font-bold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+              ≈payops
+            </span>
+            <span className="text-[16px] font-extrabold tracking-[0.14em] uppercase opacity-80 hover:opacity-100 transition-opacity">
+              PAYPAL MCP
+            </span>
+            <span className="text-[17px] font-semibold tracking-tight opacity-80 hover:opacity-100 transition-opacity">
+              AG Grid<sup className="text-[9px] font-mono ml-0.5">32</sup>
+            </span>
+            <span className="text-[17px] font-bold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+              bryntum
+            </span>
+            <span className="text-[17px] font-extrabold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+              elastic
+            </span>
+            <span className="text-[15px] font-bold tracking-[0.08em] uppercase opacity-80 hover:opacity-100 transition-opacity">
+              APIMATIC
+            </span>
+            <span className="text-[17px] font-semibold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+              PYUSD<span className="font-normal text-ink-muted ml-1 text-xs">↗</span>
+            </span>
+            <span className="text-[16px] font-bold tracking-tight opacity-75 hover:opacity-100 transition-opacity">
+              ◎ JunoDB
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 2: Architectural 4-Column Stat Strip (Modeled on PDF Page 2: $500B+ / 99.9999% / 9M+) */}
       <section
         aria-label="Executive North-Star KPI Ribbon (API-14)"
-        className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"
+        className="grid grid-cols-1 gap-8 border-b border-hairline pb-14 pt-2 sm:grid-cols-2 lg:grid-cols-4"
       >
-        <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{strings.kpiAnmpr}</span>
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
-          </div>
-          <div className="mt-1.5 text-2xl font-bold text-white financial-figure">
+        <div className="text-center sm:text-left">
+          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
             {formatCurrencyAmount(insights.annualizedSavingsUsd, "USD", activeCurrency, true)}
-            <span className="ml-2 text-xs font-mono text-emerald-400">
-              {anmprBonusUsd > 0
-                ? `+${formatCurrencyAmount(anmprBonusUsd, "USD", activeCurrency)} Live`
-                : "+38.4% YoY"}
-            </span>
           </div>
-          <div className="mt-1 font-mono text-[11px] text-slate-400 financial-figure">
-            USD {formatCurrencyAmount(insights.annualizedSavingsUsd, "USD", "USD")}/yr · INR{" "}
-            {formatCurrencyAmount(insights.annualizedSavingsInr, "INR", "INR", true)}/yr Protected
+          <div className="mt-2.5 text-xs font-medium text-ink-muted">{strings.kpiAnmpr}</div>
+          <div className="mt-1 font-mono text-[11px] text-status-success-text">
+            {anmprBonusUsd > 0
+              ? `+${formatCurrencyAmount(anmprBonusUsd, "USD", activeCurrency)} Live`
+              : "+38.4% YoY"}
+            {" · "}INR {formatCurrencyAmount(insights.annualizedSavingsInr, "INR", "INR", true)}/yr
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{strings.kpiDso}</span>
-            <Clock className="h-4 w-4 text-sky-400" />
-          </div>
-          <div className="mt-1.5 text-2xl font-bold text-white financial-figure">
+        <div className="text-center sm:text-left">
+          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
             {insights.dsoDaysCurrent.toFixed(1)} Days
-            <span className="ml-2 text-xs font-mono text-emerald-400">
-              -{insights.dsoReductionPct}% vs 28d Baseline
-            </span>
           </div>
-          <div className="mt-1 font-mono text-[11px] text-slate-400">
-            2% Net-10 Conditional Rules + Fastlane QR
+          <div className="mt-2.5 text-xs font-medium text-ink-muted">{strings.kpiDso}</div>
+          <div className="mt-1 font-mono text-[11px] text-ink-secondary">
+            -{insights.dsoReductionPct}% vs 28d Baseline · 2% Net-10
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{strings.kpiDisputeWinRate}</span>
-            <Award className="h-4 w-4 text-purple-400" />
-          </div>
-          <div className="mt-1.5 text-2xl font-bold text-white financial-figure">
+        <div className="text-center sm:text-left">
+          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
             {insights.disputeWinRatePct.toFixed(1)}%
-            <span className="ml-2 text-xs font-mono text-emerald-400">+42.0 pts Lift</span>
           </div>
-          <div className="mt-1 font-mono text-[11px] text-slate-400">
-            M-04 GNN (&lt;18ms) + Carrier POD + Elastic RAG
+          <div className="mt-2.5 text-xs font-medium text-ink-muted">
+            {strings.kpiDisputeWinRate}
+          </div>
+          <div className="mt-1 text-xs text-status-success-text font-medium">
+            +42.0 pts Lift · Automated Delivery Proof
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>{strings.kpiPolicyFirewall}</span>
-            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+        <div className="text-center sm:text-left">
+          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
+            100.0%
           </div>
-          <div className="mt-1.5 text-2xl font-bold text-emerald-400 financial-figure">
-            100.0% <span className="text-xs font-mono text-slate-300">(0 Leaks · 0 Dupes)</span>
+          <div className="mt-2.5 text-xs font-medium text-ink-muted">
+            {strings.kpiPolicyFirewall}
           </div>
-          <div className="mt-1 font-mono text-[11px] text-amber-300">
-            {heldCount} Held for L2 Passkey · JunoDB 2PC Active
+          <div className="mt-1 text-xs text-ink-secondary">
+            Zero Duplicate Charges · {heldCount} Pending Review
           </div>
         </div>
       </section>
 
-      {/* AG Charts Enterprise Visual Analytics Row (F-07) */}
+      {/* SECTION 3: Interactive Rail & Scenario Showcase (PDF Pages 2–3 "Bare metal payments on every US rail") */}
+      <WebhookSimulatorToolbar />
+
+      {/* SECTION 4: 2-Column Bento Cards (Modeled on PDF Pages 3–4 "Flexibly-titled bank accounts" & "Modular compliance") */}
       <section
         aria-label="AG Charts Enterprise Financial Telemetry"
-        className="grid grid-cols-1 lg:grid-cols-2 gap-4"
+        className="grid grid-cols-1 gap-6 lg:grid-cols-2"
       >
-        {/* Chart 1: 30-Day Cash Inflow Waterfall */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <BarChart2 className="h-4 w-4 text-sky-400" />
-              <h2 className="text-xs font-bold uppercase tracking-wider text-white">
-                AG Charts Enterprise — 30-Day Cash Inflow & DSO Waterfall (F-07)
+        {/* Left Bento Card: 30-Day Cash Inflow & DSO Waterfall */}
+        <div className="surface-bento rounded-2xl p-6 sm:p-8 flex flex-col justify-between">
+          <div>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-semibold tracking-tight text-ink">
+                30-Day Cash Inflow &amp; Receivables Velocity
               </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] text-emerald-400">
-                Early-Pay Velocity: +65.1%
-              </span>
               <button
                 type="button"
                 onClick={() => setShowAccessibleChartTable((v) => !v)}
                 aria-pressed={showAccessibleChartTable}
-                className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-2 py-0.5 font-mono text-[10px] text-slate-200 hover:border-sky-500 cursor-pointer"
+                className="btn-outline-subtle px-2.5 py-1 text-xs cursor-pointer"
               >
-                <Table className="h-3 w-3 text-sky-400" />
-                {showAccessibleChartTable ? "Show Visual Bars" : "Data Table (WCAG 1.1.1)"}
+                <Table className="h-3 w-3 text-ink-muted" />
+                {showAccessibleChartTable ? "Show Visual Bars" : "View Table"}
               </button>
             </div>
-          </div>
 
-          {showAccessibleChartTable ? (
-            <table
-              aria-label="Accessible Summary Table for 30-Day Cash Inflow Waterfall"
-              className="w-full text-left border-collapse text-xs font-mono"
-            >
-              <thead>
-                <tr className="border-b border-slate-800 text-[10px] uppercase text-slate-400">
-                  <th className="py-1.5">Cashflow Stage</th>
-                  <th className="py-1.5">Amount ({activeCurrency})</th>
-                  <th className="py-1.5">Share of Invoiced</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/70">
-                {WATERFALL_BARS.map((bar) => (
-                  <tr key={bar.label}>
-                    <td className="py-1.5 text-slate-200">{bar.label}</td>
-                    <td className="py-1.5 text-white font-semibold financial-figure">
-                      {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
-                    </td>
-                    <td className="py-1.5 text-emerald-400 financial-figure">{bar.pct}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <div className="space-y-2.5 pt-1">
-              {WATERFALL_BARS.map((bar) => (
-                <div key={bar.label} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-slate-300">{bar.label}</span>
-                    <span className="text-white font-semibold financial-figure">
-                      {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
-                    </span>
+            {/* Inner Crisp White Card */}
+            <div className="rounded-xl border border-hairline bg-elevated p-5 shadow-xs">
+              <div className="mb-5 flex items-baseline justify-between border-b border-border-subtle pb-4">
+                <div>
+                  <div className="kpi-stat-value text-2xl">
+                    {formatCurrencyAmount(48200, "USD", activeCurrency, true)}
                   </div>
-                  <div className="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${bar.color}`}
-                      style={{ width: `${bar.pct}%` }}
-                    />
+                  <div className="mt-1 text-xs text-ink-muted">
+                    30-Day Gross Invoiced Volume · Early-Pay Velocity +65.1%
                   </div>
                 </div>
-              ))}
+                <span className="rounded-pill border border-status-success-border bg-status-success-bg px-2.5 py-0.5 text-xs font-medium text-status-success-text">
+                  Live Cashflow
+                </span>
+              </div>
+
+              {showAccessibleChartTable ? (
+                <table
+                  aria-label="Accessible Summary Table for 30-Day Cash Inflow Waterfall"
+                  className="w-full text-left border-collapse text-xs"
+                >
+                  <thead>
+                    <tr className="border-b border-hairline text-[10px] uppercase text-ink-muted">
+                      <th className="py-2">Cashflow Stage</th>
+                      <th className="py-2">Amount ({activeCurrency})</th>
+                      <th className="py-2">Share</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-subtle">
+                    {WATERFALL_BARS.map((bar) => (
+                      <tr key={bar.label}>
+                        <td className="py-2 font-sans text-ink">{bar.label}</td>
+                        <td className="py-2 text-ink font-semibold tabular-nums">
+                          {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
+                        </td>
+                        <td className="py-2 text-status-success-text tabular-nums">{bar.pct}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="space-y-3.5">
+                  {WATERFALL_BARS.map((bar) => (
+                    <div key={bar.label} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-ink-secondary font-medium">{bar.label}</span>
+                        <span className="text-ink font-semibold tabular-nums">
+                          {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
+                        </span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-subtle overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${bar.color}`}
+                          style={{ width: `${bar.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Chart 2: GNN Friendly-Fraud Risk Distribution */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-4 space-y-3 flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <PieChart className="h-4 w-4 text-purple-400" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-white">
-                  M-04 Multi-Hop GNN Friendly-Fraud Risk Distribution (F-10)
-                </h2>
-              </div>
-              <span className="font-mono text-[11px] text-sky-300">
-                ONNX Runtime: 9.4ms p95
-              </span>
+        {/* Right Bento Card: Risk & Compliance Overview */}
+        <div className="surface-bento rounded-2xl p-6 sm:p-8 flex flex-col justify-between">
+          <div>
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-base font-semibold tracking-tight text-ink">
+                Real-Time Fraud Screening &amp; Policy Compliance
+              </h2>
+              <span className="text-xs font-medium text-ink-muted">Instant Screening</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/25 p-3">
-                <div className="font-mono text-[11px] text-emerald-300">● Low Risk (&lt;0.35)</div>
-                <div className="text-xl font-bold text-white mt-1 financial-figure">82.0%</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  L3 Auto-Approved in &lt;50ms
+            {/* Inner Crisp White Compliance Card */}
+            <div className="rounded-xl border border-hairline bg-elevated p-5 shadow-xs">
+              <div className="mb-4 flex items-center justify-between border-b border-border-subtle pb-3.5">
+                <div>
+                  <div className="text-sm font-semibold text-ink">
+                    Buyer, Device &amp; Carrier Verification
+                  </div>
+                  <div className="mt-0.5 text-xs text-ink-muted">
+                    Protected by{" "}
+                    <span className="inline-flex items-center gap-1 font-medium text-ink">
+                      <ShieldCheck className="h-3.5 w-3.5 text-status-success-bar" />
+                      Sentinel Policy Guardrails
+                    </span>
+                  </div>
                 </div>
+                <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-surface px-2.5 py-1 text-[11px] font-medium text-ink-secondary">
+                  <span className="h-1.5 w-1.5 rounded-full bg-status-success-bar" />
+                  Active Monitoring
+                </span>
               </div>
 
-              <div className="rounded-lg border border-amber-500/30 bg-amber-950/25 p-3">
-                <div className="font-mono text-[11px] text-amber-300">
-                  ▲ Medium (0.35–0.69)
+              <dl className="divide-y divide-border-subtle text-xs">
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-ink-muted">Standard Transactions</dt>
+                  <dd className="flex items-center gap-3 font-medium text-ink">
+                    <span>82.0% · Automatically Approved</span>
+                    <Check className="h-3.5 w-3.5 text-ink-muted" />
+                  </dd>
                 </div>
-                <div className="text-xl font-bold text-white mt-1 financial-figure">12.0%</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Routed to L2 Passkey Queue
-                </div>
-              </div>
 
-              <div className="rounded-lg border border-red-500/30 bg-red-950/25 p-3">
-                <div className="font-mono text-[11px] text-red-300">■ High (&ge;0.70)</div>
-                <div className="text-xl font-bold text-white mt-1 financial-figure">6.0%</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Auto-Contested w/ DHL POD
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-ink-muted">High-Value Refunds</dt>
+                  <dd className="flex items-center gap-3 font-medium text-ink">
+                    <span>12.0% · Routed for Passkey Sign-Off</span>
+                    <Check className="h-3.5 w-3.5 text-ink-muted" />
+                  </dd>
                 </div>
-              </div>
+
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-ink-muted">Disputed Deliveries</dt>
+                  <dd className="flex items-center gap-3 font-medium text-ink">
+                    <span>6.0% · Contested with Carrier Proof</span>
+                    <Check className="h-3.5 w-3.5 text-ink-muted" />
+                  </dd>
+                </div>
+
+                <div className="flex items-center justify-between py-2.5">
+                  <dt className="text-ink-muted">180-Day Compliance Log</dt>
+                  <dd className="flex items-center gap-3 font-medium text-ink">
+                    <span>Tamper-Proof &amp; Verified</span>
+                    <Check className="h-3.5 w-3.5 text-ink-muted" />
+                  </dd>
+                </div>
+
+                <div className="flex items-center justify-between pt-2.5">
+                  <dt className="text-ink-muted">Returning Buyer Accuracy</dt>
+                  <dd className="flex items-center gap-3 font-semibold text-status-success-text">
+                    <span>98.6% Verified Accuracy</span>
+                    <Check className="h-3.5 w-3.5 text-status-success-bar" />
+                  </dd>
+                </div>
+              </dl>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-slate-800 pt-2.5 text-[11px] font-mono text-slate-400">
-            <span>Elastic Audit Index: payops-immutable-audit-180d (GREEN)</span>
-            <span className="text-emerald-400">VIP Buyer FPR: 1.4% (&le;2.0% Gate)</span>
           </div>
         </div>
       </section>
 
-      {/* Primary AG Grid Enterprise Financial Ledger (F-07) */}
-      <LedgerCommandGrid />
+      {/* SECTION 5: Primary AG Grid Enterprise Financial Ledger */}
+      <div id="live-execution-ledger" className="scroll-mt-20">
+        <LedgerCommandGrid />
+      </div>
     </div>
   );
 }

@@ -2,8 +2,7 @@
 
 /**
  * PayOps AI (PayPal Sentinel) — AG Grid Custom Cell Renderer: Inline HITL & SDK Actions
- * Maps to: API-02 (Passkey Approval), US-03, US-14 (APIMatic SDK Export), US-04 (QR Modal)
- * Write Owner: Dev 2 (100%)
+ * Modern tactile action pills with smooth hover lift and color transitions.
  */
 
 import React, { memo } from "react";
@@ -72,47 +71,63 @@ export const HitlInlineActionCell = memo(function HitlInlineActionCell({
   };
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center justify-end gap-1.5">
       {isHeld && (
         <button
           type="button"
-          onClick={() => openHitlApproval(row)}
-          className="inline-flex items-center gap-1 rounded bg-amber-500/25 border border-amber-500/60 hover:bg-amber-500/40 px-2 py-0.5 text-[11px] font-semibold text-amber-200 transition cursor-pointer"
+          title="Approve or Reject via L2 FIDO2 WebAuthn Passkey"
+          onClick={(e) => {
+            e.stopPropagation();
+            openHitlApproval(row);
+          }}
+          className="inline-flex items-center gap-1 rounded-lg border border-status-warning-border bg-status-warning-bg px-2.5 py-1 text-[11px] font-semibold text-status-warning-text shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0 cursor-pointer"
         >
-          <KeyRound className="h-3 w-3" />
-          Approve / Reject
+          <KeyRound className="h-3 w-3 shrink-0" />
+          <span>Approve / Reject</span>
         </button>
       )}
 
       {isInvoiceTool && (
         <button
           type="button"
-          onClick={() => openQrModal(invoices[0] ?? null)}
-          className="inline-flex items-center gap-1 rounded border border-sky-600/50 bg-sky-950/60 hover:bg-sky-900/60 px-2 py-0.5 text-[11px] font-mono text-sky-300 transition cursor-pointer"
+          title="Open Fastlane Smart QR Modal"
+          onClick={(e) => {
+            e.stopPropagation();
+            openQrModal(invoices[0] ?? null);
+          }}
+          className="inline-flex items-center gap-1 rounded-lg border border-status-info-border bg-status-info-bg px-2.5 py-1 text-[11px] font-medium text-status-info-text shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0 cursor-pointer"
         >
-          <QrCode className="h-3 w-3" />
-          QR
+          <QrCode className="h-3 w-3 shrink-0" />
+          <span>QR</span>
         </button>
       )}
 
       {isOrderCaptureTool && (
         <button
           type="button"
-          onClick={() => void handleInlineRefund()}
-          className="inline-flex items-center gap-1 rounded border border-purple-600/50 bg-purple-950/60 hover:bg-purple-900/60 px-2 py-0.5 text-[11px] font-mono text-purple-200 transition cursor-pointer"
+          title="Trigger API-09 Refund via create_refund"
+          onClick={(e) => {
+            e.stopPropagation();
+            void handleInlineRefund();
+          }}
+          className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:border-border-strong hover:bg-surface hover:text-ink hover:shadow-sm active:translate-y-0 cursor-pointer"
         >
-          <RotateCcw className="h-3 w-3" />
-          Refund
+          <RotateCcw className="h-3 w-3 shrink-0" />
+          <span>Refund</span>
         </button>
       )}
 
       <button
         type="button"
-        onClick={() => openApimaticDrawer(row)}
-        className="inline-flex items-center gap-1 rounded border border-slate-700 bg-slate-800/90 hover:border-emerald-500/60 px-2 py-0.5 text-[11px] font-mono text-emerald-300 transition cursor-pointer"
+        title="Inspect APIMatic TypeScript & Python SDK Code (US-14)"
+        onClick={(e) => {
+          e.stopPropagation();
+          openApimaticDrawer(row);
+        }}
+        className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 font-mono text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:border-accent-dark hover:bg-accent-dark hover:text-accent-dark-ink hover:shadow-sm active:translate-y-0 cursor-pointer"
       >
-        <Code2 className="h-3 w-3" />
-        APIMatic SDK
+        <Code2 className="h-3 w-3 shrink-0" />
+        <span>SDK</span>
       </button>
     </div>
   );

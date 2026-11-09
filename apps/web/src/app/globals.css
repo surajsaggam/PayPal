@@ -2,86 +2,445 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+ * PayOps AI · PayPal Sentinel — Increase-Inspired Light-First Design System
+ * Primary visual reference: https://increase.com/
+ * ============================================================================ */
+
 :root,
-.dark {
-  --payops-bg-canvas: #070b14;
-  --payops-bg-surface: #0f172a;
-  --payops-bg-elevated: #1e293b;
-  --payops-brand-admiral: #003087;
-  --payops-brand-sky: #0070e0;
-  --payops-brand-pyusd: #14f195;
-  --payops-status-allow: #10b981;
-  --payops-status-hold: #f59e0b;
-  --payops-status-deny: #ef4444;
-  --payops-text-primary: #f8fafc;
-  --payops-text-secondary: #94a3b8;
-  --payops-border-subtle: #1e293b;
-  --font-sans: "Inter Variable", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "JetBrains Mono Variable", "Fira Code", ui-monospace, SFMono-Regular, monospace;
-  --font-indic: "Noto Sans Devanagari", "Noto Sans", sans-serif;
-  --spring-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+html.light {
+  color-scheme: light;
+
+  /* 1. Backgrounds */
+  --bg-canvas: #ffffff;
+  --bg-surface: #f8fafc;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-contrast: #11191f;
+
+  /* 2. Text Colours (Dual-Tone Hierarchy) */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* 3. Borders (1px Architectural Hairlines) */
+  --border-hairline: #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --border-strong: #cbd5e1;
+  --border-focus: #0f172a;
+
+  /* 4. Signature Accents (Increase Lime, Mint, and Carbon) */
+  --accent-lime-bg: #e2ff66;
+  --accent-lime-border: #d4f542;
+  --accent-lime-text: #111827;
+
+  --accent-mint-bg: #6ee7b7;
+  --accent-mint-hover: #34d399;
+  --accent-mint-border: #34d399;
+  --accent-mint-text: #064e3b;
+
+  --accent-dark-bg: #18181b;
+  --accent-dark-hover: #27272a;
+  --accent-dark-text: #ffffff;
+
+  --accent-brand: #0f172a;
+
+  /* 5. Semantic Status Tokens (WCAG AA High-Contrast Light Tints) */
+  --status-success-bg: #ecfdf5;
+  --status-success-text: #065f46;
+  --status-success-border: #a7f3d0;
+  --status-success-bar: #10b981;
+
+  --status-warning-bg: #fffbeb;
+  --status-warning-text: #92400e;
+  --status-warning-border: #fde68a;
+  --status-warning-bar: #f59e0b;
+
+  --status-danger-bg: #fef2f2;
+  --status-danger-text: #991b1b;
+  --status-danger-border: #fecaca;
+  --status-danger-bar: #ef4444;
+
+  --status-info-bg: #eff6ff;
+  --status-info-text: #1e40af;
+  --status-info-border: #bfdbfe;
+  --status-info-bar: #3b82f6;
+
+  /* 6. Financial Chart & Waterfall Series Palette */
+  --chart-invoiced: #60a5fa;
+  --chart-early: #34d399;
+  --chart-dunning: #a3e635;
+  --chart-disputes: #818cf8;
+
+  /* 7. Typography Tokens */
+  --font-sans: var(--font-inter), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
+  --tracking-editorial: -0.03em;
+  --tracking-stat: -0.035em;
+  --tracking-label: 0.06em;
+
+  /* 8. Spacing & Radii Tokens */
+  --space-container-max: 1440px;
+  --space-card-pad: 1.25rem;
+  --space-section-gap: 1.5rem;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  /* 9. Shadows & Elevation */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.03);
+  --shadow-card: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  --shadow-elevated: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-popover: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-row-active: 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+
+  /* 10. Transitions & Micro-Animations */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 220ms;
+
+  /* Dot-grid surface pattern token */
+  --dot-grid-color: #cbd5e1;
+
+  /* Backwards-compatible legacy variable aliases for unmigrated screens */
+  --payops-bg-primary: var(--bg-canvas);
+  --payops-bg-card: var(--bg-surface);
+  --payops-border: var(--border-hairline);
+  --payops-text-primary: var(--text-primary);
+  --payops-text-muted: var(--text-muted);
+  --payops-accent-blue: var(--accent-brand);
+  --payops-accent-emerald: var(--status-success-bar);
+  --payops-accent-amber: var(--status-warning-bar);
+  --payops-accent-rose: var(--status-danger-bar);
 }
 
-.light {
-  --payops-bg-canvas: #f8fafc;
-  --payops-bg-surface: #ffffff;
-  --payops-bg-elevated: #f1f5f9;
-  --payops-brand-admiral: #003087;
-  --payops-brand-sky: #005ea6;
-  --payops-brand-pyusd: #059669;
-  --payops-status-allow: #047857;
-  --payops-status-hold: #b45309;
-  --payops-status-deny: #b91c1c;
-  --payops-text-primary: #0f172a;
-  --payops-text-secondary: #475569;
-  --payops-border-subtle: #e2e8f0;
+/* Preserved Dark Theme Override (toggled via useCockpitStore.toggleTheme) */
+html.dark {
+  color-scheme: dark;
+
+  --bg-canvas: #0b0f17;
+  --bg-surface: #111827;
+  --bg-elevated: #1e293b;
+  --bg-subtle: #1e293b;
+  --bg-contrast: #070b14;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --text-inverse: #0f172a;
+
+  --border-hairline: #1e293b;
+  --border-subtle: #1e293b;
+  --border-strong: #334155;
+  --border-focus: #6ee7b7;
+
+  --accent-lime-bg: #e2ff66;
+  --accent-lime-border: #d4f542;
+  --accent-lime-text: #111827;
+
+  --accent-mint-bg: #6ee7b7;
+  --accent-mint-hover: #34d399;
+  --accent-mint-border: #34d399;
+  --accent-mint-text: #064e3b;
+
+  --accent-dark-bg: #f8fafc;
+  --accent-dark-hover: #e2e8f0;
+  --accent-dark-text: #0f172a;
+
+  --accent-brand: #38bdf8;
+
+  --status-success-bg: rgba(16, 185, 129, 0.14);
+  --status-success-text: #6ee7b7;
+  --status-success-border: rgba(16, 185, 129, 0.35);
+  --status-success-bar: #10b981;
+
+  --status-warning-bg: rgba(245, 158, 11, 0.14);
+  --status-warning-text: #fcd34d;
+  --status-warning-border: rgba(245, 158, 11, 0.35);
+  --status-warning-bar: #f59e0b;
+
+  --status-danger-bg: rgba(239, 68, 68, 0.14);
+  --status-danger-text: #fca5a5;
+  --status-danger-border: rgba(239, 68, 68, 0.35);
+  --status-danger-bar: #ef4444;
+
+  --status-info-bg: rgba(59, 130, 246, 0.14);
+  --status-info-text: #93c5fd;
+  --status-info-border: rgba(59, 130, 246, 0.35);
+  --status-info-bar: #3b82f6;
+
+  --dot-grid-color: #334155;
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  --shadow-popover: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-row-active: 0 4px 12px -2px rgba(0, 0, 0, 0.5);
 }
 
-body {
-  background-color: var(--payops-bg-canvas);
-  color: var(--payops-text-primary);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  body {
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  code,
+  pre,
+  kbd,
+  .font-mono {
+    font-family: var(--font-mono);
+  }
 }
 
-.financial-figure {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums slashed-zero;
-  letter-spacing: -0.015em;
+/* ============================================================================
+ * Reusable Design System Primitives (Increase.com Editorial Language)
+ * ============================================================================ */
+
+@layer components {
+  /* Bento Surface Card (#F8FAFC with 1px #E2E8F0 hairline border) */
+  .surface-bento {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-lg);
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 200ms ease;
+  }
+
+  .surface-bento:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 12px 28px -8px rgba(15, 23, 42, 0.06);
+  }
+
+  /* Crisp White Elevated Card (#FFFFFF with 1px #E2E8F0 border & whisper shadow) */
+  .surface-card {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 180ms ease;
+  }
+
+  .surface-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-strong);
+    box-shadow: 0 10px 24px -6px rgba(15, 23, 42, 0.07);
+  }
+
+  /* Subtle Architectural Dot-Grid Inspection Surface */
+  .dot-grid-surface {
+    background-color: var(--bg-surface);
+    background-image: radial-gradient(var(--dot-grid-color) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  /* Dual-Tone Editorial Heading */
+  .editorial-heading {
+    color: var(--text-primary);
+    font-weight: 600;
+    letter-spacing: var(--tracking-editorial);
+    line-height: 1.2;
+  }
+
+  .editorial-subcopy {
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* Architectural KPI Numerals */
+  .kpi-stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    letter-spacing: var(--tracking-stat);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.05;
+  }
+
+  /* Technical Monospace Identifier Pill */
+  .mono-code-pill {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--bg-subtle);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-sm);
+    padding: 0.125rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Signature Increase Buttons */
+  .btn-primary-mint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    background-color: var(--accent-mint-bg);
+    color: var(--accent-mint-text);
+    border: 1px solid var(--accent-mint-border);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: all var(--duration-fast) var(--ease-spring);
+  }
+
+  .btn-primary-mint:hover:not(:disabled) {
+    background-color: var(--accent-mint-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .btn-secondary-dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    background-color: var(--accent-dark-bg);
+    color: var(--accent-dark-text);
+    border: 1px solid var(--accent-dark-bg);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: all var(--duration-fast) var(--ease-spring);
+  }
+
+  .btn-secondary-dark:hover:not(:disabled) {
+    background-color: var(--accent-dark-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline-subtle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 1px solid var(--border-hairline);
+    border-radius: var(--radius-md);
+    font-weight: 500;
+    transition: all var(--duration-fast) var(--ease-spring);
+  }
+
+  .btn-outline-subtle:hover:not(:disabled) {
+    background-color: var(--bg-surface);
+    border-color: var(--border-strong);
+  }
+
+  /* Signature Increase Lime Callout Pill */
+  .badge-lime {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background-color: var(--accent-lime-bg);
+    color: var(--accent-lime-text);
+    border: 1px solid var(--accent-lime-border);
+    border-radius: var(--radius-pill);
+    font-weight: 500;
+  }
 }
 
-@keyframes rowFlashEmerald {
+/* ============================================================================
+ * AG Grid Enterprise 32.3.2 Supported CSS Variables & Virtualization-Safe Rows
+ * ============================================================================ */
+
+.ag-theme-quartz,
+.ag-theme-quartz-dark,
+.ag-theme-increase {
+  --ag-background-color: var(--bg-canvas);
+  --ag-header-background-color: var(--bg-surface);
+  --ag-odd-row-background-color: var(--bg-canvas);
+  --ag-row-hover-color: var(--bg-surface);
+  --ag-selected-row-background-color: var(--bg-subtle);
+  --ag-border-color: var(--border-hairline);
+  --ag-row-border-color: var(--border-subtle);
+  --ag-foreground-color: var(--text-primary);
+  --ag-secondary-foreground-color: var(--text-muted);
+  --ag-header-foreground-color: var(--text-muted);
+  --ag-font-family: var(--font-sans);
+  --ag-font-size: 13px;
+  --ag-row-height: 56px;
+  --ag-header-height: 40px;
+}
+
+/* Virtualization-safe row states (no scale transforms that cause row overlap) */
+.ledger-row {
+  background-color: var(--bg-canvas);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 220ms var(--ease-spring),
+    box-shadow 220ms var(--ease-spring);
+}
+
+.ledger-row:hover {
+  background-color: var(--bg-surface);
+  box-shadow: inset 3px 0 0 0 var(--border-strong), 0 4px 12px -4px rgba(15, 23, 42, 0.06);
+}
+
+.ledger-row-active {
+  background-color: var(--bg-surface);
+  box-shadow: inset 3px 0 0 0 var(--accent-brand), var(--shadow-row-active);
+}
+
+/* Focus-visible accessibility ring (WCAG 2.2 AA 2.4.11) */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* ============================================================================
+ * Smooth Editorial Card Pop-In & Tab Switch Animations
+ * ============================================================================ */
+
+@keyframes editorialPopIn {
   0% {
-    background-color: rgba(16, 185, 129, 0.28);
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
   }
   100% {
-    background-color: transparent;
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
-@keyframes rowFlashAmber {
+@keyframes tabContentFade {
   0% {
-    background-color: rgba(245, 158, 11, 0.28);
+    opacity: 0;
+    transform: translateY(8px);
   }
   100% {
-    background-color: transparent;
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.animate-row-emerald {
-  animation: rowFlashEmerald 600ms ease-out;
+.animate-pop-in {
+  animation: editorialPopIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.animate-row-amber {
-  animation: rowFlashAmber 600ms ease-out;
+.animate-tab-switch {
+  animation: tabContentFade 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  ::before,
-  ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+.delay-75 {
+  animation-delay: 75ms;
+}
+
+.delay-150 {
+  animation-delay: 150ms;
+}
+
+.delay-225 {
+  animation-delay: 225ms;
 }

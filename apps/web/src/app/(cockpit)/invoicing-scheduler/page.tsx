@@ -1,14 +1,16 @@
 "use client";
 
 /**
- * PayOps AI (PayPal Sentinel) — Screen 3: Smart Invoicing v2 & Bryntum Receivables Scheduler
- * Maps to: F-03 (Smart Invoicing v2), F-08 ($3,000 Bryntum Sponsor Track), US-04, US-05, US-06, US-13
- * Write Owner: Dev 2 (100%)
+ * PayOps AI (PayPal Sentinel) — Screen 3: Smart Invoicing & Cash-Flow Scheduler
+ * Increase.com Light-First Editorial Redesign:
+ *  - Clean human-readable typography (Inter font) with smooth pop-in and hover transitions
+ *  - 12-column responsive layout: Receivables Timeline + Working-Capital Histogram (left 8 cols) +
+ *    Smart Invoice Creator & Subscription Billing Plan Creator (right 4 cols)
  */
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { PlusCircle, QrCode, Sparkles, Coins, Repeat } from "lucide-react";
+import { PlusCircle, QrCode, Sparkles, Coins, Repeat, CalendarClock, ShieldCheck } from "lucide-react";
 import type { CurrencyCode } from "@payops/shared";
 import { DunningHistogram } from "../../../components/bryntum/DunningHistogram";
 import {
@@ -18,14 +20,13 @@ import {
 import { formatCurrencyAmount } from "../../../lib/formatters";
 import { useCockpitStore } from "../../../stores/useCockpitStore";
 
-// FRONTEND.md Section 3.2: Load Bryntum Scheduler Pro via next/dynamic({ ssr: false })
 const ReceivablesTimeline = dynamic(
   () => import("../../../components/bryntum/ReceivablesTimeline"),
   {
     ssr: false,
     loading: () => (
-      <div className="h-64 rounded-xl border border-slate-800 bg-slate-900/80 p-6 font-mono text-xs text-sky-300 animate-pulse">
-        Hydrating Bryntum Scheduler Pro 6.1.2 Canvas &amp; Dependency Graph...
+      <div className="h-64 surface-bento rounded-2xl p-6 text-xs text-ink-secondary animate-pulse">
+        Loading Receivables Timeline &amp; Payment Schedule...
       </div>
     ),
   }
@@ -52,7 +53,6 @@ export default function InvoicingSchedulerPage() {
   const [enableRecurring, setEnableRecurring] = useState(true);
   const [creating, setCreating] = useState(false);
 
-  // API-12 Recurring Subscription Plan Creator State
   const [planName, setPlanName] = useState("Kaveri B2B Retainer — Pro Tier");
   const [planInterval, setPlanInterval] = useState<"MONTH" | "YEAR">("MONTH");
   const [planAmount, setPlanAmount] = useState("750.00");
@@ -97,7 +97,7 @@ export default function InvoicingSchedulerPage() {
         createRecurringSeries({
           seriesId: `RS-${created.invoiceNumber.slice(-4)}`,
           workspaceId: activeWorkspaceId,
-          seriesName: `Auto-Series for ${recipientEmail} (#${created.invoiceNumber})`,
+          seriesName: `Monthly Retainer for ${recipientEmail}`,
           recipientEmail,
           cadence: "MONTHLY",
           nextTriggerDate: dueDate,
@@ -118,218 +118,263 @@ export default function InvoicingSchedulerPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1750px] space-y-4">
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* Left 2 Columns: Bryntum Scheduler Pro & Working Capital Histogram (F-08) */}
-        <div className="xl:col-span-2 space-y-4">
+    <div className="mx-auto max-w-[1160px] space-y-8 pb-12 animate-pop-in">
+      {/* Editorial Section Header */}
+      <header className="flex flex-col justify-between gap-6 border-b border-hairline pb-8 lg:flex-row lg:items-end">
+        <div className="max-w-2xl space-y-3">
+          <div className="badge-lime px-3 py-1 text-xs">
+            <CalendarClock className="h-3.5 w-3.5" />
+            <span>Smart Invoicing &amp; Cash-Flow Scheduler</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.12]">
+            Automated receivables and cash-flow scheduling.{" "}
+            <span className="font-normal text-ink-muted">
+              Offer early-payment incentives, schedule polite payment reminders, and manage
+              recurring retainers from one timeline.
+            </span>
+          </h1>
+        </div>
+
+        {selectedInvoice && (
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => openQrModal(selectedInvoice)}
+              className="btn-outline-subtle h-9 rounded-xl px-3.5 text-xs shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm cursor-pointer"
+            >
+              <QrCode className="h-3.5 w-3.5" />
+              <span>View QR Link ({selectedInvoice.invoiceNumber})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => openPyusdModal(selectedInvoice)}
+              className="btn-secondary-dark h-9 rounded-xl px-4 text-xs shadow-xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-md cursor-pointer"
+            >
+              <Coins className="h-3.5 w-3.5" />
+              <span>Settle via PYUSD</span>
+            </button>
+          </div>
+        )}
+      </header>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        {/* Left 8 Columns: Receivables Timeline & Working Capital Histogram */}
+        <div className="xl:col-span-8 space-y-6 animate-pop-in delay-75">
           <ReceivablesTimeline />
           <DunningHistogram />
         </div>
 
-        {/* Right Column: Autonomous Smart Invoice Creator & Live QR Preview Drawer (F-03, E-07) */}
+        {/* Right 4 Columns: Smart Invoice Creator & Recurring Plan Creator */}
         <aside
           aria-label="Autonomous Smart Invoice v2 Creator and QR Preview"
-          className="rounded-xl border border-slate-800 bg-slate-900/90 p-5 space-y-4"
+          className="xl:col-span-4 space-y-6 animate-pop-in delay-150"
         >
-          <div className="border-b border-slate-800 pb-3">
-            <span className="inline-flex items-center gap-1 rounded bg-sky-500/15 border border-sky-500/40 px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-300">
-              <Sparkles className="h-3 w-3" />
-              API-04 · 5-Step PayPal Invoicing v2 Orchestrator
-            </span>
-            <h1 className="text-sm font-bold text-white mt-1">
-              Create Autonomous Smart Invoice + QR (US-04 · US-05)
-            </h1>
+          {/* Card 1: Smart Invoice Creator */}
+          <div className="surface-bento rounded-2xl p-6 space-y-4">
+            <div className="border-b border-hairline pb-3.5">
+              <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 text-xs font-medium text-ink-secondary">
+                <Sparkles className="h-3 w-3" />
+                Instant Invoice &amp; QR Link
+              </span>
+              <h2 className="mt-2 text-base font-semibold tracking-tight text-ink">
+                Create Smart Invoice
+              </h2>
+            </div>
+
+            <form onSubmit={(e) => void handleCreateInvoice(e)} className="space-y-3.5 text-xs">
+              <div>
+                <label
+                  htmlFor="invoice-recipient-email"
+                  className="block text-xs font-medium text-ink-secondary"
+                >
+                  Customer Email Address
+                </label>
+                <input
+                  id="invoice-recipient-email"
+                  type="email"
+                  required
+                  value={recipientEmail}
+                  onChange={(e) => setRecipientEmail(e.target.value)}
+                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="invoice-amount-input"
+                    className="block text-xs font-medium text-ink-secondary"
+                  >
+                    Invoice Amount
+                  </label>
+                  <input
+                    id="invoice-amount-input"
+                    type="text"
+                    required
+                    value={amountValue}
+                    onChange={(e) => setAmountValue(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-sm font-semibold text-ink tabular-nums shadow-2xs focus:border-ink focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="invoice-currency-select"
+                    className="block text-xs font-medium text-ink-secondary"
+                  >
+                    Currency
+                  </label>
+                  <select
+                    id="invoice-currency-select"
+                    value={currencyCode}
+                    onChange={(e) => setCurrencyCode(e.target.value as CurrencyCode)}
+                    className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2 text-xs font-medium text-ink shadow-2xs focus:border-ink focus:outline-none cursor-pointer"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="invoice-due-date"
+                    className="block text-xs font-medium text-ink-secondary"
+                  >
+                    Payment Due Date
+                  </label>
+                  <input
+                    id="invoice-due-date"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="invoice-discount-pct"
+                    className="block text-xs font-medium text-ink-secondary"
+                  >
+                    Early-Pay Discount (%)
+                  </label>
+                  <input
+                    id="invoice-discount-pct"
+                    type="text"
+                    value={discountPct}
+                    onChange={(e) => setDiscountPct(e.target.value)}
+                    className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2 text-xs font-semibold text-status-success-text tabular-nums shadow-2xs focus:border-ink focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2.5 rounded-xl border border-hairline bg-elevated p-3 shadow-2xs cursor-pointer transition-colors hover:border-border-strong">
+                <input
+                  type="checkbox"
+                  checked={enableRecurring}
+                  onChange={(e) => setEnableRecurring(e.target.checked)}
+                  className="h-3.5 w-3.5 accent-slate-900"
+                />
+                <Repeat className="h-3.5 w-3.5 text-ink-secondary" />
+                <span className="text-xs font-medium text-ink-secondary">
+                  Enable Monthly Recurring Billing
+                </span>
+              </label>
+
+              <button
+                type="submit"
+                disabled={creating}
+                className="btn-primary-mint w-full py-2.5 px-4 text-xs font-semibold cursor-pointer"
+              >
+                <PlusCircle className="h-4 w-4" />
+                <span>
+                  {creating ? "Sending Smart Invoice..." : "Send Invoice & Generate QR Link"}
+                </span>
+              </button>
+            </form>
+
+            {/* Active Invoice Inspector Card */}
+            {selectedInvoice && (
+              <div className="border-t border-hairline pt-4 space-y-3 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-ink">
+                    Selected · {selectedInvoice.invoiceNumber}
+                  </span>
+                  <span className="rounded-pill border border-status-success-border bg-status-success-bg px-2.5 py-0.5 text-xs font-medium text-status-success-text">
+                    {selectedInvoice.status}
+                  </span>
+                </div>
+
+                <div className="surface-card rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Invoice Total</span>
+                    <span className="text-ink font-semibold tabular-nums">
+                      {formatCurrencyAmount(
+                        selectedInvoice.amountValue,
+                        selectedInvoice.currencyCode,
+                        activeCurrency
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-ink-muted">Early-Pay Incentive</span>
+                    <span className="text-status-success-text font-medium">
+                      {selectedInvoice.conditionalRule?.percentage}% off before{" "}
+                      {selectedInvoice.conditionalRule?.triggerDate}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-ink-muted pt-1.5 border-t border-border-subtle">
+                    <ShieldCheck className="h-3.5 w-3.5 text-status-success-text shrink-0" />
+                    <span>Duplicate-Request Protection Active</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openQrModal(selectedInvoice)}
+                    className="btn-outline-subtle py-2 px-3 text-xs cursor-pointer"
+                  >
+                    <QrCode className="h-3.5 w-3.5" />
+                    <span>View QR Code</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openPyusdModal(selectedInvoice)}
+                    className="btn-secondary-dark py-2 px-3 text-xs cursor-pointer"
+                  >
+                    <Coins className="h-3.5 w-3.5" />
+                    <span>Settle PYUSD</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          <form onSubmit={(e) => void handleCreateInvoice(e)} className="space-y-3 text-xs">
-            <div>
-              <label
-                htmlFor="invoice-recipient-email"
-                className="block font-mono text-[10px] uppercase text-slate-400"
-              >
-                Buyer / AP Recipient Email
-              </label>
-              <input
-                id="invoice-recipient-email"
-                type="email"
-                required
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-                className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-white"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label
-                  htmlFor="invoice-amount-input"
-                  className="block font-mono text-[10px] uppercase text-slate-400"
-                >
-                  2-Decimal Amount (R-03)
-                </label>
-                <input
-                  id="invoice-amount-input"
-                  type="text"
-                  required
-                  value={amountValue}
-                  onChange={(e) => setAmountValue(e.target.value)}
-                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-white financial-figure"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="invoice-currency-select"
-                  className="block font-mono text-[10px] uppercase text-slate-400"
-                >
-                  ISO-4217 Currency
-                </label>
-                <select
-                  id="invoice-currency-select"
-                  value={currencyCode}
-                  onChange={(e) => setCurrencyCode(e.target.value as CurrencyCode)}
-                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-white"
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="INR">INR (₹)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label
-                  htmlFor="invoice-due-date"
-                  className="block font-mono text-[10px] uppercase text-slate-400"
-                >
-                  Net Due Date
-                </label>
-                <input
-                  id="invoice-due-date"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-white"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="invoice-discount-pct"
-                  className="block font-mono text-[10px] uppercase text-slate-400"
-                >
-                  Early-Pay Discount (%)
-                </label>
-                <input
-                  id="invoice-discount-pct"
-                  type="text"
-                  value={discountPct}
-                  onChange={(e) => setDiscountPct(e.target.value)}
-                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-emerald-300 financial-figure"
-                />
-              </div>
-            </div>
-
-            <label className="flex items-center gap-2 rounded border border-slate-800 bg-slate-950/60 p-2.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enableRecurring}
-                onChange={(e) => setEnableRecurring(e.target.checked)}
-                className="h-3.5 w-3.5 accent-sky-500"
-              />
-              <Repeat className="h-3.5 w-3.5 text-purple-400" />
-              <span className="font-mono text-[11px] text-slate-300">
-                Activate Recurring Invoice Series (`create_recurring_series` #16)
-              </span>
-            </label>
-
-            <button
-              type="submit"
-              disabled={creating}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#0070E0] hover:bg-[#005EA6] py-2.5 px-4 text-xs font-bold text-white shadow transition cursor-pointer"
-            >
-              <PlusCircle className="h-4 w-4" />
-              {creating
-                ? "Running 5 PayPal Invoicing v2 MCP Tools..."
-                : "Generate Invoice + 2% Rule + QR (API-04)"}
-            </button>
-          </form>
-
-          {/* Active Invoice Inspector Card */}
-          {selectedInvoice && (
-            <div className="border-t border-slate-800 pt-4 space-y-3 text-xs">
-              <div className="flex items-center justify-between font-mono">
-                <span className="font-bold text-sky-300">{selectedInvoice.invoiceId}</span>
-                <span className="rounded bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300">
-                  {selectedInvoice.status}
-                </span>
-              </div>
-
-              <div className="rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] space-y-1">
-                <div>
-                  <span className="text-slate-400">Amount:</span>{" "}
-                  <span className="text-white font-bold financial-figure">
-                    {formatCurrencyAmount(
-                      selectedInvoice.amountValue,
-                      selectedInvoice.currencyCode,
-                      activeCurrency
-                    )}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400">Conditional Rule:</span>{" "}
-                  <span className="text-emerald-300">
-                    {selectedInvoice.conditionalRule?.percentage}% off by{" "}
-                    {selectedInvoice.conditionalRule?.triggerDate}
-                  </span>
-                </div>
-                <div className="truncate">
-                  <span className="text-slate-400">PayPal-Request-Id:</span>{" "}
-                  {selectedInvoice.idempotencyKey}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => openQrModal(selectedInvoice)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded border border-sky-500/50 bg-sky-950/60 hover:bg-sky-900/60 py-2 px-3 font-mono text-xs text-sky-200 cursor-pointer"
-                >
-                  <QrCode className="h-3.5 w-3.5" />
-                  Inspect QR Modal
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => openPyusdModal(selectedInvoice)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded border border-emerald-500/50 bg-emerald-950/60 hover:bg-emerald-900/60 py-2 px-3 font-mono text-xs text-emerald-200 cursor-pointer"
-                >
-                  <Coins className="h-3.5 w-3.5" />
-                  Settle via PYUSD
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* API-12 Recurring Subscription Billing Plan Creator (E-09) */}
+          {/* Card 2: Recurring Subscription Plan Creator */}
           <form
             onSubmit={(e) => void handleCreateSubscriptionPlan(e)}
-            className="border-t border-slate-800 pt-4 space-y-2.5 text-xs"
+            className="surface-bento rounded-2xl p-6 space-y-3.5 text-xs"
           >
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1 font-mono text-[10px] font-semibold uppercase text-purple-300">
-                <Repeat className="h-3 w-3" />
-                API-12 · PayPal Subscriptions v1 Plan Creator
+            <div className="flex items-center justify-between border-b border-hairline pb-3">
+              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink">
+                <Repeat className="h-4 w-4 text-ink-secondary" />
+                Recurring Subscription Plan
               </span>
-              <span className="font-mono text-[10px] text-slate-400">MCP #31–#35</span>
+              <span className="rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 text-[11px] font-medium text-ink-muted">
+                Auto-Billing
+              </span>
             </div>
 
             <div>
               <label
                 htmlFor="sub-plan-name"
-                className="block font-mono text-[10px] uppercase text-slate-400"
+                className="block text-xs font-medium text-ink-secondary"
               >
                 Subscription Plan Name
               </label>
@@ -339,17 +384,17 @@ export default function InvoicingSchedulerPage() {
                 required
                 value={planName}
                 onChange={(e) => setPlanName(e.target.value)}
-                className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-white"
+                className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label
                   htmlFor="sub-plan-amount"
-                  className="block font-mono text-[10px] uppercase text-slate-400"
+                  className="block text-xs font-medium text-ink-secondary"
                 >
-                  Cycle Amount ({currencyCode})
+                  Billing Amount ($)
                 </label>
                 <input
                   id="sub-plan-amount"
@@ -357,25 +402,25 @@ export default function InvoicingSchedulerPage() {
                   required
                   value={planAmount}
                   onChange={(e) => setPlanAmount(e.target.value)}
-                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-purple-200 financial-figure"
+                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-sm font-semibold text-ink tabular-nums shadow-2xs focus:border-ink focus:outline-none"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="sub-plan-interval"
-                  className="block font-mono text-[10px] uppercase text-slate-400"
+                  className="block text-xs font-medium text-ink-secondary"
                 >
-                  Billing Interval
+                  Billing Cycle
                 </label>
                 <select
                   id="sub-plan-interval"
                   value={planInterval}
                   onChange={(e) => setPlanInterval(e.target.value as "MONTH" | "YEAR")}
-                  className="mt-1 w-full rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-white"
+                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2 text-xs font-medium text-ink shadow-2xs focus:border-ink focus:outline-none cursor-pointer"
                 >
-                  <option value="MONTH">MONTH</option>
-                  <option value="YEAR">YEAR</option>
+                  <option value="MONTH">Monthly</option>
+                  <option value="YEAR">Annual</option>
                 </select>
               </div>
             </div>
@@ -383,12 +428,10 @@ export default function InvoicingSchedulerPage() {
             <button
               type="submit"
               disabled={creatingPlan}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-purple-500/50 bg-purple-950/60 hover:bg-purple-900/60 py-2 px-3 font-mono text-xs font-semibold text-purple-200 transition cursor-pointer"
+              className="btn-secondary-dark w-full py-2.5 px-4 text-xs font-semibold cursor-pointer"
             >
               <Repeat className="h-3.5 w-3.5" />
-              {creatingPlan
-                ? "Activating PayPal Billing Plan..."
-                : "Create Subscription Plan (API-12)"}
+              <span>{creatingPlan ? "Creating Plan..." : "Create Subscription Plan"}</span>
             </button>
           </form>
         </aside>

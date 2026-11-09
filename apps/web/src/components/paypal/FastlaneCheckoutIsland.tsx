@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * PayOps AI (PayPal Sentinel) — PayPal Orders v2 & Fastlane Accelerated Guest Checkout Island
- * Maps to: F-05, F-06 (JunoDB PayPal-Request-Id), US-10, US-11, ADR-0005 (Zero-PAN Zoid Isolation), R-02, R-07
- * Write Owner: Dev 2 (100%)
+ * PayOps AI (PayPal Sentinel) — PayPal Fastlane Express B2B Checkout Island
+ * Increase.com Light-First Editorial Redesign:
+ *  - Clean human-readable typography (Inter font) with smooth pop-in and hover transitions
+ *  - Preserves all Zustand hooks, duplicate-charge protection testing, and policy-guarded refund testing
  */
 
 import React, { useState } from "react";
@@ -88,7 +89,6 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
     setProcessing(true);
     setRefundVerdictMsg(null);
     try {
-      // Check Cosmos.AI Policy Firewall Cap (<= $500.00 auto-cap vs > $500.00 Passkey Hold)
       if (isOverProcurementCap) {
         const heldOrderExec = {
           executionId: `ex_ord_hold_${selectedSku.skuId.replace(/[^a-zA-Z0-9]/g, "")}`,
@@ -107,7 +107,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
         prependExecution(heldOrderExec);
         openHitlApproval(heldOrderExec);
         setStatusBanner(
-          `Cosmos.AI Policy Hold (Rule POL-02): Channel3 B2B order for SKU #${selectedSku.skuId} ($${computedOrderTotalUsd} USD) exceeds $500.00 autonomous procurement cap. Routed to FIDO2 Passkey Approval Drawer.`
+          `Policy Hold: B2B order for ${selectedSku.title} ($${computedOrderTotalUsd}) exceeds the $500.00 automatic purchasing limit. Routed for passkey approval.`
         );
         return;
       }
@@ -117,7 +117,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
         setLastLeaseStatus("REPLAYED_FROM_JUNODB");
         setCapturedOrderId(existingOrder.orderId);
         setStatusBanner(
-          `JunoDB 2PC Idempotency Hit (F-06 · R-02): Duplicate ${fundingSource} retry intercepted for PayPal-Request-Id ${deterministicRequestId}. Returned cached Order ${existingOrder.orderId} with 0 duplicate charges.`
+          `Duplicate Charge Prevented: Repeated ${fundingSource} click detected. Returned existing Order #${existingOrder.orderId} with zero extra charges.`
         );
         return;
       }
@@ -189,8 +189,8 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
         verdict: res.policyVerdict,
         detail:
           res.policyVerdict === "APPROVED_L3_AUTO"
-            ? `API-09 Auto-Refund Executed: $${refundAmountUsd} USD <= $250.00 L3 cap (${res.reasonCode}).`
-            : `API-09 Held for FIDO2 Passkey: $${refundAmountUsd} USD > $250.00 cap (${res.reasonCode}).`,
+            ? `Auto-Approved Refund: $${refundAmountUsd} is within your $250.00 automatic refund limit.`
+            : `Held for Passkey Review: $${refundAmountUsd} exceeds your $250.00 automatic refund limit.`,
       });
     } finally {
       setProcessing(false);
@@ -198,82 +198,82 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/90 p-5 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+    <div className="surface-bento rounded-2xl p-6 space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-hairline pb-4">
         <div>
-          <span className="inline-flex items-center gap-1 rounded bg-sky-500/15 border border-sky-500/40 px-2 py-0.5 font-mono text-[10px] font-semibold text-sky-300">
-            <Zap className="h-3 w-3 text-amber-400" />
-            @paypal/react-paypal-js v8.7 · Fastlane + Orders v2 (F-05 · US-10 · US-11)
+          <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 text-xs font-medium text-ink-secondary">
+            <Zap className="h-3 w-3 text-status-warning-bar" />
+            PayPal Fastlane Express Checkout
           </span>
-          <h3 className="text-sm font-bold text-white mt-1">
-            Idempotent B2B Procurement Checkout Island ({selectedSku.skuId})
+          <h3 className="mt-2 text-base font-semibold tracking-tight text-ink">
+            One-Click B2B Order Checkout ({selectedSku.title.split(" ").slice(0, 3).join(" ")})
           </h3>
         </div>
-        <div className="text-right font-mono">
-          <div className="text-[10px] uppercase text-slate-400">
-            Selected Order Total ({packMultiplier}x Case)
+        <div className="text-right tabular-nums">
+          <div className="text-xs font-medium text-ink-muted">
+            Order Total ({packMultiplier} {packMultiplier === 1 ? "Case" : "Cases"})
           </div>
-          <div className="text-lg font-bold text-emerald-400 financial-figure">
+          <div className="text-xl font-semibold text-ink">
             {formatCurrencyAmount(computedOrderTotalUsd, "USD", activeCurrency)}
           </div>
-          <div className="text-[10px] text-slate-400 financial-figure">{dualPrice.secondary}</div>
+          <div className="text-xs text-ink-muted">{dualPrice.secondary}</div>
         </div>
       </div>
 
-      {/* Fastlane Identity Recognition Bar (ADR-0005 Zero-PAN Zoid & R-07 HMAC-SHA256) */}
-      <div className="rounded-lg border border-sky-500/40 bg-sky-950/25 p-3 space-y-2">
+      {/* Fastlane Returning Buyer Recognition Card */}
+      <div className="surface-card rounded-xl p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span className="font-semibold text-sky-300 flex items-center gap-1.5">
-            <Zap className="h-4 w-4 text-amber-400" />
-            Fastlane by PayPal — Recognized: {fastlaneEmail}
+          <span className="font-semibold text-ink flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-status-warning-bar" />
+            Returning Buyer Recognized: <span className="text-ink-secondary">{fastlaneEmail}</span>
           </span>
-          <span className="rounded bg-emerald-500/20 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
-            Zero-PAN Zoid Iframe (ADR-0005)
+          <span className="rounded-pill border border-status-success-border bg-status-success-bg px-2.5 py-0.5 text-xs font-medium text-status-success-text">
+            Saved Card &amp; Address Ready
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-4">
           <input
             type="email"
             value={fastlaneEmail}
             onChange={(e) => setFastlaneEmail(e.target.value)}
             aria-label="Fastlane Recognized Buyer Email"
-            className="sm:col-span-2 rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-xs text-slate-100"
+            className="sm:col-span-2 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs text-ink focus:border-ink focus:outline-none"
           />
 
           <select
             aria-label="B2B Pack Quantity Multiplier"
             value={packMultiplier}
             onChange={(e) => setPackMultiplier(Number(e.target.value))}
-            className="rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-xs text-slate-200"
+            className="rounded-lg border border-hairline bg-surface px-2.5 py-1.5 text-xs font-medium text-ink focus:border-ink focus:outline-none cursor-pointer"
           >
-            <option value={1}>1x Case (${selectedSku.totalPriceUsd})</option>
-            <option value={2}>
-              2x Cases (${(baseSkuTotal * 2).toFixed(2)} · &gt;$500 Hold)
-            </option>
-            <option value={3}>
-              3x Cases (${(baseSkuTotal * 3).toFixed(2)} · &gt;$500 Hold)
-            </option>
+            <option value={1}>1 Case (${selectedSku.totalPriceUsd})</option>
+            <option value={2}>2 Cases (${(baseSkuTotal * 2).toFixed(2)})</option>
+            <option value={3}>3 Cases (${(baseSkuTotal * 3).toFixed(2)})</option>
           </select>
 
           <select
             aria-label="PayPal Order v2 Intent"
             value={intent}
             onChange={(e) => setIntent(e.target.value as "CAPTURE" | "AUTHORIZE")}
-            className="rounded border border-slate-700 bg-slate-950 px-2.5 py-1.5 font-mono text-xs text-slate-200"
+            className="rounded-lg border border-hairline bg-surface px-2.5 py-1.5 text-xs font-medium text-ink focus:border-ink focus:outline-none cursor-pointer"
           >
-            <option value="CAPTURE">intent: CAPTURE</option>
-            <option value="AUTHORIZE">intent: AUTHORIZE</option>
+            <option value="CAPTURE">Instant Capture</option>
+            <option value="AUTHORIZE">Hold Authorization</option>
           </select>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 font-mono text-[10px] text-slate-400">
-          <span className="truncate">R-07 Buyer HMAC-SHA256: {buyerEmailHmac}</span>
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-border-subtle text-xs text-ink-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <Lock className="h-3 w-3 text-status-success-bar" />
+            Card Details Encrypted &amp; Protected
+          </span>
+          <div className="flex items-center gap-2">
+            <span>Switch Buyer:</span>
             <button
               type="button"
               onClick={() => setFastlaneEmail("maya@lumina.io")}
-              className="underline text-sky-300 hover:text-white cursor-pointer"
+              className="underline text-ink-secondary hover:text-ink cursor-pointer"
             >
               maya@lumina.io
             </button>
@@ -281,7 +281,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
             <button
               type="button"
               onClick={() => setFastlaneEmail("maya.lin@kaveriknitwear.example.in")}
-              className="underline text-sky-300 hover:text-white cursor-pointer"
+              className="underline text-ink-secondary hover:text-ink cursor-pointer"
             >
               maya.lin@kaveri
             </button>
@@ -289,128 +289,130 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
         </div>
       </div>
 
-      {/* JunoDB Idempotency Key & Cosmos.AI Firewall Pre-Check (F-02, F-06, R-02) */}
-      <div className="rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-[11px] space-y-1.5">
+      {/* Spending Policy & Duplicate Payment Protection Pre-Check */}
+      <div className="dot-grid-surface rounded-xl border border-hairline p-4 text-xs space-y-1.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-slate-400">PayPal-Request-Id (UUIDv5/SHA-256):</span>
-          <div className="flex items-center gap-1.5">
+          <span className="font-medium text-ink">Pre-Checkout Protection Check</span>
+          <div className="flex flex-wrap items-center gap-1.5">
             <span
-              className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+              className={`rounded-pill border px-2.5 py-0.5 text-xs font-medium ${
                 isOverProcurementCap
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  ? "border-status-warning-border bg-status-warning-bg text-status-warning-text"
+                  : "border-status-success-border bg-status-success-bg text-status-success-text"
               }`}
             >
               {isOverProcurementCap
-                ? "Cosmos.AI POL-02: HOLD_APPROVAL (>$500 Cap)"
-                : `Cosmos.AI ${selectedSku.policyRuleId}: ALLOW (<=$500 Cap)`}
+                ? "Requires Passkey Approval (Over $500)"
+                : "Auto-Approved (Under $500 Limit)"}
             </span>
             <span
-              className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
+              className={`rounded-pill border px-2.5 py-0.5 text-xs font-medium ${
                 lastLeaseStatus === "REPLAYED_FROM_JUNODB"
-                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                  : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  ? "border-status-warning-border bg-status-warning-bg text-status-warning-text"
+                  : "border-status-success-border bg-status-success-bg text-status-success-text"
               }`}
             >
-              JunoDB Lease: {lastLeaseStatus}
+              {lastLeaseStatus === "REPLAYED_FROM_JUNODB"
+                ? "Duplicate Click Prevented"
+                : "Single-Charge Lock Active"}
             </span>
           </div>
         </div>
-        <div className="text-slate-200 truncate">{deterministicRequestId}</div>
+        <p className="text-xs text-ink-muted">
+          Guaranteed single charge even if the checkout button is clicked multiple times.
+        </p>
       </div>
 
-      {/* PayPal Smart Payment Buttons Grid (Fastlane, Orders v2, Venmo, Pay Later 4x, 10x Dedup Stress Test) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      {/* PayPal Smart Payment Buttons Grid */}
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         <button
           type="button"
           disabled={processing || uiState === "loading"}
           onClick={() => void handleCheckout("FASTLANE")}
-          className="sm:col-span-2 flex items-center justify-center gap-2 rounded-lg bg-[#0070E0] hover:bg-[#005EA6] py-2.5 px-4 text-xs font-bold text-white shadow transition cursor-pointer"
+          className="sm:col-span-2 btn-primary-mint py-2.5 px-4 text-xs font-semibold cursor-pointer"
         >
-          <Zap className="h-4 w-4 text-amber-300 fill-current" />
-          {processing || uiState === "loading"
-            ? "Executing create_order -> pay_order -> create_shipment_tracking..."
-            : `Pay ${formatCurrencyAmount(
-                computedOrderTotalUsd,
-                "USD",
-                activeCurrency
-              )} with PayPal Orders v2 · Fastlane (Idempotent)`}
+          <Zap className="h-4 w-4" />
+          <span>
+            {processing || uiState === "loading"
+              ? "Processing Express Order & Syncing Shipment..."
+              : `Pay ${formatCurrencyAmount(
+                  computedOrderTotalUsd,
+                  "USD",
+                  activeCurrency
+                )} with PayPal Fastlane`}
+          </span>
         </button>
 
         <button
           type="button"
           disabled={processing}
           onClick={() => void handleCheckout("PAYPAL")}
-          className="flex items-center justify-center gap-1.5 rounded-lg bg-[#003087] hover:bg-[#00256B] py-2 px-3 text-xs font-semibold text-white transition cursor-pointer"
+          className="btn-secondary-dark py-2 px-3 text-xs cursor-pointer"
         >
           <CreditCard className="h-3.5 w-3.5" />
-          PayPal Orders v2 ({intent})
+          <span>PayPal Checkout</span>
         </button>
 
         <button
           type="button"
           disabled={processing}
           onClick={() => void handleCheckout("VENMO")}
-          className="flex items-center justify-center gap-1.5 rounded-lg bg-[#008CFF] hover:bg-[#0074D4] py-2 px-3 text-xs font-semibold text-white transition cursor-pointer"
+          className="btn-outline-subtle py-2 px-3 text-xs shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm cursor-pointer"
         >
-          Pay with Venmo
+          <span>Pay with Venmo</span>
         </button>
 
         <button
           type="button"
           disabled={processing}
           onClick={() => void handleCheckout("PAY_LATER")}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-950/50 hover:bg-sky-900/50 py-2 px-3 text-xs font-semibold text-sky-200 transition cursor-pointer financial-figure"
+          className="btn-outline-subtle py-2 px-3 text-xs tabular-nums shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm cursor-pointer"
         >
-          Pay Later (4x {formatCurrencyAmount(installmentQuarterUsd, "USD", activeCurrency)})
+          <span>
+            Pay in 4 ({formatCurrencyAmount(installmentQuarterUsd, "USD", activeCurrency)} / pmt)
+          </span>
         </button>
 
         <button
           type="button"
           disabled={processing}
           onClick={handleStressTest10x}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-slate-800 hover:bg-slate-700 py-2 px-3 text-xs font-semibold text-emerald-300 transition cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-success-border bg-status-success-bg py-2 px-3 text-xs font-semibold text-status-success-text shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm cursor-pointer"
         >
-          <RefreshCw className="h-3.5 w-3.5 text-emerald-400" />
-          10x Retry Dedup Test (R-02)
+          <RefreshCw className="h-3.5 w-3.5" />
+          <span>Test 10x Duplicate Click Protection</span>
         </button>
       </div>
 
-      {/* 10x Retry Dedup Stress Test Telemetry Banner (R-02, F-06) */}
+      {/* 10x Retry Dedup Stress Test Telemetry Banner */}
       {stressTestResult && (
         <div
           role="status"
-          className="rounded-lg border border-amber-500/50 bg-amber-950/30 p-3 font-mono text-[11px] space-y-1 text-amber-200"
+          className="animate-tab-switch rounded-xl border border-status-success-border bg-status-success-bg p-3.5 text-xs space-y-1 text-status-success-text"
         >
-          <div className="flex items-center justify-between font-bold">
-            <span>
-              JunoDB 10x Concurrency Stress Test PASS (R-02 · SET NX EX 86400):
-            </span>
-            <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-300">
-              $0.00 Duplicate Charge
+          <div className="flex items-center justify-between font-semibold">
+            <span>Duplicate-Click Protection Verified</span>
+            <span className="rounded-pill bg-elevated border border-status-success-border px-2.5 py-0.5 text-xs text-status-success-text">
+              $0.00 Extra Charges
             </span>
           </div>
-          <div>
-            Sent <strong>{stressTestResult.totalRequests}</strong> concurrent requests for{" "}
-            <code className="text-white">{stressTestResult.paypalRequestId}</code> &rarr;{" "}
-            <strong className="text-emerald-300">
-              {stressTestResult.acquiredCount} ACQUIRED
+          <div className="text-ink-secondary">
+            Simulated <strong>{stressTestResult.totalRequests}</strong> rapid checkout clicks —{" "}
+            <strong className="text-status-success-text">
+              {stressTestResult.acquiredCount} order processed
             </strong>{" "}
-            +{" "}
-            <strong className="text-amber-300">
-              {stressTestResult.replayedCount} REPLAYED_FROM_JUNODB
-            </strong>
+            and <strong>{stressTestResult.replayedCount} duplicate clicks safely ignored</strong>.
           </div>
         </div>
       )}
 
-      {/* Post-Capture Shipment Tracking Sync & Policy-Guarded Refund Tester (US-11, API-08, API-09) */}
+      {/* Post-Capture Shipment Tracking Sync & Policy-Guarded Refund Tester */}
       {capturedOrderId && (
-        <div className="rounded-lg border border-emerald-500/40 bg-emerald-950/25 p-3.5 text-xs space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-2 font-semibold text-emerald-300">
+        <div className="surface-card rounded-xl p-4 text-xs space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 font-semibold text-ink">
             <span className="inline-flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4" />
-              Order {capturedOrderId} Captured &amp; Carrier Tracking Attached (US-11)
+              <CheckCircle2 className="h-4 w-4 text-status-success-bar" />
+              Order #{capturedOrderId} Confirmed &amp; Tracking Linked
             </span>
             <select
               aria-label="Carrier Code for create_shipment_tracking"
@@ -418,93 +420,84 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
               onChange={(e) =>
                 setCarrierCode(e.target.value as "FEDEX" | "DHL_EXPRESS" | "BLUEDART")
               }
-              className="rounded border border-emerald-500/40 bg-slate-950 px-2 py-0.5 font-mono text-[10px] text-emerald-200"
+              className="rounded-lg border border-hairline bg-surface px-2.5 py-1 text-xs font-medium text-ink cursor-pointer"
             >
-              <option value="FEDEX">Carrier: FEDEX</option>
-              <option value="DHL_EXPRESS">Carrier: DHL_EXPRESS</option>
-              <option value="BLUEDART">Carrier: BLUEDART</option>
+              <option value="FEDEX">Carrier: FedEx Express</option>
+              <option value="DHL_EXPRESS">Carrier: DHL Express</option>
+              <option value="BLUEDART">Carrier: BlueDart</option>
             </select>
           </div>
 
-          <div className="flex items-center gap-2 font-mono text-[11px] text-slate-300">
-            <Truck className="h-3.5 w-3.5 text-sky-400 shrink-0" />
+          <div className="flex items-center gap-2 text-xs text-ink-secondary">
+            <Truck className="h-3.5 w-3.5 text-ink-muted shrink-0" />
             <span>
-              MCP Tool: create_shipment_tracking (#28) · Carrier: {carrierCode} · Status: DELIVERED
+              Shipment Tracking Synced Automatically · Status:{" "}
+              <strong className="text-status-success-text">Delivered</strong>
             </span>
           </div>
 
-          {/* Policy-Guarded Refund Test Controls (API-09: <= $250 L3 Auto vs > $250 L2 Passkey Hold) */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-emerald-500/30 pt-2">
-            <span className="font-mono text-[11px] text-slate-300">
-              Test Policy-Guarded Refund (`create_refund` · API-09):
-            </span>
+          {/* Policy-Guarded Refund Test Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
+            <span className="text-xs text-ink-muted">Test Refund Protection Rules:</span>
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 disabled={processing}
                 onClick={() => void handlePolicyGuardedRefund("120.00")}
-                className="inline-flex items-center gap-1 rounded border border-emerald-500/50 bg-emerald-950/70 hover:bg-emerald-900/70 px-2.5 py-1 font-mono text-[10px] text-emerald-200 cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-2.5 py-1 text-xs font-medium text-status-success-text transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
               >
                 <RotateCcw className="h-3 w-3" />
-                Refund $120 (&le;$250 L3 Auto)
+                Refund $120 (Auto-Approved)
               </button>
               <button
                 type="button"
                 disabled={processing}
                 onClick={() => void handlePolicyGuardedRefund("420.00")}
-                className="inline-flex items-center gap-1 rounded border border-amber-500/50 bg-amber-950/70 hover:bg-amber-900/70 px-2.5 py-1 font-mono text-[10px] text-amber-200 cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-lg border border-status-warning-border bg-status-warning-bg px-2.5 py-1 text-xs font-medium text-status-warning-text transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
               >
                 <AlertTriangle className="h-3 w-3" />
-                Refund $420 (&gt;$250 L2 Passkey Hold)
+                Refund $420 (Passkey Hold)
               </button>
             </div>
           </div>
 
           {refundVerdictMsg && (
-            <div className="rounded border border-slate-800 bg-slate-950 px-2.5 py-1.5 font-mono text-[11px] text-sky-200">
+            <div className="rounded-lg border border-hairline bg-surface px-3 py-2 text-xs text-ink">
               {refundVerdictMsg.detail}
             </div>
           )}
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] font-mono text-slate-400">
-        <span className="inline-flex items-center gap-1">
-          <Lock className="h-3 w-3 text-emerald-400" />
-          Luhn PAN Scrubber &amp; HMAC-SHA256 Active (R-07) · PayPalScriptProvider (
-          {activeCurrency})
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-ink-muted">
+        <span className="inline-flex items-center gap-1.5">
+          <ShieldCheck className="h-3.5 w-3.5 text-status-success-bar" />
+          Zero-PAN Buyer Privacy Protection Active
         </span>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() =>
-              openApimaticDrawer({
-                executionId: "ex_fastlane_preview",
-                sessionId: "ses_20261108_9041",
-                workspaceId: activeWorkspaceId,
-                toolName: "pay_order",
-                paypalRequestId: deterministicRequestId,
-                junodbLeaseStatus: lastLeaseStatus,
-                policyVerdict: isOverProcurementCap
-                  ? "HELD_FOR_L2_PASSKEY"
-                  : "APPROVED_L3_AUTO",
-                reasonCode: "RC_OK_FASTLANE_CAPTURED",
-                gnnRiskScore: 0.02,
-                amountValue: computedOrderTotalUsd,
-                currencyCode: "USD",
-                executedAt: new Date().toISOString(),
-              })
-            }
-            className="rounded border border-sky-500/40 bg-sky-950/50 hover:bg-sky-900/50 px-2 py-0.5 text-[10px] text-sky-300 cursor-pointer"
-          >
-            APIMatic SDK Code (US-14)
-          </button>
-          <span className="inline-flex items-center gap-1">
-            <ShieldCheck className="h-3 w-3 text-sky-400" />
-            Cosmos.AI Rule {selectedSku.policyRuleId}:{" "}
-            {isOverProcurementCap ? "HOLD_APPROVAL (>$500)" : "ALLOW (<=$500 Cap)"}
-          </span>
-        </div>
+        <button
+          type="button"
+          onClick={() =>
+            openApimaticDrawer({
+              executionId: "ex_fastlane_preview",
+              sessionId: "ses_20261108_9041",
+              workspaceId: activeWorkspaceId,
+              toolName: "pay_order",
+              paypalRequestId: deterministicRequestId,
+              junodbLeaseStatus: lastLeaseStatus,
+              policyVerdict: isOverProcurementCap
+                ? "HELD_FOR_L2_PASSKEY"
+                : "APPROVED_L3_AUTO",
+              reasonCode: "RC_OK_FASTLANE_CAPTURED",
+              gnnRiskScore: 0.02,
+              amountValue: computedOrderTotalUsd,
+              currencyCode: "USD",
+              executedAt: new Date().toISOString(),
+            })
+          }
+          className="rounded-lg border border-hairline bg-elevated px-2.5 py-1 text-xs font-medium text-ink shadow-2xs transition-colors hover:border-border-strong cursor-pointer"
+        >
+          View Integration Details
+        </button>
       </div>
     </div>
   );

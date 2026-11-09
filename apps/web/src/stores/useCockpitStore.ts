@@ -318,7 +318,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
   apiMode: initialApiMode,
   uiState: "success",
   dryRun: false,
-  theme: "dark",
+  theme: "light",
   navCollapsed: false,
 
   executions: MOCK_EXECUTIONS,

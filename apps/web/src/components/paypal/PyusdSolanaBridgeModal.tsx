@@ -1,9 +1,10 @@
 "use client";
 
 /**
- * PayOps AI (PayPal Sentinel) — Cross-Border PYUSD Solana Token-2022 Settlement Bridge Modal
- * Maps to: F-11, TKT-022, US-15, R-08 (Non-Custodial Compliance), R-09 (Mandatory Memo Required Binding)
- * Write Owner: Dev 2 (100%)
+ * PayOps AI (PayPal Sentinel) — Instant PYUSD Supplier Settlement Card
+ * Increase.com Light-First Editorial Modal:
+ *  - Clean human-readable supplier invoice settlement card
+ *  - Smooth pop-in animation and tactile button micro-interactions
  */
 
 import React, { useEffect, useState } from "react";
@@ -15,12 +16,13 @@ import {
   X,
   ArrowRight,
   RotateCcw,
+  Zap,
+  Globe2,
+  FileText,
 } from "lucide-react";
 import { validatePyusdToken2022Memo } from "@payops/shared/mock-fixtures";
 import { formatDualCurrency } from "../../lib/formatters";
 import { useCockpitStore } from "../../stores/useCockpitStore";
-
-const PYUSD_MINT = "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo";
 
 export function PyusdSolanaBridgeModal() {
   const {
@@ -55,7 +57,6 @@ export function PyusdSolanaBridgeModal() {
       ? memoInput
       : `PAYOPS:${pyusdModalInvoice.invoiceId}:${pyusdModalInvoice.idempotencyKey}`;
 
-  // R-09 Memo Required regex validation: PAYOPS:<invoice_id>:<PayPal-Request-Id>
   const memoValidation = validatePyusdToken2022Memo(
     effectiveMemo,
     pyusdModalInvoice.invoiceId
@@ -69,12 +70,12 @@ export function PyusdSolanaBridgeModal() {
   );
 
   const handleSimulateCorruptMemo = () => {
-    const corrupt = `CORRUPT_MEMO:${pyusdModalInvoice.invoiceId}`;
+    const corrupt = `INVALID_MEMO:${pyusdModalInvoice.invoiceId}`;
     setMemoInput(corrupt);
     const check = validatePyusdToken2022Memo(corrupt, pyusdModalInvoice.invoiceId);
     setMemoError(
       check.errorReason ??
-        `R-09 Memo Mismatch Guard: Solana Token-2022 Memo Required extension must match 'PAYOPS:${pyusdModalInvoice.invoiceId}:<PayPal-Request-Id>'.`
+        `Invoice reference memo does not match Invoice ${pyusdModalInvoice.invoiceNumber}. Settlement blocked to prevent unlinked transfer.`
     );
   };
 
@@ -88,7 +89,7 @@ export function PyusdSolanaBridgeModal() {
     if (!isMemoValid) {
       setMemoError(
         memoValidation.errorReason ??
-          `R-09 Memo Mismatch Guard: Solana Token-2022 Memo Required extension must match 'PAYOPS:${pyusdModalInvoice.invoiceId}:<PayPal-Request-Id>'.`
+          `Invoice reference memo does not match Invoice ${pyusdModalInvoice.invoiceNumber}.`
       );
       return;
     }
@@ -105,40 +106,51 @@ export function PyusdSolanaBridgeModal() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="pyusd-bridge-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+      onClick={() => openPyusdModal(null)}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 backdrop-blur-sm p-4 sm:p-6 transition-opacity duration-200"
     >
-      <div className="w-full max-w-xl rounded-xl border border-emerald-500/50 bg-slate-900 shadow-2xl text-slate-100 overflow-hidden">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-xl rounded-3xl border border-hairline bg-elevated shadow-popover text-ink overflow-hidden animate-pop-in"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 bg-emerald-950/40 px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <Coins className="h-5 w-5 text-[#14F195]" />
+        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-4.5">
+          <div className="flex items-center gap-3.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-status-success-border bg-status-success-bg text-status-success-text shadow-2xs">
+              <Coins className="h-5 w-5" />
+            </span>
             <div>
-              <h2 id="pyusd-bridge-modal-title" className="text-sm font-bold text-white">
-                Cross-Border PYUSD Solana Token-2022 Settlement Bridge (F-11 · US-15)
+              <h2
+                id="pyusd-bridge-modal-title"
+                className="text-base font-semibold tracking-tight text-ink"
+              >
+                Instant PYUSD Supplier Settlement
               </h2>
-              <p className="text-[11px] font-mono text-[#14F195]">
-                Non-Custodial Control Plane (R-08) · On-Chain Memo Required Extension (R-09)
+              <p className="text-xs text-ink-muted">
+                Direct 1:1 USD settlement with automatic invoice reconciliation
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => openPyusdModal(null)}
-            className="rounded p-1 text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer"
+            aria-label="Close PYUSD Settlement Modal"
+            className="rounded-xl p-2 text-ink-muted transition-all duration-200 hover:bg-subtle hover:text-ink hover:rotate-90 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4 text-xs">
-          {/* Open/Overdue Supplier Invoice Selector */}
-          <div className="space-y-1">
+        <div className="p-6 space-y-4 text-xs">
+          {/* Supplier Invoice Selector */}
+          <div className="space-y-1.5">
             <label
               htmlFor="pyusd-modal-invoice-select"
-              className="block font-mono text-[10px] uppercase text-slate-400"
+              className="flex items-center gap-1.5 text-xs font-semibold text-ink"
             >
-              Select Supplier Invoice for PYUSD Token-2022 Settlement (E-07)
+              <FileText className="h-3.5 w-3.5 text-ink-secondary" />
+              <span>Select Invoice to Settle</span>
             </label>
             <select
               id="pyusd-modal-invoice-select"
@@ -147,147 +159,136 @@ export function PyusdSolanaBridgeModal() {
                 const chosen = invoices.find((inv) => inv.invoiceId === e.target.value);
                 if (chosen) openPyusdModal(chosen);
               }}
-              className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-1.5 font-mono text-xs text-white"
+              className="w-full rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-xs font-medium text-ink transition-colors focus:border-ink focus:outline-none"
             >
               {invoices.map((inv) => (
                 <option key={inv.invoiceId} value={inv.invoiceId}>
-                  {inv.invoiceNumber} ({inv.invoiceId}) — {inv.amountValue} {inv.currencyCode} [
-                  {inv.status}]
+                  Invoice {inv.invoiceNumber} · {inv.recipientEmail} — ${inv.amountValue}{" "}
+                  {inv.currencyCode} ({inv.status})
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Rail Comparison Table */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-3">
-              <div className="text-[10px] font-mono uppercase text-slate-400">
-                Legacy Correspondent SWIFT Wire
+          {/* Rail Comparison Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-hairline bg-surface p-4">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-muted">
+                <Globe2 className="h-3.5 w-3.5 text-ink-muted" />
+                <span>Traditional International Wire</span>
               </div>
-              <div className="text-base font-bold text-red-400 mt-1 financial-figure">
+              <div className="text-base font-bold text-status-danger-text mt-1 tabular-nums">
                 $48.00 Fee + 3.2% FX Spread
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
-                Settlement Time: 4 Business Days · Manual Reconciliation
+              <div className="text-xs text-ink-muted mt-0.5">
+                3–4 Business Days · Manual Bank Matching
               </div>
             </div>
 
-            <div className="rounded-lg border border-[#14F195]/50 bg-emerald-950/25 p-3">
-              <div className="text-[10px] font-mono uppercase text-[#14F195]">
-                PayPal PYUSD (Solana Token-2022)
+            <div className="rounded-2xl border border-status-success-border bg-status-success-bg/85 p-4">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-status-success-text">
+                <Zap className="h-3.5 w-3.5" />
+                <span>PayPal PYUSD Instant Rail</span>
               </div>
-              <div className="text-base font-bold text-[#14F195] mt-1 financial-figure">
+              <div className="text-base font-bold text-status-success-text mt-1 tabular-nums">
                 $0.001 Network Fee · 1:1 USD
               </div>
-              <div className="text-[11px] text-emerald-200 mt-0.5">
-                Settlement Time: 1.2 Seconds · Auto MCP Reconciliation
+              <div className="text-xs text-status-success-text/90 mt-0.5">
+                ~1.2 Seconds · Automatic Invoice Paid Status
               </div>
             </div>
           </div>
 
-          {/* Token-2022 Specs */}
-          <div className="rounded-lg border border-slate-800 bg-slate-950 p-3.5 space-y-1.5 font-mono text-[11px]">
+          {/* Clean Settlement Summary */}
+          <div className="rounded-2xl border border-hairline bg-surface/70 p-4 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">Invoice Target (E-07):</span>
-              <span className="text-white font-bold financial-figure">
-                {pyusdModalInvoice.invoiceId} ({pyusdModalInvoice.amountValue} PYUSD ·{" "}
-                {dualInvoiceAmt.secondary})
+              <span className="text-ink-muted">Selected Invoice</span>
+              <span className="text-ink font-semibold">
+                Invoice {pyusdModalInvoice.invoiceNumber} ({pyusdModalInvoice.recipientEmail})
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">PYUSD Solana Mint:</span>
-              <span className="text-[#14F195]">{PYUSD_MINT}</span>
+              <span className="text-ink-muted">Settlement Amount</span>
+              <span className="text-ink font-bold tabular-nums">
+                {pyusdModalInvoice.amountValue} PYUSD ({dualInvoiceAmt.secondary})
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-400">MCP Reconciliation Tool:</span>
-              <span className="text-sky-400">record_payment_for_invoice (#13)</span>
+              <span className="text-ink-muted">Invoice Matching</span>
+              <span className="inline-flex items-center gap-1.5 font-semibold text-status-success-text">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Automatic Invoice Reconciliation
+              </span>
             </div>
           </div>
 
-          {/* Mandatory Memo Required Binding Input (R-09) */}
-          <div className="space-y-1.5">
+          {/* Invoice Reference Verification */}
+          <div className="rounded-2xl border border-hairline bg-surface/50 p-4 space-y-2.5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label
-                htmlFor="pyusd-memo-input"
-                className="font-semibold text-slate-200"
-              >
-                Solana Token-2022 `Memo Required` Payload (R-09 Guard):
-              </label>
+              <span className="font-semibold text-ink">
+                Invoice Reference Verification
+              </span>
               <span
-                className={`font-mono text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                className={`text-[11px] px-2.5 py-0.5 rounded-pill border font-semibold ${
                   isMemoValid
-                    ? "bg-emerald-500/20 text-emerald-300"
-                    : "bg-red-500/20 text-red-300"
+                    ? "border-status-success-border bg-status-success-bg text-status-success-text"
+                    : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
                 }`}
               >
-                {isMemoValid ? "MEMO BINDING VALID" : "INVALID MEMO FORMAT"}
+                {isMemoValid ? "Reference Matched" : "Reference Mismatch"}
               </span>
             </div>
 
-            <input
-              id="pyusd-memo-input"
-              type="text"
-              value={effectiveMemo}
-              onChange={(e) => {
-                setMemoInput(e.target.value);
-                setMemoError(null);
-              }}
-              className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs text-emerald-300"
-            />
+            <p className="text-xs text-ink-secondary leading-relaxed">
+              Every PYUSD transfer automatically attaches the invoice reference so the payment is
+              never lost or unlinked.
+            </p>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-              <span className="text-[11px] text-slate-400">
-                Required:{" "}
-                <code className="font-mono text-slate-300">
-                  PAYOPS:&lt;invoice_id&gt;:&lt;PayPal-Request-Id&gt;
-                </code>
-              </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleSimulateCorruptMemo}
-                  className="rounded border border-red-500/50 bg-red-950/50 hover:bg-red-900/50 px-2 py-0.5 font-mono text-[10px] text-red-200 cursor-pointer"
-                >
-                  Simulate Memo Mismatch Error (R-09)
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRestoreValidMemo}
-                  className="inline-flex items-center gap-1 rounded border border-emerald-500/50 bg-emerald-950/50 hover:bg-emerald-900/50 px-2 py-0.5 font-mono text-[10px] text-emerald-200 cursor-pointer"
-                >
-                  <RotateCcw className="h-2.5 w-2.5" />
-                  Restore Valid Token-2022 Memo
-                </button>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <button
+                type="button"
+                onClick={handleSimulateCorruptMemo}
+                className="rounded-lg border border-status-danger-border bg-status-danger-bg px-3 py-1 text-[11px] font-medium text-status-danger-text transition-all duration-150 hover:-translate-y-0.5 cursor-pointer"
+              >
+                Test Missing Reference Guard
+              </button>
+              <button
+                type="button"
+                onClick={handleRestoreValidMemo}
+                className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-3 py-1 text-[11px] font-medium text-status-success-text transition-all duration-150 hover:-translate-y-0.5 cursor-pointer"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Restore Valid Reference
+              </button>
             </div>
           </div>
 
           {memoError && (
             <div
               role="alert"
-              className="rounded border border-red-500/60 bg-red-950/50 p-2.5 text-[11px] font-mono text-red-200 flex items-center gap-2"
+              className="rounded-xl border border-status-danger-border bg-status-danger-bg p-3.5 text-xs font-medium text-status-danger-text flex items-center gap-2"
             >
-              <AlertTriangle className="h-4 w-4 text-red-400 shrink-0" />
-              {memoError}
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{memoError}</span>
             </div>
           )}
 
-          <div className="flex items-center gap-2 rounded border border-slate-800 bg-slate-950/60 px-3 py-2 text-[11px] text-slate-300">
-            <ShieldCheck className="h-4 w-4 text-sky-400 shrink-0" />
+          <div className="flex items-center gap-2.5 rounded-xl border border-hairline bg-surface px-4 py-3 text-xs text-ink-secondary">
+            <ShieldCheck className="h-4 w-4 text-status-success-bar shrink-0" />
             <span>
-              <strong>R-08 Non-Custodial Attestation:</strong> PayOps AI never takes custody of funds;
-              transfer executes directly from merchant signer to supplier wallet and records payment on
-              PayPal Invoicing v2.
+              <strong className="text-ink">Direct Non-Custodial Settlement:</strong> Funds transfer
+              directly from your merchant account to the supplier and automatically mark Invoice{" "}
+              {pyusdModalInvoice.invoiceNumber} as Paid.
             </span>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-800 bg-slate-950 px-5 py-3">
+        <div className="flex items-center justify-between border-t border-hairline bg-surface/90 px-6 py-4">
           <button
             type="button"
             onClick={() => openPyusdModal(null)}
-            className="rounded border border-slate-700 bg-slate-800 px-3.5 py-2 text-xs text-slate-300 hover:bg-slate-700 cursor-pointer"
+            className="btn-outline-subtle px-4 py-2 text-xs font-medium transition-all duration-200 ease-spring hover:-translate-y-0.5 cursor-pointer"
           >
             Cancel
           </button>
@@ -296,12 +297,14 @@ export function PyusdSolanaBridgeModal() {
             type="button"
             disabled={settling}
             onClick={() => void handleSettle()}
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow cursor-pointer"
+            className="btn-primary-mint px-4.5 py-2 text-xs font-semibold transition-all duration-200 ease-spring hover:-translate-y-0.5 hover:shadow-sm cursor-pointer"
           >
             <CheckCircle2 className="h-4 w-4" />
-            {settling
-              ? "Confirming Solana Devnet & MCP..."
-              : `Settle ${pyusdModalInvoice.amountValue} PYUSD & Reconcile Invoice`}
+            <span>
+              {settling
+                ? "Completing Settlement..."
+                : `Settle ${pyusdModalInvoice.amountValue} PYUSD Now`}
+            </span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
