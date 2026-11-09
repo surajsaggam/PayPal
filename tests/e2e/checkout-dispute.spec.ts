@@ -5,6 +5,7 @@
  * - F-03: Autonomous Smart Invoicing v2 with QR & Conditional Rules (API-04)
  * - F-04 & F-10: Autonomous Dispute Defense with Carrier Tracking & GNN Risk Score (API-11)
  * - F-05 & F-06: Idempotent Order Capture & Refund Enforcement via PayPal-Request-Id (R-02)
+ * - F-07, F-08, F-09, F-11, F-12: Dev 2 Cockpit Mock/Replay Fixtures & 10k-Row AG Grid Generator
  */
 
 import { describe, it, expect } from "vitest";
@@ -19,7 +20,16 @@ import {
   type CosmosPolicyConfig,
 } from "../../packages/shared/src/policy-dsl";
 import { validatePayPalMonetaryPayload } from "../../packages/shared/src/apimatic-validators";
-import { MOCK_DISPUTES, MOCK_INVOICES, MOCK_WORKSPACES } from "../../packages/shared/src/mock-fixtures";
+import {
+  ALL_35_MCP_TOOLS,
+  MOCK_CHANNEL3_CATALOG,
+  MOCK_DISPUTES,
+  MOCK_EXECUTIONS,
+  MOCK_GUIDED_DEMO_SCENARIOS,
+  MOCK_INVOICES,
+  MOCK_WORKSPACES,
+  generateHighDensityLedgerRows,
+} from "../../packages/shared/src/mock-fixtures";
 
 type PolicyRuleConfig = CosmosPolicyConfig;
 
@@ -109,5 +119,14 @@ describe("PayOps AI (PayPal Sentinel) — E2E Checkout, Invoicing & Dispute Defe
     expect(MOCK_WORKSPACES.length).toBeGreaterThanOrEqual(2);
     expect(MOCK_INVOICES[0].invoiceId).toBe(SEED_INVOICES[0].invoiceId);
     expect(MOCK_DISPUTES[0].disputeId).toBe(SEED_DISPUTES[0].disputeId);
+    expect(MOCK_EXECUTIONS.length).toBeGreaterThanOrEqual(8);
+    expect(MOCK_CHANNEL3_CATALOG.length).toBeGreaterThanOrEqual(3);
+    expect(MOCK_GUIDED_DEMO_SCENARIOS).toHaveLength(4);
+
+    const totalTools = ALL_35_MCP_TOOLS.reduce((sum, dom) => sum + dom.tools.length, 0);
+    expect(totalTools).toBe(35);
+
+    const benchmarkRows = generateHighDensityLedgerRows(10000);
+    expect(benchmarkRows).toHaveLength(10000);
   });
 });
