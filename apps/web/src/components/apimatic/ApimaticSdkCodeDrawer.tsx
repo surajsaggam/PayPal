@@ -29,7 +29,12 @@ export function ApimaticSdkCodeDrawer() {
     MOCK_APIMATIC_SNIPPETS[apimaticDrawerExecution.toolName] ??
     MOCK_APIMATIC_SNIPPETS.send_invoice;
 
-  const codeText = lang === "ts" ? snippetEntry.ts : snippetEntry.python;
+  const rawCodeText = lang === "ts" ? snippetEntry.ts : snippetEntry.python;
+  const codeText = rawCodeText
+    .replace(/\s*\(F-09,\s*R-03:\s*2-decimal string precision enforced\)/g, " · 2-decimal string precision enforced")
+    .replace(/\s*\(POL-02\)/g, "")
+    .replace(/\s*\(F-06\)/g, "")
+    .replace(/\s*\(R-03\)/g, "");
 
   const liveValidation = validatePayPalMonetaryPayload(
     testAmountInput,
@@ -64,10 +69,10 @@ export function ApimaticSdkCodeDrawer() {
             </span>
             <div>
               <h2 id="apimatic-drawer-title" className="text-sm font-semibold tracking-tight text-ink">
-                APIMatic Context Plugin — Verified PayPal Server SDK Exporter
+                PayPal Server SDK Code &amp; Schema Inspector
               </h2>
               <p className="text-[11px] font-mono text-ink-muted">
-                Zero-Hallucination Schema Gate · @paypal/paypal-server-sdk · R-03 Compliant
+                Verified Schema Gate · @paypal/paypal-server-sdk · 2-Decimal Currency Check
               </p>
             </div>
           </div>
@@ -88,7 +93,7 @@ export function ApimaticSdkCodeDrawer() {
             <div className="flex items-center justify-between">
               <span className="font-semibold text-status-success-text flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4" />
-                APIMatic Pre-Flight Schema Validation: PASS (100% EVAL-DS-01)
+                Pre-Flight Schema Validation: PASS (100% Verified)
               </span>
               <span className="font-mono text-[11px] text-ink-secondary">
                 {snippetEntry.endpoint}
@@ -96,7 +101,7 @@ export function ApimaticSdkCodeDrawer() {
             </div>
             <div className="grid grid-cols-3 gap-2 font-mono text-[11px] text-ink pt-1 tabular-nums">
               <div>
-                <span className="text-ink-muted">Tool:</span> {apimaticDrawerExecution.toolName}
+                <span className="text-ink-muted">Action:</span> {apimaticDrawerExecution.toolName}
               </div>
               <div>
                 <span className="text-ink-muted">Amount:</span> &quot;
@@ -109,11 +114,11 @@ export function ApimaticSdkCodeDrawer() {
             </div>
           </div>
 
-          {/* Interactive R-03 2-Decimal String Tester */}
+          {/* Interactive 2-Decimal String Tester */}
           <div className="rounded-xl border border-hairline bg-surface p-4 space-y-2.5">
             <div className="font-semibold text-ink flex items-center gap-1.5">
               <TerminalSquare className="h-4 w-4 text-ink-secondary" />
-              Interactive APIMatic Monetary Payload Validator (R-03 Guard)
+              Interactive Monetary Payload Validator (2-Decimal String Check)
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -131,7 +136,7 @@ export function ApimaticSdkCodeDrawer() {
                     : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
                 }`}
               >
-                {liveValidation.valid ? "VALID 2-DECIMAL STRING" : "REJECTED (R-03)"}
+                {liveValidation.valid ? "VALID 2-DECIMAL STRING" : "INVALID FORMAT"}
               </span>
             </div>
             {!liveValidation.valid && (
@@ -179,7 +184,7 @@ export function ApimaticSdkCodeDrawer() {
           </div>
 
           {/* Code Block */}
-          <pre className="rounded-xl border border-slate-800 bg-[#11191F] p-4 font-mono text-xs text-slate-200 overflow-x-auto leading-relaxed shadow-md">
+          <pre className="rounded-xl border border-slate-800 bg-[#11191F] p-4 font-mono text-[11.5px] text-slate-200 whitespace-pre-wrap break-words leading-relaxed shadow-md">
             <code>{codeText}</code>
           </pre>
         </div>

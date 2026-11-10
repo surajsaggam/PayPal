@@ -88,16 +88,16 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
   return (
     <div className="dot-grid-surface border-t border-b border-hairline p-5 sm:p-6 text-xs text-ink">
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {/* Card 1: Cosmos.AI Policy Firewall & JunoDB 2PC */}
+        {/* Card 1: Policy Guard & Duplicate-Charge Lock */}
         <div className="surface-card rounded-xl p-5 flex flex-col justify-between overflow-hidden">
           <div>
             <div className="mb-3 flex items-center justify-between border-b border-border-subtle pb-2.5">
               <div className="flex items-center gap-2 font-semibold text-ink">
                 <ShieldCheck className="h-4 w-4 text-status-success-bar shrink-0" />
-                <span>1. Policy &amp; JunoDB 2PC</span>
+                <span>1. Policy &amp; Duplicate Lock</span>
               </div>
               <span className="rounded-pill bg-surface px-2 py-0.5 font-mono text-[10px] text-ink-muted border border-hairline">
-                F-02 · F-06
+                Verified
               </span>
             </div>
 
@@ -105,7 +105,11 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
               <div className="flex items-center justify-between gap-2 py-2">
                 <dt className="text-ink-muted">Verdict</dt>
                 <dd className="font-mono text-[11px] font-semibold text-ink">
-                  {row.policyVerdict}
+                  {row.policyVerdict === "APPROVED_L3_AUTO"
+                    ? "Auto-Approved"
+                    : row.policyVerdict === "HELD_FOR_L2_PASSKEY"
+                    ? "Passkey Hold"
+                    : "Blocked"}
                 </dd>
               </div>
 
@@ -117,12 +121,12 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
               </div>
 
               <div className="flex items-center justify-between gap-2 py-2">
-                <dt className="text-ink-muted">JunoDB Lease</dt>
+                <dt className="text-ink-muted">Idempotency Lock</dt>
                 <dd className="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium text-status-success-text tabular-nums">
                   <span className="h-1.5 w-1.5 rounded-full bg-status-success-bar" />
                   {row.junodbLeaseStatus === "REPLAYED_FROM_JUNODB"
-                    ? "Replayed (86,400s)"
-                    : "Acquired (86,400s)"}
+                    ? "Replayed (24h)"
+                    : "Locked (24h)"}
                 </dd>
               </div>
 
@@ -150,16 +154,16 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
           </div>
         </div>
 
-        {/* Card 2: M-04 GraphSAGE + LightGBM TreeSHAP Attribution */}
+        {/* Card 2: Fraud Risk Signals */}
         <div className="surface-card rounded-xl p-5 flex flex-col justify-between overflow-hidden">
           <div>
             <div className="mb-3 flex items-center justify-between border-b border-border-subtle pb-2.5">
               <div className="flex items-center gap-2 font-semibold text-ink">
                 <FileCheck2 className="h-4 w-4 text-ink-secondary shrink-0" />
-                <span>2. M-04 GNN Attribution</span>
+                <span>2. Fraud Risk Signals</span>
               </div>
               <span className="rounded-pill bg-surface px-2 py-0.5 font-mono text-[10px] text-ink-muted border border-hairline">
-                F-10 · ONNX
+                Live Check
               </span>
             </div>
 
@@ -195,10 +199,10 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
             <div className="mb-3 flex items-center justify-between border-b border-border-subtle pb-2.5">
               <div className="flex items-center gap-2 font-semibold text-ink">
                 <Hash className="h-4 w-4 text-ink-secondary shrink-0" />
-                <span>3. SHA-256 Audit Ledger</span>
+                <span>3. Tamper-Proof Audit Trail</span>
               </div>
               <span className="rounded-pill bg-status-success-bg px-2 py-0.5 font-mono text-[10px] font-medium text-status-success-text border border-status-success-border">
-                Elastic 180d
+                180d Retention
               </span>
             </div>
 
@@ -253,7 +257,7 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
                 className="btn-primary-mint px-2.5 py-1.5 text-[11px] font-medium cursor-pointer"
               >
                 <KeyRound className="h-3 w-3" />
-                <span>Sign Passkey (API-02)</span>
+                <span>Approve with Passkey</span>
               </button>
             )}
             <button
@@ -262,7 +266,7 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
               className="btn-secondary-dark px-2.5 py-1.5 text-[11px] font-medium cursor-pointer"
             >
               <Code2 className="h-3 w-3" />
-              <span>Export APIMatic SDK (US-14)</span>
+              <span>View SDK Code</span>
             </button>
           </div>
         </div>

@@ -20,6 +20,11 @@ import {
 import { InlineCommandStudio } from "../../../components/agent/GlobalCommandBar";
 import { WebhookSimulatorToolbar } from "../../../components/agent/WebhookSimulatorToolbar";
 import { LedgerCommandGrid } from "../../../components/ag-grid/LedgerCommandGrid";
+import {
+  AnimatedNumber,
+  AnimatedProgressBar,
+  IncreasePulseBars,
+} from "../../../components/ui/AnimatedNumber";
 import { formatCurrencyAmount, LOCALE_DICTIONARY } from "../../../lib/formatters";
 import {
   computeLiveMerchantInsights,
@@ -69,7 +74,7 @@ export default function CommandCenterPage() {
                 onClick={() => runFullGuidedPitchWalkthrough()}
                 className="group badge-lime px-3 py-1 text-xs transition-all duration-200 ease-spring hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
               >
-                <span>PayPal Sentinel · Autonomous Agentic CFO</span>
+                <span>PayPal Sentinel · Autonomous Treasury Workspace</span>
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </button>
             </div>
@@ -98,20 +103,29 @@ export default function CommandCenterPage() {
           </div>
         </div>
 
-        {/* Top-of-Page Natural-Language AI Command Studio (C-1) */}
+        {/* Top-of-Page Natural-Language Action Studio */}
         <InlineCommandStudio />
       </section>
 
       {/* SECTION 2: Structured 4-Column Apple KPI Cards (Visible Above the Fold) */}
       <section
         aria-label="Executive North-Star KPI Ribbon (API-14)"
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
       >
         <div className="surface-card p-6 flex flex-col justify-between">
           <div>
-            <div className="text-xs font-medium text-ink-muted">{strings.kpiAnmpr}</div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs font-medium text-ink-muted">{strings.kpiAnmpr}</div>
+              <IncreasePulseBars bars={10} />
+            </div>
             <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[34px]">
-              {formatCurrencyAmount(insights.annualizedSavingsUsd, "USD", activeCurrency, true)}
+              <AnimatedNumber
+                value={Number(insights.annualizedSavingsUsd)}
+                durationMs={1050}
+                formatFn={(val) =>
+                  formatCurrencyAmount(Math.round(val), "USD", activeCurrency, true)
+                }
+              />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-border-subtle font-mono text-[11px] text-status-success-text tabular-nums">
@@ -126,7 +140,12 @@ export default function CommandCenterPage() {
           <div>
             <div className="text-xs font-medium text-ink-muted">{strings.kpiDso}</div>
             <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[34px]">
-              {insights.dsoDaysCurrent.toFixed(1)} Days
+              <AnimatedNumber
+                value={insights.dsoDaysCurrent}
+                decimals={1}
+                suffix=" Days"
+                durationMs={950}
+              />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-border-subtle font-mono text-[11px] text-ink-secondary tabular-nums">
@@ -140,7 +159,12 @@ export default function CommandCenterPage() {
               {strings.kpiDisputeWinRate}
             </div>
             <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[34px]">
-              {insights.disputeWinRatePct.toFixed(1)}%
+              <AnimatedNumber
+                value={insights.disputeWinRatePct}
+                decimals={1}
+                suffix="%"
+                durationMs={1000}
+              />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-status-success-text font-medium tabular-nums">
@@ -154,7 +178,7 @@ export default function CommandCenterPage() {
               {strings.kpiPolicyFirewall}
             </div>
             <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[34px]">
-              100.0%
+              <AnimatedNumber value={100.0} decimals={1} suffix="%" durationMs={900} />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-ink-secondary tabular-nums">
@@ -166,7 +190,7 @@ export default function CommandCenterPage() {
       {/* SECTION 3: Interactive Rail & Scenario Showcase */}
       <WebhookSimulatorToolbar />
 
-      {/* SECTION 4: Primary AG Grid Enterprise Financial Ledger */}
+      {/* SECTION 4: Primary Financial Ledger */}
       <div id="live-execution-ledger" className="scroll-mt-20">
         <LedgerCommandGrid />
       </div>
@@ -198,7 +222,13 @@ export default function CommandCenterPage() {
               <div className="mb-5 flex items-baseline justify-between border-b border-border-subtle pb-4">
                 <div>
                   <div className="kpi-stat-value text-2xl">
-                    {formatCurrencyAmount(48200, "USD", activeCurrency, true)}
+                    <AnimatedNumber
+                      value={48200}
+                      durationMs={1100}
+                      formatFn={(val) =>
+                        formatCurrencyAmount(Math.round(val), "USD", activeCurrency, true)
+                      }
+                    />
                   </div>
                   <div className="mt-1 text-xs text-ink-muted tabular-nums">
                     30-Day Gross Invoiced Volume · Early-Pay Velocity +65.1%
@@ -235,20 +265,25 @@ export default function CommandCenterPage() {
                 </table>
               ) : (
                 <div className="space-y-3.5">
-                  {WATERFALL_BARS.map((bar) => (
+                  {WATERFALL_BARS.map((bar, idx) => (
                     <div key={bar.label} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-ink-secondary font-medium">{bar.label}</span>
                         <span className="text-ink font-semibold tabular-nums">
-                          {formatCurrencyAmount(bar.usd, "USD", activeCurrency, true)}
+                          <AnimatedNumber
+                            value={bar.usd}
+                            durationMs={950 + idx * 120}
+                            formatFn={(val) =>
+                              formatCurrencyAmount(Math.round(val), "USD", activeCurrency, true)
+                            }
+                          />
                         </span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-subtle overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${bar.color}`}
-                          style={{ width: `${bar.pct}%` }}
-                        />
-                      </div>
+                      <AnimatedProgressBar
+                        percent={bar.pct}
+                        colorClass={bar.color}
+                        delayMs={idx * 90}
+                      />
                     </div>
                   ))}
                 </div>
@@ -291,7 +326,9 @@ export default function CommandCenterPage() {
                 <div className="flex items-center justify-between py-2.5">
                   <dt className="text-ink-muted">Standard Transactions</dt>
                   <dd className="flex items-center gap-3 font-medium text-ink">
-                    <span>82.0% · Automatically Approved</span>
+                    <span>
+                      <AnimatedNumber value={82.0} decimals={1} suffix="%" /> · Automatically Approved
+                    </span>
                     <Check className="h-3.5 w-3.5 text-ink-muted" />
                   </dd>
                 </div>
@@ -299,7 +336,9 @@ export default function CommandCenterPage() {
                 <div className="flex items-center justify-between py-2.5">
                   <dt className="text-ink-muted">High-Value Refunds</dt>
                   <dd className="flex items-center gap-3 font-medium text-ink">
-                    <span>12.0% · Routed for Passkey Sign-Off</span>
+                    <span>
+                      <AnimatedNumber value={12.0} decimals={1} suffix="%" /> · Routed for Passkey Sign-Off
+                    </span>
                     <Check className="h-3.5 w-3.5 text-ink-muted" />
                   </dd>
                 </div>
@@ -307,7 +346,9 @@ export default function CommandCenterPage() {
                 <div className="flex items-center justify-between py-2.5">
                   <dt className="text-ink-muted">Disputed Deliveries</dt>
                   <dd className="flex items-center gap-3 font-medium text-ink">
-                    <span>6.0% · Contested with Carrier Proof</span>
+                    <span>
+                      <AnimatedNumber value={6.0} decimals={1} suffix="%" /> · Contested with Carrier Proof
+                    </span>
                     <Check className="h-3.5 w-3.5 text-ink-muted" />
                   </dd>
                 </div>
@@ -323,7 +364,9 @@ export default function CommandCenterPage() {
                 <div className="flex items-center justify-between pt-2.5">
                   <dt className="text-ink-muted">Returning Buyer Accuracy</dt>
                   <dd className="flex items-center gap-3 font-semibold text-status-success-text">
-                    <span>98.6% Verified Accuracy</span>
+                    <span>
+                      <AnimatedNumber value={98.6} decimals={1} suffix="%" /> Verified Accuracy
+                    </span>
                     <Check className="h-3.5 w-3.5 text-status-success-bar" />
                   </dd>
                 </div>
@@ -335,3 +378,4 @@ export default function CommandCenterPage() {
     </div>
   );
 }
+

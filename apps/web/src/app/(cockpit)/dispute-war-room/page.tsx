@@ -39,6 +39,7 @@ import {
   formatDualCurrency,
   formatSlaCountdown,
 } from "../../../lib/formatters";
+import { AnimatedNumber } from "../../../components/ui/AnimatedNumber";
 import { useCockpitStore } from "../../../stores/useCockpitStore";
 
 function formatReasonLabel(reasonCode: string): string {
@@ -407,11 +408,17 @@ export default function DisputeWarRoomPage() {
                       </div>
                       <div className="text-right tabular-nums shrink-0">
                         <div className="text-sm font-semibold text-ink">
-                          {formatCurrencyAmount(
-                            d.disputedAmountValue,
-                            d.currencyCode,
-                            activeCurrency
-                          )}
+                          <AnimatedNumber
+                            value={parseFloat(d.disputedAmountValue) || 0}
+                            durationMs={850}
+                            formatFn={(val) =>
+                              formatCurrencyAmount(
+                                val.toFixed(2),
+                                d.currencyCode,
+                                activeCurrency
+                              )
+                            }
+                          />
                         </div>
                         <div className="text-[11px] text-ink-muted">{dualAmt.secondary}</div>
                       </div>
@@ -510,7 +517,12 @@ export default function DisputeWarRoomPage() {
                       {showGraphTextSummary ? "Show Diagram" : "Text Summary"}
                     </button>
                     <span className="rounded-pill border border-status-danger-border bg-status-danger-bg px-2.5 py-0.5 text-xs font-semibold text-status-danger-text tabular-nums">
-                      Fraud Confidence: {Math.round(activeDispute.gnnRiskScore * 100)}%
+                      Fraud Confidence:{" "}
+                      <AnimatedNumber
+                        value={Math.round(activeDispute.gnnRiskScore * 100)}
+                        durationMs={750}
+                        suffix="%"
+                      />
                     </span>
                   </div>
                 </div>
@@ -802,9 +814,25 @@ export default function DisputeWarRoomPage() {
                         </span>
                       </div>
                       <ul className="space-y-1 text-ink-secondary text-xs tabular-nums pt-0.5">
-                        {activeHopTelemetry.telemetryBullets.map((bullet) => (
-                          <li key={bullet}>• {bullet}</li>
-                        ))}
+                        {activeHopTelemetry.telemetryBullets.map((bullet) => {
+                          const cleanBullet = bullet
+                            .replace(
+                              /M-03 Gemini 1\.5 Pro Vision OCR \+ Bhashini normalizer/gi,
+                              "Multilingual Delivery Receipt Scanner"
+                            )
+                            .replace(
+                              /M-05 Elastic Hybrid RAG/gi,
+                              "Automated Policy Matcher"
+                            )
+                            .replace(
+                              /M-04 2-Hop Mirror Graph scored in 9\.2ms via onnxruntime-node/gi,
+                              "Cross-Merchant Relationship Graph verified in 9.2ms"
+                            )
+                            .replace(/\(blocked by M-02\)/gi, "(blocked by Safety Guard)")
+                            .replace(/stripped from ONNX input/gi, "excluded from risk evaluation")
+                            .replace(/\s*\(#28-#30\)/g, "");
+                          return <li key={bullet}>• {cleanBullet}</li>;
+                        })}
                       </ul>
                     </div>
                   </div>

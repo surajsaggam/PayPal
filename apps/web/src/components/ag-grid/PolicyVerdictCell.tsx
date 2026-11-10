@@ -18,7 +18,7 @@ export const PolicyVerdictCell = memo(function PolicyVerdictCell({ row }: Policy
     return (
       <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border border-status-success-border bg-status-success-bg px-2.5 py-0.5 font-mono text-[11px] font-medium text-status-success-text transition-all duration-200 group-hover:shadow-2xs">
         <ShieldCheck className="h-3 w-3 shrink-0" />
-        <span>ALLOW (L3)</span>
+        <span>Auto-Approved</span>
       </div>
     );
   }
@@ -27,7 +27,7 @@ export const PolicyVerdictCell = memo(function PolicyVerdictCell({ row }: Policy
     return (
       <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border border-status-warning-border bg-status-warning-bg px-2.5 py-0.5 font-mono text-[11px] font-medium text-status-warning-text transition-all duration-200 group-hover:shadow-2xs">
         <ShieldAlert className="h-3 w-3 shrink-0" />
-        <span>HOLD_PASSKEY (L2)</span>
+        <span>Passkey Hold</span>
       </div>
     );
   }
@@ -35,7 +35,8 @@ export const PolicyVerdictCell = memo(function PolicyVerdictCell({ row }: Policy
   return (
     <div className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border border-status-danger-border bg-status-danger-bg px-2.5 py-0.5 font-mono text-[11px] font-medium text-status-danger-text transition-all duration-200 group-hover:shadow-2xs">
       <AlertOctagon className="h-3 w-3 shrink-0" />
-      <span>BLOCKED_INJECTION</span>
+      <span>Blocked</span>
     </div>
   );
 });
+

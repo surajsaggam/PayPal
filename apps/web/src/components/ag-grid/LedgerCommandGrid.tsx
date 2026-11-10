@@ -257,17 +257,16 @@ export function LedgerCommandGrid() {
       {/* Row 1: Editorial Title + Ordered Top-Right Action Sequence */}
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-lg font-semibold tracking-tight text-ink">
               Autonomous Execution &amp; Dispute Ledger
             </h2>
             <span className="rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 font-mono text-[10px] font-medium text-ink-secondary">
-              AG Grid 32.3.2 · {filteredRows.length.toLocaleString()} rows · {lastRenderLatencyMs}ms
+              Live Activity · {filteredRows.length.toLocaleString()} records · {lastRenderLatencyMs}ms
             </span>
           </div>
           <p className="mt-1 text-xs text-ink-muted">
-            Click any execution row to inspect policy guardrails, fraud risk signals, and SHA-256
-            audit hashes.
+            Click any row to inspect policy guardrails, fraud risk signals, and tamper-proof audit hashes.
           </p>
         </div>
 
@@ -296,7 +295,7 @@ export function LedgerCommandGrid() {
             )}
           </div>
 
-          {/* 2. Toggle Real AG Grid 32 Virtualized Canvas vs Master-Detail Inspector (C-2) */}
+          {/* 2. Toggle Compact Grid Canvas vs Master-Detail Inspector */}
           <button
             type="button"
             onClick={() => setUseNativeAgGridCanvas((v) => !v)}
@@ -307,7 +306,7 @@ export function LedgerCommandGrid() {
             }`}
           >
             <Table2 className="h-3.5 w-3.5" />
-            <span>{useNativeAgGridCanvas ? "Inspector View" : "AG Grid Canvas"}</span>
+            <span>{useNativeAgGridCanvas ? "Inspector View" : "Compact Grid"}</span>
           </button>
 
           {/* 3. Group by Currency Toggle */}
@@ -335,7 +334,7 @@ export function LedgerCommandGrid() {
             }`}
           >
             <Zap className="h-3.5 w-3.5 text-ink-secondary transition-transform duration-200 group-hover:scale-110" />
-            <span>{benchmarkMode10k ? "Reset 9 Rows" : "10k Benchmark"}</span>
+            <span>{benchmarkMode10k ? "Reset 9 Rows" : "10k Scale Test"}</span>
           </button>
 
           {/* 5. Primary Export CSV Action */}
@@ -354,7 +353,7 @@ export function LedgerCommandGrid() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="apple-segmented-track">
           {[
-            { id: "ALL", label: "All Executions", count: counts.all, dotClass: null },
+            { id: "ALL", label: "All Activity", count: counts.all, dotClass: null },
             {
               id: "APPROVED_L3_AUTO",
               label: "Auto-Approved",
@@ -369,7 +368,7 @@ export function LedgerCommandGrid() {
             },
             {
               id: "BLOCKED_SECURITY_INJECTION",
-              label: "Blocked Injection",
+              label: "Blocked",
               count: counts.blocked,
               dotClass: "bg-status-danger-bar",
             },
@@ -435,12 +434,11 @@ export function LedgerCommandGrid() {
         {uiState === "offline" && (
           <div
             role="status"
-            className="flex items-center justify-between border-b border-status-warning-border bg-status-warning-bg px-4 py-2.5 text-xs text-status-warning-text"
+            className="flex flex-wrap items-center justify-between gap-2 border-b border-status-warning-border bg-status-warning-bg px-4 py-2.5 text-xs text-status-warning-text"
           >
             <span className="inline-flex items-center gap-2 font-mono">
               <WifiOff className="h-4 w-4 shrink-0" />
-              OFFLINE / REPLAY FALLBACK ACTIVE — Operating against signed local Sandbox
-              transcripts.
+              OFFLINE QUEUE ACTIVE — Operating against signed local Sandbox transcripts.
             </span>
             <button
               type="button"
@@ -455,7 +453,7 @@ export function LedgerCommandGrid() {
         {uiState === "error" && (
           <div
             role="alert"
-            className="flex items-center justify-between border-b border-status-danger-border bg-status-danger-bg px-4 py-3 text-xs text-status-danger-text"
+            className="flex flex-wrap items-center justify-between gap-2 border-b border-status-danger-border bg-status-danger-bg px-4 py-3 text-xs text-status-danger-text"
           >
             <div className="flex items-center gap-2 font-mono">
               <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -468,7 +466,7 @@ export function LedgerCommandGrid() {
               onClick={() => {
                 setUiState("success");
                 setStatusBanner(
-                  "JunoDB Idempotent Retry Verified: Reused PayPal-Request-Id with zero duplicate side effects."
+                  "Idempotent Retry Verified: Reused PayPal-Request-Id with zero duplicate side effects."
                 );
               }}
               className="btn-secondary-dark px-3 py-1 font-mono text-xs cursor-pointer"
@@ -487,26 +485,31 @@ export function LedgerCommandGrid() {
             <div className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4 animate-spin text-ink" />
               <span>
-                Validating Schema &rarr; Evaluating Policy Firewall &rarr; Acquiring 2PC
-                Idempotency Lock...
+                Validating Schema &rarr; Evaluating Spend Policy &rarr; Acquiring Idempotency Lock...
               </span>
             </div>
-            <div className="h-8 w-full rounded bg-subtle animate-pulse" />
-            <div className="h-8 w-full rounded bg-subtle/80 animate-pulse" />
+            <div className="h-8 w-full rounded animate-shimmer" />
+            <div className="h-8 w-full rounded animate-shimmer" />
           </div>
         )}
 
         {uiState === "empty" || filteredRows.length === 0 ? (
-          <div className="p-12 text-center space-y-3 bg-elevated">
-            <p className="text-sm text-ink-secondary">
-              No live agent executions in this filter view. Click{" "}
-              <span className="font-mono font-semibold text-ink">[Restore Default Ledger]</span>{" "}
-              or press{" "}
-              <kbd className="rounded border border-hairline bg-surface px-1.5 py-0.5 font-mono text-xs text-ink">
-                Cmd+K
-              </kbd>{" "}
-              to run your first PayPal MCP workflow.
-            </p>
+          <div className="p-10 sm:p-12 text-center space-y-3.5 bg-elevated">
+            <div className="mx-auto w-10 h-10 rounded-xl bg-subtle border border-hairline flex items-center justify-center text-ink-muted">
+              <Layers className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-ink">
+                No Treasury Activity in This View
+              </h3>
+              <p className="text-xs text-ink-secondary max-w-md mx-auto">
+                Your filter or workspace state currently has zero matching executions. Restore the default ledger or press{" "}
+                <kbd className="rounded border border-hairline bg-surface px-1.5 py-0.5 font-mono text-[11px] text-ink">
+                  Cmd+K
+                </kbd>{" "}
+                to launch a new invoice or dispute defense workflow.
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -524,7 +527,7 @@ export function LedgerCommandGrid() {
         ) : (
           uiState !== "loading" && (
             <>
-              {/* Real AG Grid 32.3.2 Virtualized Canvas Mode (C-2) */}
+              {/* Compact Grid Canvas Mode */}
               {useNativeAgGridCanvas && (
                 <div
                   role="treegrid"
@@ -555,13 +558,13 @@ export function LedgerCommandGrid() {
 
               {/* Expandable 3-Card Master-Detail Inspector Mode */}
               {!useNativeAgGridCanvas && (
-                <div>
+                <div className="overflow-x-auto">
                   <table
                     role="treegrid"
                     aria-rowcount={filteredRows.length}
                     aria-colcount={5}
                     aria-label="PayPal Sentinel Agent Tool Executions Ledger"
-                    className="w-full table-fixed text-left border-collapse text-xs"
+                    className="w-full min-w-[680px] table-fixed text-left border-collapse text-xs"
                   >
                     <colgroup>
                       <col className="w-[30%]" />
@@ -572,7 +575,7 @@ export function LedgerCommandGrid() {
                     </colgroup>
                     <thead className="border-b border-hairline bg-surface/80 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-muted">
                       <tr>
-                        <th className="py-3 pl-4 pr-2 font-semibold">Execution &amp; MCP Tool</th>
+                        <th className="py-3 pl-4 pr-2 font-semibold">Workflow &amp; Action</th>
                         <th className="py-3 px-2 font-semibold">Amount ({activeCurrency})</th>
                         <th className="py-3 px-2 font-semibold">Fraud Risk Score</th>
                         <th className="py-3 px-2 font-semibold">Policy Verdict</th>
@@ -645,7 +648,7 @@ export function LedgerCommandGrid() {
                                       <span className="shrink-0 text-status-success-text font-medium">
                                         {row.junodbLeaseStatus === "REPLAYED_FROM_JUNODB"
                                           ? "Replayed"
-                                          : "2PC OK"}
+                                          : "Verified"}
                                       </span>
                                     </div>
                                   </div>

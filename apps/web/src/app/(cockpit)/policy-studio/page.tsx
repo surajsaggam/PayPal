@@ -31,6 +31,7 @@ import { validatePayPalMonetaryPayload } from "@payops/shared/apimatic-validator
 import { MOCK_APIMATIC_SNIPPETS } from "@payops/shared/mock-fixtures";
 import { evaluateCosmosPolicyFirewall } from "@payops/shared/policy-dsl";
 import { executeAgentPrompt, updateWorkspacePolicy } from "../../../lib/api-client";
+import { AnimatedNumber } from "../../../components/ui/AnimatedNumber";
 import { useCockpitStore } from "../../../stores/useCockpitStore";
 
 interface TierProfile {
@@ -482,7 +483,11 @@ export default function PolicyStudioPage() {
 
   const snippetObj =
     MOCK_APIMATIC_SNIPPETS[simTool] ?? MOCK_APIMATIC_SNIPPETS.create_refund;
-  const snippetCode = sdkLang === "ts" ? snippetObj.ts : snippetObj.python;
+  const snippetCode = (sdkLang === "ts" ? snippetObj.ts : snippetObj.python)
+    .replace(/\s*\(F-09,\s*R-03:\s*2-decimal string precision enforced\)/g, " · 2-decimal string precision enforced")
+    .replace(/\s*\(POL-02\)/g, "")
+    .replace(/\s*\(F-06\)/g, "")
+    .replace(/\s*\(R-03\)/g, "");
 
   const handleSelectAutonomyTier = (level: AutonomyLevel) => {
     const profile = AUTONOMY_PROFILES[level];
@@ -663,7 +668,14 @@ export default function PolicyStudioPage() {
               </p>
             </div>
             <span className="shrink-0 rounded-xl border border-hairline bg-surface px-3.5 py-2 text-xs font-medium text-ink tabular-nums">
-              Auto-Refund Cap: <strong>${singleCap.toLocaleString()}</strong>
+              Auto-Refund Cap:{" "}
+              <strong>
+                $<AnimatedNumber value={singleCap} durationMs={650} />
+              </strong>{" "}
+              · Daily:{" "}
+              <strong>
+                $<AnimatedNumber value={dailyCap} durationMs={750} />
+              </strong>
             </span>
           </div>
 

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { CockpitShell } from "@/components/agent/CockpitShell";
@@ -15,10 +15,36 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#003087",
+};
+
 export const metadata: Metadata = {
-  title: "PayOps AI · PayPal Sentinel | Autonomous Working-Capital & Dispute Defense Cockpit",
+  title: {
+    default: "PayPal Sentinel — Autonomous Treasury, Receivables & Dispute Protection",
+    template: "%s | PayPal Sentinel",
+  },
   description:
-    "PayPal AI Hackathon 2026 — 5-Screen Autonomous Commerce Cockpit powered by @paypal/agent-toolkit MCP, AG Grid Enterprise, Bryntum Scheduler, Elastic Hybrid RAG, and APIMatic.",
+    "Autonomous CFO treasury workspace powered by PayPal Invoicing, Dispute Protection, Fastlane Checkout, and PYUSD Cross-Border Settlement with human-in-the-loop passkey guardrails.",
+  keywords: [
+    "PayPal Sentinel",
+    "Autonomous Treasury",
+    "Receivables Automation",
+    "Dispute Defense",
+    "PYUSD Settlement",
+    "Fastlane Checkout",
+    "CFO Command Center",
+  ],
+  authors: [{ name: "PayPal Sentinel Treasury Team" }],
+  openGraph: {
+    title: "PayPal Sentinel — Autonomous CFO Treasury & Payment Operations",
+    description:
+      "Real-time receivables collection, automated dispute evidence assembly, policy-guarded refunds, and instant PYUSD cross-border vendor settlement.",
+    type: "website",
+    siteName: "PayPal Sentinel",
+  },
 };
 
 export default function RootLayout({
@@ -27,10 +53,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`light ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-canvas text-ink font-sans antialiased selection:bg-accent-lime selection:text-accent-lime-ink">
+    <html
+      lang="en"
+      className={`light overflow-x-hidden scroll-smooth ${inter.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className="min-h-screen overflow-x-hidden bg-canvas text-ink font-sans antialiased selection:bg-accent-lime selection:text-accent-lime-ink">
         <CockpitShell>{children}</CockpitShell>
       </body>
     </html>
   );
 }
+

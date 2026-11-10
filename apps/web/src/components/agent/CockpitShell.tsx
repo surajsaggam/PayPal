@@ -20,6 +20,9 @@ import {
   Cpu,
   Sparkles,
   ArrowRight,
+  ArrowUp,
+  ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import type { AutonomyLevel, CurrencyCode } from "@payops/shared";
 import { MOCK_GUIDED_DEMO_SCENARIOS } from "@payops/shared/mock-fixtures";
@@ -51,10 +54,23 @@ const AUTONOMY_LEVELS: { level: AutonomyLevel; label: string; title: string }[] 
   { level: "L4", label: "L4", title: "L4 High-Velocity Autonomous ($500 Auto Cap)" },
 ];
 
+const ROUTE_BREADCRUMB_LABELS: Record<string, string> = {
+  "/": "Command Center",
+  "/command-center": "Command Center",
+  "/policy-studio": "Policy Studio",
+  "/invoicing-scheduler": "Smart Invoicing",
+  "/dispute-war-room": "Dispute Defense",
+  "/checkout-bridge": "Fastlane & PYUSD",
+  "/about": "About & FAQs",
+  "/privacy": "Privacy Policy",
+  "/terms": "Terms & Conditions",
+};
+
 export function CockpitShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [envPopoverOpen, setEnvPopoverOpen] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const envPopoverRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -114,6 +130,15 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
       }
     }
   }, [theme]);
+
+  // Track vertical scroll for Back to Top floating button
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackToTop(window.scrollY > 240);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Close Environment popover on route change, outside pointerdown, or Escape
   useEffect(() => {
@@ -245,14 +270,17 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
     },
   ];
 
+  const currentBreadcrumb =
+    ROUTE_BREADCRUMB_LABELS[pathname] ?? "Treasury Workspace";
+
   return (
     <div className="min-h-screen flex flex-col bg-canvas text-ink transition-colors duration-200 overflow-x-hidden">
       {/* Top Navbar — Apple Translucent Chrome Layer */}
       <header className="sticky top-0 z-30 apple-glass-nav">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-3 px-6 sm:px-10">
+        <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-3 px-4 sm:px-10">
           {/* Left: Geometric Wordmark + Segmented Hover-Pill Navigation */}
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={toggleNavCollapsed}
@@ -286,7 +314,7 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
                     key={item.href}
                     href={item.href}
                     title={`${item.fullLabel} (${item.shortcut})`}
-                    className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[12.5px] transition-all duration-200 ease-spring active:scale-[0.975] ${
+                    className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12.5px] transition-all duration-200 ease-spring active:scale-[0.975] ${
                       isActive
                         ? "bg-subtle/95 text-ink font-semibold shadow-2xs ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
                         : "font-medium text-ink-muted hover:bg-subtle/60 hover:text-ink"
@@ -303,13 +331,13 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
                   type="button"
                   aria-expanded={envPopoverOpen}
                   onClick={() => setEnvPopoverOpen((v) => !v)}
-                  className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-all duration-200 ease-spring active:scale-[0.975] cursor-pointer ${
+                  className={`inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-all duration-200 ease-spring active:scale-[0.975] cursor-pointer ${
                     envPopoverOpen
                       ? "bg-subtle text-ink font-semibold shadow-2xs"
                       : "text-ink-muted hover:bg-subtle/60 hover:text-ink"
                   }`}
                 >
-                  <span>Environment</span>
+                  <span>Settings</span>
                   <ChevronDown
                     className={`h-3.5 w-3.5 transition-transform duration-200 ease-spring ${
                       envPopoverOpen ? "rotate-180" : ""
@@ -318,8 +346,8 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
                 </button>
 
                 {envPopoverOpen && (
-                  <div className="animate-popover-origin apple-glass-sheet absolute left-0 mt-2.5 w-[490px] rounded-2xl p-5 z-50 grid grid-cols-12 gap-5">
-                    <div className="col-span-7 space-y-4">
+                  <div className="animate-popover-origin apple-glass-sheet absolute left-0 mt-2.5 w-[calc(100vw-2rem)] sm:w-[460px] max-w-[460px] rounded-2xl p-5 z-50 grid grid-cols-1 sm:grid-cols-12 gap-5">
+                    <div className="sm:col-span-7 space-y-4">
                       <div className="flex items-start gap-3">
                         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-hairline bg-surface text-ink-secondary shadow-2xs">
                           <Cpu className="h-3.5 w-3.5" />
@@ -388,7 +416,7 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
                         </span>
                         <div className="flex-1">
                           <label className="block text-xs font-semibold text-ink">
-                            Judge &amp; Resilience State Simulator
+                            Workspace State Preview
                           </label>
                           <select
                             aria-label="Inspect 5 Interactive UI States"
@@ -406,25 +434,25 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
                       </div>
                     </div>
 
-                    <div className="col-span-5 flex flex-col justify-between gap-3">
+                    <div className="sm:col-span-5 flex flex-col justify-between gap-3">
                       <div className="rounded-xl bg-surface/90 p-3.5 border border-hairline shadow-2xs">
-                        <div className="text-xs font-semibold text-ink">JunoDB &amp; Neon PG16</div>
+                        <div className="text-xs font-semibold text-ink">Duplicate-Charge Lock</div>
                         <div className="mt-0.5 text-[11px] text-ink-muted">
-                          2PC Idempotency Lock Active
+                          Atomic Idempotency Active
                         </div>
                         <div className="mt-2.5 inline-flex items-center gap-1.5 font-mono text-[10px] font-semibold text-status-success-text tabular-nums">
                           <Database className="h-3 w-3" />
-                          TTL 86,400s · VERIFIED
+                          24H LEASE · VERIFIED
                         </div>
                       </div>
 
                       <div className="rounded-xl bg-surface/90 p-3.5 border border-hairline shadow-2xs">
                         <div className="text-xs font-semibold text-ink">Active Autonomy</div>
                         <div className="mt-0.5 text-[11px] text-ink-muted">
-                          Tier {activeWorkspace.autonomyLevel} · 35 PayPal MCP Tools
+                          Tier {activeWorkspace.autonomyLevel} · 35 PayPal Actions
                         </div>
                         <div className="mt-2.5 font-mono text-[10px] text-status-success-text font-semibold">
-                          Gemini 2.5 Flash + Channel3
+                          Real-Time Policy Guard
                         </div>
                       </div>
                     </div>
@@ -434,71 +462,31 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
             </nav>
           </div>
 
-          {/* Right: Global L0-L4 Autonomy Control + Ask AI (Cmd+K) + Workspace + Theme + Guided Pitch */}
-          <div className="flex items-center gap-2.5">
+          {/* Right: Ask AI (Cmd+K) + Theme + Guided Pitch */}
+          <div className="flex items-center gap-2 shrink-0">
             {(apiMode === "replay" || circuitBreakerTripped) && (
               <span
                 role="status"
                 aria-label="R-06 Circuit Breaker Replay Active"
-                className="whitespace-nowrap rounded-pill border border-status-warning-border bg-status-warning-bg px-3 py-1 font-mono text-[10px] font-semibold text-status-warning-text tabular-nums"
+                className="whitespace-nowrap rounded-pill border border-status-warning-border bg-status-warning-bg px-2.5 py-1 font-mono text-[10px] font-semibold text-status-warning-text tabular-nums"
               >
                 REPLAY ({lastFailoverLatencyMs ?? 11}ms · {replayedTranscriptCount})
               </span>
             )}
-
-            {/* Global L0-L4 Autonomy Segmented Selector (C-4) */}
-            <div
-              role="group"
-              aria-label="Global Autonomy Tier Selector (L0-L4)"
-              className="hidden xl:inline-flex items-center rounded-xl border border-hairline bg-subtle/80 p-0.5"
-            >
-              {AUTONOMY_LEVELS.map((tier) => {
-                const isSelected = activeWorkspace.autonomyLevel === tier.level;
-                return (
-                  <button
-                    key={tier.level}
-                    type="button"
-                    title={tier.title}
-                    onClick={() => handleGlobalAutonomySwitch(tier.level)}
-                    className={`rounded-lg px-2 py-1 font-mono text-[11px] transition-all duration-150 cursor-pointer ${
-                      isSelected
-                        ? "bg-elevated text-ink font-bold shadow-2xs"
-                        : "text-ink-muted hover:text-ink"
-                    }`}
-                  >
-                    {tier.label}
-                  </button>
-                );
-              })}
-            </div>
 
             {/* Spotlight Ask AI Trigger (C-1) */}
             <button
               type="button"
               onClick={() => setCommandBarOpen(true)}
               aria-label="Open Sentinel AI Spotlight Command Palette (Cmd+K)"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-elevated px-3 py-1.5 text-xs font-medium text-ink shadow-2xs hover:border-border-strong active:scale-95 transition-all cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-elevated px-2.5 sm:px-3 py-1.5 text-xs font-medium text-ink shadow-2xs hover:border-border-strong active:scale-95 transition-all cursor-pointer"
             >
               <Sparkles className="h-3.5 w-3.5 text-ink-secondary" />
-              <span className="hidden sm:inline">Ask AI</span>
+              <span className="hidden sm:inline">Quick Action</span>
               <kbd className="rounded bg-subtle px-1.5 py-0.2 font-mono text-[10px] text-ink-muted">
                 ⌘K
               </kbd>
             </button>
-
-            {/* Ghost Workspace Selector */}
-            <select
-              aria-label="Select Merchant Workspace (E-01)"
-              value={activeWorkspaceId}
-              onChange={(e) => setWorkspaceId(e.target.value)}
-              className="hidden md:inline-block max-w-[155px] truncate rounded-lg bg-transparent px-2.5 py-1.5 text-xs font-medium text-ink-muted transition-colors duration-150 hover:bg-subtle/70 hover:text-ink focus:outline-none cursor-pointer"
-            >
-              {workspaces.map((ws) => (
-                <option key={ws.workspaceId} value={ws.workspaceId} className="bg-elevated text-ink">
-                  {ws.merchantName}
-                </option>
-              ))}
-            </select>
 
             {/* Tactile Theme Switcher */}
             <button
@@ -518,9 +506,9 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => runFullGuidedPitchWalkthrough()}
-              className="btn-secondary-dark whitespace-nowrap rounded-lg px-3.5 py-1.5 text-xs font-medium cursor-pointer"
+              className="btn-secondary-dark whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium cursor-pointer"
             >
-              Guided Pitch
+              Guided Tour
             </button>
           </div>
         </div>
@@ -529,7 +517,7 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
         {!navCollapsed && (
           <nav
             aria-label="Mobile Cockpit Navigation"
-            className="flex items-center gap-2 overflow-x-auto border-t border-hairline bg-surface/90 px-4 py-2.5 lg:hidden"
+            className="flex items-center gap-1.5 overflow-x-auto border-t border-hairline bg-surface/95 px-4 py-2.5 lg:hidden"
           >
             {navItems.map((item) => {
               const isActive =
@@ -539,7 +527,7 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${
+                  className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95 ${
                     isActive
                       ? "bg-elevated text-ink border border-hairline shadow-2xs font-semibold"
                       : "text-ink-muted hover:text-ink"
@@ -554,7 +542,7 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
 
         {/* Interactive 4-Step Guided Tour Overlay Banner (A-2) */}
         {activePitchScenario && (
-          <div className="border-t border-accent-lime-border bg-accent-lime/25 px-6 py-2.5 text-xs text-ink sm:px-10">
+          <div className="border-t border-accent-lime-border bg-accent-lime/25 px-4 py-2.5 text-xs text-ink sm:px-10">
             <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="badge-lime px-2.5 py-0.5 font-semibold">
@@ -606,18 +594,18 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
           <div
             role="status"
             aria-live="polite"
-            className="animate-tab-switch border-t border-hairline bg-surface/95 px-6 py-2 text-xs text-ink sm:px-10"
+            className="animate-tab-switch border-t border-hairline bg-surface/95 px-4 py-2 text-xs text-ink sm:px-10"
           >
             <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4">
-              <span className="inline-flex items-center gap-2 font-mono text-[11px] tabular-nums">
+              <span className="inline-flex items-center gap-2 font-mono text-[11px] tabular-nums break-words">
                 <CheckCircle2 className="h-3.5 w-3.5 text-status-success-bar shrink-0" />
-                {statusBannerMessage}
+                <span>{statusBannerMessage}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setStatusBanner(null)}
                 aria-label="Dismiss Notification Banner"
-                className="rounded-md p-1 text-ink-muted hover:bg-subtle hover:text-ink active:scale-95 transition-all cursor-pointer"
+                className="rounded-md p-1 text-ink-muted hover:bg-subtle hover:text-ink active:scale-95 transition-all cursor-pointer shrink-0"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -626,10 +614,121 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
+      {/* Breadcrumb & Global Workspace Control Bar */}
+      <div className="border-b border-subtle bg-surface/40">
+        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 px-4 py-1.5 text-[11px] text-ink-muted sm:px-10">
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5">
+            <Link
+              href="/command-center"
+              className="font-medium text-ink-secondary hover:text-ink transition-colors"
+            >
+              PayPal Sentinel
+            </Link>
+            <ChevronRight className="h-3 w-3 text-ink-faint" />
+            <span className="font-semibold text-ink">{currentBreadcrumb}</span>
+          </nav>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Merchant Workspace Selector */}
+            <select
+              aria-label="Select Merchant Workspace (E-01)"
+              value={activeWorkspaceId}
+              onChange={(e) => setWorkspaceId(e.target.value)}
+              className="hidden sm:inline-block max-w-[230px] truncate rounded-md border border-hairline bg-elevated/80 px-2 py-0.5 text-[11px] font-medium text-ink-secondary transition-colors duration-150 hover:text-ink focus:outline-none cursor-pointer"
+            >
+              {workspaces.map((ws) => (
+                <option key={ws.workspaceId} value={ws.workspaceId} className="bg-elevated text-ink">
+                  {ws.merchantName}
+                </option>
+              ))}
+            </select>
+
+            {/* Global L0-L4 Autonomy Segmented Selector (C-4) */}
+            <div
+              role="group"
+              aria-label="Global Autonomy Tier Selector (L0-L4)"
+              className="inline-flex items-center rounded-lg border border-hairline bg-subtle/80 p-0.5"
+            >
+              {AUTONOMY_LEVELS.map((tier) => {
+                const isSelected = activeWorkspace.autonomyLevel === tier.level;
+                return (
+                  <button
+                    key={tier.level}
+                    type="button"
+                    title={tier.title}
+                    onClick={() => handleGlobalAutonomySwitch(tier.level)}
+                    className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] transition-all duration-150 cursor-pointer ${
+                      isSelected
+                        ? "bg-elevated text-ink font-bold shadow-2xs"
+                        : "text-ink-muted hover:text-ink"
+                    }`}
+                  >
+                    {tier.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Link
+              href="/about"
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-ink-secondary hover:bg-subtle hover:text-ink transition-colors"
+            >
+              <HelpCircle className="h-3 w-3" />
+              <span>About &amp; FAQs</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content Container */}
-      <main className="mx-auto w-full max-w-[1280px] flex-1 min-w-0 px-6 pt-6 pb-16 sm:px-10">
+      <main className="mx-auto w-full max-w-[1280px] flex-1 min-w-0 px-4 pt-6 pb-14 sm:px-10">
         {children}
       </main>
+
+      {/* Executive Footer with About/FAQ, Privacy Policy, Terms & Conditions, and State Controls */}
+      <footer className="border-t border-hairline bg-surface/70 mt-auto">
+        <div className="mx-auto flex max-w-[1280px] flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 py-5 text-xs text-ink-muted sm:px-10">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-bold tracking-wider uppercase text-ink text-[11px]">
+              PayPal Sentinel
+            </span>
+            <span>·</span>
+            <span>Autonomous CFO Treasury, Invoicing &amp; Dispute Protection</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/about" className="hover:text-ink transition-colors font-medium">
+              About &amp; 5 FAQs
+            </Link>
+            <Link href="/privacy" className="hover:text-ink transition-colors font-medium">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-ink transition-colors font-medium">
+              Terms &amp; Conditions
+            </Link>
+            <button
+              type="button"
+              onClick={() => setUiState(uiState === "empty" ? "success" : "empty")}
+              className="rounded-md border border-hairline bg-elevated px-2.5 py-1 text-[11px] font-medium text-ink-secondary hover:text-ink hover:border-border-strong transition-colors cursor-pointer"
+            >
+              {uiState === "empty" ? "Restore Active Ledger" : "Preview Empty State"}
+            </button>
+          </div>
+        </div>
+      </footer>
+
+      {/* Floating Back to Top Button */}
+      {showBackToTop && (
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="Scroll Back to Top"
+          className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-ink px-3.5 py-2 text-xs font-semibold text-canvas shadow-elevated transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+        >
+          <ArrowUp className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Top</span>
+        </button>
+      )}
 
       {/* Shared Drawers, Modals & Spotlight Command Studio */}
       <McpToolTraceDrawer />
@@ -641,3 +740,4 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

@@ -261,9 +261,9 @@ html.dark {
 
   /* Modal Dimming Scrim */
   .apple-modal-scrim {
-    background-color: rgba(15, 23, 42, 0.42);
-    backdrop-filter: blur(10px) saturate(140%);
-    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    background-color: rgba(15, 23, 42, 0.38);
+    backdrop-filter: blur(2px) saturate(120%);
+    -webkit-backdrop-filter: blur(2px) saturate(120%);
   }
 
   /* Bento Surface Card (Outer container: rounded-2xl, subtle specular inner highlight) */
@@ -668,4 +668,35 @@ html.dark {
     border-color: var(--border-strong) !important;
   }
 }
+
+@keyframes increaseShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-subtle) 25%,
+    var(--bg-surface) 50%,
+    var(--bg-subtle) 75%
+  );
+  background-size: 200% 100%;
+  animation: increaseShimmer 1.6s infinite linear;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+nextjs-portal {
+  display: none !important;
+}
+
 

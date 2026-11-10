@@ -1,0 +1,83 @@
+1
+00:00:00,000 --> 00:00:06,783
+Welcome to PayPal Sentinel — the autonomous payment operations workspace for ambitious merchants.
+
+2
+00:00:06,863 --> 00:00:13,647
+Live scroll-triggered KPIs track $26,960 in protected net margin, 16.0-day DSO, and an 84% dispute win rate.
+
+3
+00:00:13,727 --> 00:00:20,510
+The Quick Action studio (Cmd+K) lets teams launch invoices, dispute defenses, and payouts in seconds.
+
+4
+00:00:20,590 --> 00:00:26,716
+Every autonomous action is logged in the real-time execution ledger with a 3-card verification inspector.
+
+5
+00:00:26,796 --> 00:00:32,922
+Inspect 24-hour atomic duplicate-charge locks, fraud risk signals, and 180-day tamper-proof audit hashes.
+
+6
+00:00:33,002 --> 00:00:39,128
+Track the 30-day cash inflow waterfall and verify strongly-typed PayPal SDK payloads side by side.
+
+7
+00:00:39,208 --> 00:00:45,208
+In Policy Studio, CFOs configure 5 autonomy tiers (L0 Observe Only through L4 Full Auto).
+
+8
+00:00:45,288 --> 00:00:51,288
+When a $2,400 high-value refund is triggered, Sentinel automatically blocks unverified execution.
+
+9
+00:00:51,368 --> 00:00:57,369
+Transactions exceeding the $250 cap require hardware passkey sign-off before touching PayPal.
+
+10
+00:00:57,449 --> 00:01:03,118
+Smart Invoicing reduces Days Sales Outstanding by 42.9% — from 28.0 days down to 16.0 days.
+
+11
+00:01:03,198 --> 00:01:08,867
+Combines a 2% Net-10 early-pay discount with a strict 72-hour customer quiet period guard.
+
+12
+00:01:08,947 --> 00:01:14,616
+Generates instant PayPal Fastlane QR payment links and tracks working-capital recovery live.
+
+13
+00:01:14,696 --> 00:01:20,773
+The Dispute Defense War Room maps the 3-hop Buyer, Order, and Carrier Delivery Graph automatically.
+
+14
+00:01:20,853 --> 00:01:26,929
+Compiles signed carrier delivery proof, customs declarations, and serial records in under 4 seconds.
+
+15
+00:01:27,009 --> 00:01:33,086
+Submits the complete evidence package to PayPal Disputes API, lifting win rates from 42% to 84%.
+
+16
+00:01:33,166 --> 00:01:38,613
+Returning wholesale buyers complete B2B restock orders in 1 click via PayPal Fastlane.
+
+17
+00:01:38,693 --> 00:01:44,140
+Cross-border supplier payouts settle in 1.2 seconds using PayPal USD (PYUSD) at $0.001 fee.
+
+18
+00:01:44,220 --> 00:01:49,667
+Eliminates $48 correspondent wire fees and 4-day settlement delays for export merchants.
+
+19
+00:01:49,747 --> 00:01:56,468
+Engineered with Apple-grade typography, smooth spring motion, and mobile-first responsiveness.
+
+20
+00:01:56,548 --> 00:02:03,268
+Includes dedicated About & 5 Core FAQs, Privacy Policy, Terms & Conditions, and 404/Error recovery.
+
+21
+00:02:03,348 --> 00:02:10,068
+PayPal Sentinel — Autonomous Treasury, Invoicing & Dispute Protection for Modern Merchants.

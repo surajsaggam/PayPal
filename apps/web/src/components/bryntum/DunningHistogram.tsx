@@ -7,11 +7,12 @@
  *  - Preserves exported `computeWorkingCapitalBuckets` pure function for unit tests
  */
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, TrendingUp } from "lucide-react";
 import type { PayPalInvoiceRecord, SubscriptionPlanRecord } from "@payops/shared";
 import { convertCurrencyAmount, formatCurrencyAmount } from "../../lib/formatters";
 import { useCockpitStore } from "../../stores/useCockpitStore";
+import { AnimatedNumber } from "../ui/AnimatedNumber";
 
 export interface WorkingCapitalBucket {
   isoDate: string;
@@ -128,6 +129,27 @@ export function DunningHistogram() {
   const activeCurrency = useCockpitStore((s) => s.activeCurrency);
   const invoices = useCockpitStore((s) => s.invoices);
   const subscriptionPlans = useCockpitStore((s) => s.subscriptionPlans);
+  const [barsVisible, setBarsVisible] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setBarsVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setBarsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const buckets = useMemo(
     () => computeWorkingCapitalBuckets(invoices, subscriptionPlans),
@@ -149,7 +171,7 @@ export function DunningHistogram() {
   );
 
   return (
-    <div className="surface-bento rounded-2xl p-6 space-y-4">
+    <div ref={containerRef} className="surface-bento rounded-2xl p-6 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -167,10 +189,24 @@ export function DunningHistogram() {
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="rounded-pill border border-hairline bg-elevated px-3 py-1 text-ink shadow-2xs tabular-nums">
             Projected Inflow:{" "}
-            <strong className="font-semibold">{formatCurrencyAmount(totalProjectedInflowUsd, "USD", activeCurrency, true)}</strong>{" "}
+            <strong className="font-semibold">
+              <AnimatedNumber
+                value={totalProjectedInflowUsd}
+                durationMs={950}
+                formatFn={(val) =>
+                  formatCurrencyAmount(Math.round(val), "USD", activeCurrency, true)
+                }
+              />
+            </strong>{" "}
             · Outflow:{" "}
             <span className="text-ink-secondary">
-              {formatCurrencyAmount(totalScheduledOutflowUsd, "USD", activeCurrency, true)}
+              <AnimatedNumber
+                value={totalScheduledOutflowUsd}
+                durationMs={950}
+                formatFn={(val) =>
+                  formatCurrencyAmount(Math.round(val), "USD", activeCurrency, true)
+                }
+              />
             </span>
           </span>
           <span className="inline-flex items-center gap-1 rounded-pill border border-status-success-border bg-status-success-bg px-3 py-1 font-medium text-status-success-text tabular-nums">
@@ -181,7 +217,7 @@ export function DunningHistogram() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-7 gap-3.5 pt-2">
-        {buckets.map((b) => {
+        {buckets.map((b, idx) => {
           const inPct = Math.round((b.inflowUsd / maxVal) * 100);
           const outPct = Math.round((b.outflowUsd / maxVal) * 100);
           const hasInvoices = b.matchedInvoices.length > 0;
@@ -197,20 +233,33 @@ export function DunningHistogram() {
             >
               <div className="h-24 flex items-end justify-center gap-2 border-b border-border-subtle pb-2">
                 <div
-                  className="w-4 rounded-t-md bg-status-success-bar transition-all duration-300 group-hover:brightness-110"
-                  style={{ height: `${Math.max(12, inPct)}%` }}
+                  className="w-4 rounded-t-md bg-status-success-bar transition-all duration-700 ease-out group-hover:brightness-110"
+                  style={{
+                    height: barsVisible ? `${Math.max(12, inPct)}%` : "8%",
+                    transitionDelay: `${idx * 60}ms`,
+                  }}
                   title={`Projected Inflow (${b.dateLabel}): $${b.inflowUsd.toLocaleString()} USD`}
                 />
                 <div
-                  className="w-4 rounded-t-md bg-status-warning-bar/85 transition-all duration-300"
-                  style={{ height: `${Math.max(8, outPct)}%` }}
+                  className="w-4 rounded-t-md bg-status-warning-bar/85 transition-all duration-700 ease-out"
+                  style={{
+                    height: barsVisible ? `${Math.max(8, outPct)}%` : "5%",
+                    transitionDelay: `${idx * 60 + 40}ms`,
+                  }}
                   title={`Scheduled Supplier Payout (${b.dateLabel}): $${b.outflowUsd.toLocaleString()} USD`}
                 />
               </div>
               <div className="text-center tabular-nums">
                 <div className="text-xs font-semibold text-ink">{b.dateLabel}</div>
                 <div className="mt-0.5 text-[11px] font-semibold text-status-success-text">
-                  +{formatCurrencyAmount(b.inflowUsd, "USD", activeCurrency, true)}
+                  +
+                  <AnimatedNumber
+                    value={b.inflowUsd}
+                    durationMs={850 + idx * 80}
+                    formatFn={(val) =>
+                      formatCurrencyAmount(Math.round(val), "USD", activeCurrency, true)
+                    }
+                  />
                 </div>
                 <div className="text-[10.5px] text-ink-muted">
                   -{formatCurrencyAmount(b.outflowUsd, "USD", activeCurrency, true)}
@@ -229,3 +278,4 @@ export function DunningHistogram() {
     </div>
   );
 }
+

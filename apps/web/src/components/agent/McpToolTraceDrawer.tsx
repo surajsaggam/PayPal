@@ -41,17 +41,17 @@ export function McpToolTraceDrawer() {
   return (
     <aside
       aria-label="Live PayPal MCP Tool Execution Trace Drawer"
-      className="fixed bottom-6 right-6 z-40 w-full max-w-xl rounded-2xl apple-glass-sheet text-ink overflow-hidden animate-pop-in"
+      className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-40 sm:w-full max-w-xl rounded-2xl apple-glass-sheet text-ink overflow-hidden animate-pop-in"
     >
       <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-5 py-4">
         <div className="flex items-center gap-2.5">
           <Cpu className="h-4 w-4 text-ink-secondary" />
           <div>
             <h3 className="text-xs font-semibold tracking-tight text-ink">
-              PayPal Agent Toolkit MCP Execution Trace
+              PayPal Workflow Verification Trace
             </h3>
             <p className="text-[10.5px] font-mono text-ink-muted tabular-nums">
-              Gemini 2.5 Flash · @paypal/agent-toolkit · {totalLatencyMs}ms total
+              PayPal Sandbox Verification · {totalLatencyMs}ms total
             </p>
           </div>
         </div>
@@ -65,7 +65,7 @@ export function McpToolTraceDrawer() {
         </button>
       </div>
 
-      {/* Live Infrastructure Verification Strip (A-1) */}
+      {/* Live Infrastructure Verification Strip */}
       <div className="grid grid-cols-3 gap-2 border-b border-hairline bg-surface/60 px-5 py-2.5 text-[11px] font-mono tabular-nums">
         <div className="truncate">
           <span className="text-ink-muted">PayPal:</span>{" "}
@@ -74,12 +74,12 @@ export function McpToolTraceDrawer() {
           </span>
         </div>
         <div className="truncate">
-          <span className="text-ink-muted">Model:</span>{" "}
-          <span className="text-ink font-semibold">Gemini 2.5</span>
+          <span className="text-ink-muted">Guard:</span>{" "}
+          <span className="text-ink font-semibold">Policy Active</span>
         </div>
         <div className="truncate flex items-center gap-1">
           <Database className="h-3 w-3 text-status-success-text shrink-0" />
-          <span className="text-status-success-text font-semibold">Neon PG16</span>
+          <span className="text-status-success-text font-semibold">Audit Locked</span>
         </div>
       </div>
 

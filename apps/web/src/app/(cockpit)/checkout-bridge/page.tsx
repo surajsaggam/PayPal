@@ -30,6 +30,7 @@ import {
   type Channel3CatalogItem,
 } from "@payops/shared/mock-fixtures";
 import { FastlaneCheckoutIsland } from "../../../components/paypal/FastlaneCheckoutIsland";
+import { AnimatedNumber } from "../../../components/ui/AnimatedNumber";
 import { searchChannel3CatalogApi, settleInvoicePyusd } from "../../../lib/api-client";
 import { formatCurrencyAmount, formatDualCurrency } from "../../../lib/formatters";
 import {
@@ -478,7 +479,13 @@ export default function CheckoutBridgePage() {
 
                     <div className="text-right tabular-nums shrink-0">
                       <div className="text-sm font-semibold text-ink">
-                        {formatCurrencyAmount(item.totalPriceUsd, "USD", activeCurrency)}
+                        <AnimatedNumber
+                          value={numericTotal}
+                          durationMs={850}
+                          formatFn={(val) =>
+                            formatCurrencyAmount(val.toFixed(2), "USD", activeCurrency)
+                          }
+                        />
                       </div>
                       <div className="text-[11px] text-ink-muted">{dualSkuPrice.secondary}</div>
                       <div
@@ -567,7 +574,12 @@ export default function CheckoutBridgePage() {
                   <div className="text-right tabular-nums">
                     <div className="text-xs font-medium text-ink-muted">Settlement Amount</div>
                     <div className="text-base font-semibold text-status-success-text mt-0.5">
-                      {crossBorderInvoice.amountValue} PYUSD
+                      <AnimatedNumber
+                        value={parseFloat(crossBorderInvoice.amountValue) || 650}
+                        decimals={2}
+                        suffix=" PYUSD"
+                        durationMs={850}
+                      />
                     </div>
                     <div className="text-[11px] text-ink-muted">
                       {

@@ -354,47 +354,47 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
     {
       stepIndex: 1,
       stage: "M-02_ROUTER",
-      label: "M-02 Intent Router & XML Sandboxing (GPT-4o-mini)",
-      detail: "Domain pruned 35 -> 6 Invoicing tools in 84ms. 0 injection patterns detected.",
+      label: "1. Request Safety & Intent Verification",
+      detail: "Scoped request to 6 Invoicing actions in 84ms. 0 injection patterns detected.",
       latencyMs: 84,
       status: "PASS",
     },
     {
       stepIndex: 2,
       stage: "M-01_PLANNER",
-      label: "M-01 PayPal MCP Planner (Claude 3.5 Sonnet)",
-      detail: "Synthesized 5-step tool chain: generate_invoice_number -> create_invoice -> rules -> QR -> send_invoice.",
+      label: "2. PayPal Workflow Planner",
+      detail: "Prepared 5-step sequence: generate_invoice_number -> create_invoice -> rules -> QR -> send_invoice.",
       latencyMs: 410,
       status: "PASS",
     },
     {
       stepIndex: 3,
       stage: "F-09_APIMATIC",
-      label: "F-09 APIMatic Schema & 2-Decimal String Validator",
-      detail: 'Verified ISO-4217 currencyCode="USD" and normalized amountValue="2450.00" (R-03 compliant).',
+      label: "3. Currency & 2-Decimal Schema Check",
+      detail: 'Verified ISO-4217 currencyCode="USD" and normalized amountValue="2450.00".',
       latencyMs: 3,
       status: "PASS",
     },
     {
       stepIndex: 4,
       stage: "F-02_COSMOS_DSL",
-      label: "F-02 Cosmos.AI Decision DSL Policy Firewall",
-      detail: "Matched Rule POL-01 (Autonomy L3, amount <= $5,000.00). Verdict: APPROVED_L3_AUTO.",
+      label: "4. Spend & Risk Policy Guard",
+      detail: "Matched Policy Rule POL-01 (Autonomy L3, amount <= $5,000.00). Verdict: Auto-Approved.",
       latencyMs: 2,
       status: "PASS",
     },
     {
       stepIndex: 5,
       stage: "F-06_JUNODB",
-      label: "F-06 JunoDB 2PC Idempotency Lock",
-      detail: "Acquired SET NX EX 86400 lease for PayPal-Request-Id: idem_ws_99102a_invoice_INV_2026_8841.",
+      label: "5. Duplicate-Charge Protection Lock",
+      detail: "Acquired 24-hour idempotency lock for PayPal-Request-Id: idem_ws_99102a_invoice_INV_2026_8841.",
       latencyMs: 4,
       status: "PASS",
     },
     {
       stepIndex: 6,
       stage: "PAYPAL_SANDBOX",
-      label: "PayPal Sandbox Execution (api-m.sandbox.paypal.com)",
+      label: "6. PayPal Sandbox Execution (api-m.sandbox.paypal.com)",
       detail: "Invoice INV2-X89A-4412-9012-7731 created, 2.00% Net-10 discount attached, QR code generated.",
       latencyMs: 312,
       status: "PASS",
@@ -421,10 +421,10 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       uiState: mode === "replay" ? "offline" : "success",
       statusBannerMessage:
         mode === "replay"
-          ? "DEMO_REPLAY_MODE Engaged (R-06): Serving deterministic signed PayPal Sandbox HTTP transcripts with zero latency."
+          ? "Offline Replay Mode Engaged: Serving deterministic signed PayPal Sandbox HTTP transcripts with zero latency."
           : mode === "live"
             ? "Connected to Live Fastify Control Plane (:4000) & PayPal Developer Sandbox."
-            : "Operating in Deterministic Mock Contract Mode (packages/shared/src/mock-fixtures.ts).",
+            : "Operating in Deterministic Sandbox Contract Mode.",
     }),
   setUiState: (uiState) =>
     set((state) => ({
@@ -492,7 +492,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       replayedTranscriptCount: state.replayedTranscriptCount + 1,
       executions: [failoverExec, ...state.executions],
       auditLogs: appendChainedAuditLog(state.auditLogs, failoverExec, "r06_circuit_breaker"),
-      statusBannerMessage: `R-06 Circuit Breaker Auto-Failover (${transcript.replayFailoverLatencyMs}ms < 50ms): ${reason} -> Flipped to DEMO_REPLAY_MODE (uiState: offline) serving SHA-256 signed Sandbox transcript ${transcript.transcriptId} (Debug-Id: ${transcript.paypalDebugId}).`,
+      statusBannerMessage: `Circuit Breaker Auto-Failover (${transcript.replayFailoverLatencyMs}ms < 50ms): ${reason} -> Switched to Offline Replay Mode serving signed Sandbox transcript ${transcript.transcriptId} (Debug-Id: ${transcript.paypalDebugId}).`,
     }));
     return transcript;
   },
@@ -587,7 +587,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       set({
         traceDrawerOpen: true,
         lastReplayTranscript: MOCK_SIGNED_SANDBOX_TRANSCRIPTS["/api/v1/invoices/autonomous"],
-        statusBannerMessage: `[Pitch Step 1 · ${scenario.timecodeWindow}] Smart Invoice INV2-X89A-4412-9012-7731 & $1,850 QR created + Bryntum Dunning Drag (API-06) synced · Judges: ${scenario.judgeCallouts.join(" · ")}`,
+        statusBannerMessage: `[Pitch Step 1 · ${scenario.timecodeWindow}] Smart Invoice INV2-X89A-4412-9012-7731 & $1,850 QR created + Dunning Schedule synced.`,
       });
     } else if (scenario.scenarioId === "DEMO_2_DISPUTE_DEFENSE") {
       get().simulateDisputeWebhook("INR_340");
@@ -595,13 +595,13 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       set({
         traceDrawerOpen: true,
         lastReplayTranscript: MOCK_SIGNED_SANDBOX_TRANSCRIPTS["/api/v1/webhooks/paypal"],
-        statusBannerMessage: `[Pitch Step 2 · ${scenario.timecodeWindow}] Dispute PP-D-90412 / PP-D-4012 ($340 INR) + DHL #77819201 DELIVERED + M-04 GNN (0.88) contested · Judges: ${scenario.judgeCallouts.join(" · ")}`,
+        statusBannerMessage: `[Pitch Step 2 · ${scenario.timecodeWindow}] Dispute PP-D-90412 / PP-D-4012 ($340 INR) + DHL #77819201 DELIVERED contested automatically.`,
       });
     } else if (scenario.scenarioId === "DEMO_3_INJECTION_BLOCK") {
       get().simulateDisputeWebhook("INJECTION_2400");
       set({
         lastReplayTranscript: MOCK_SIGNED_SANDBOX_TRANSCRIPTS["/api/v1/agent/approve"],
-        statusBannerMessage: `[Pitch Step 3 · ${scenario.timecodeWindow}] Prompt Injection ($2,400) blocked (RC_00_INDIRECT_PROMPT_INJECTION_DETECTED) & ex_9041 held for FIDO2 Passkey · Judges: ${scenario.judgeCallouts.join(" · ")}`,
+        statusBannerMessage: `[Pitch Step 3 · ${scenario.timecodeWindow}] Prompt Injection ($2,400) blocked & ex_9041 held for FIDO2 Passkey approval.`,
       });
     } else if (scenario.scenarioId === "DEMO_4_PYUSD_BRIDGE") {
       get().settleInvoiceWithPyusd(
@@ -728,8 +728,8 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         hitlApprovalExecution: null,
         statusBannerMessage:
           decision === "APPROVE"
-            ? `Execution ${executionId} cryptographically signed via FIDO2 Passkey (API-02) & released to PayPal Sandbox.`
-            : `Execution ${executionId} rejected by operator and permanently locked in ImmutableAuditLog (E-10).`,
+            ? `Execution ${executionId} cryptographically signed via FIDO2 Passkey & released to PayPal Sandbox.`
+            : `Execution ${executionId} rejected by operator and permanently locked in the tamper-proof audit log.`,
       };
     }),
 
@@ -755,7 +755,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         ),
         policies: state.policies.map((pol) => ({ ...pol, autonomyLevel })),
         auditLogs: appendChainedAuditLog(state.auditLogs, policyExec, state.activeOperatorId),
-        statusBannerMessage: `Workspace Autonomy Level updated to ${autonomyLevel} via API-03. Cosmos.AI Policy AST re-compiled in 1.8ms.`,
+        statusBannerMessage: `Workspace Autonomy Level updated to ${autonomyLevel}. Spending guardrails updated in 1.8ms.`,
       };
     }),
 
@@ -778,7 +778,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       return {
         policies: state.policies.map((pol) => (pol.policyId === policyId ? { ...pol, ...patch } : pol)),
         auditLogs: appendChainedAuditLog(state.auditLogs, policyExec, state.activeOperatorId),
-        statusBannerMessage: `Policy Rule ${policyId} compiled in 1.8ms and persisted to ImmutableAuditLog (E-10).`,
+        statusBannerMessage: `Policy threshold ${policyId} updated in 1.8ms and recorded in the tamper-proof audit log.`,
       };
     }),
 
@@ -968,7 +968,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         ),
         executions: [exec, ...state.executions],
         auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
-        statusBannerMessage: `Recurring Series ${seriesId} (${target.seriesName}) transitioned to ${nextStatus} via PayPal MCP ${toolName} (#17/#19).`,
+        statusBannerMessage: `Recurring Series ${seriesId} (${target.seriesName}) transitioned to ${nextStatus} via PayPal ${toolName}.`,
       };
     }),
 
@@ -995,7 +995,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         ],
         executions: [exec, ...state.executions],
         auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
-        statusBannerMessage: `Created & activated PayPal Recurring Invoice Series ${series.seriesId} (${series.amountValue} ${series.currencyCode} / ${series.cadence}) via create_recurring_series (#16).`,
+        statusBannerMessage: `Created & activated PayPal Recurring Invoice Series ${series.seriesId} (${series.amountValue} ${series.currencyCode} / ${series.cadence}).`,
       };
     }),
 
@@ -1040,7 +1040,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         executions: [exec, ...state.executions],
         auditLogs: appendChainedAuditLog(state.auditLogs, exec, "paypal_webhook_api13"),
         statusBannerMessage:
-          "Webhook CUSTOMER.DISPUTE.CREATED (PP-D-4012 · $340.00 USD) RSA-SHA256 verified -> DHL #77819201 DELIVERED correlated -> M-04 GNN Score 0.88 -> Compelling Evidence 3.0 compiled in 3.1s.",
+          "Webhook CUSTOMER.DISPUTE.CREATED (PP-D-4012 · $340.00 USD) verified -> DHL #77819201 DELIVERED matched -> Fraud Risk 88% -> Compelling Evidence packet compiled in 3.1s.",
       });
       return dispute;
     }
@@ -1084,7 +1084,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       auditLogs: appendChainedAuditLog(state.auditLogs, blockedExec, "cosmos_policy_firewall"),
       hitlApprovalExecution: blockedExec,
       statusBannerMessage:
-        "EXECUTION HELD by Cosmos.AI Rule POL-02: Buyer note contained Indirect Prompt Injection (RC_00_INDIRECT_PROMPT_INJECTION_DETECTED) & Refund $2,400.00 exceeds $250.00 cap. Routed to FIDO2 Passkey.",
+        "EXECUTION HELD by Refund Safeguard Policy: Buyer note contained an unsafe prompt-override attempt & Refund $2,400.00 exceeds $250.00 cap. Routed to FIDO2 Passkey.",
     });
     return advDispute;
   },
@@ -1115,7 +1115,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
           ...state.executions.filter((e) => e.executionId !== alertExec.executionId),
         ],
         auditLogs: appendChainedAuditLog(state.auditLogs, alertExec, "sse_dispute_stream"),
-        statusBannerMessage: `Live SSE-01 dispute_alert received: [${dispute.disputeId}] (${dispute.disputedAmountValue} ${dispute.currencyCode}) · M-04 GNN Score ${dispute.gnnRiskScore.toFixed(2)} -> ${dispute.recommendedAction}.`,
+        statusBannerMessage: `Live dispute alert received: [${dispute.disputeId}] (${dispute.disputedAmountValue} ${dispute.currencyCode}) · Fraud Risk ${(dispute.gnnRiskScore * 100).toFixed(0)}%.`,
       };
     }),
 
@@ -1142,7 +1142,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
       return {
         disputes: updatedDisputes,
         uiState: "success",
-        statusBannerMessage: `M-03 Gemini 1.5 Pro Vision OCR + Bhashini parsed uploaded ${carrierCode} #${trackingNumber} POD receipt (F1 = 96.4% · DELIVERED). Compelling Evidence 3.0 packet ready.`,
+        statusBannerMessage: `Carrier proof-of-delivery receipt verified for ${carrierCode} #${trackingNumber} (DELIVERED). Compelling Evidence packet ready for submission.`,
       };
     }),
 
@@ -1179,8 +1179,8 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
             : state.winRateDeltaPct,
         statusBannerMessage:
           action === "CONTEST_WITH_COMPELLING_EVIDENCE"
-            ? `Dispute ${disputeId} contested via API-11 with signed carrier POD (${target?.carrierCode} #${target?.trackingNumber}), M-03 OCR & M-05 Elastic RAG Clause 4.2.`
-            : `Low-value dispute ${disputeId} ($${target?.disputedAmountValue}) auto-accepted via accept_dispute_claim to protect merchant dispute ratio.`,
+            ? `Dispute ${disputeId} contested with signed carrier POD (${target?.carrierCode} #${target?.trackingNumber}) and verified delivery receipt.`
+            : `Low-value dispute ${disputeId} ($${target?.disputedAmountValue}) auto-accepted to protect merchant dispute ratio.`,
       };
     }),
 
@@ -1271,7 +1271,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         subscriptionPlans: [plan, ...state.subscriptionPlans.filter((p) => p.planId !== plan.planId)],
         executions: [exec, ...state.executions],
         auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
-        statusBannerMessage: `PayPal Billing Plan ${plan.planId} (${plan.planName} · ${plan.amountValue} ${plan.currencyCode}/${plan.billingIntervalUnit}) activated via API-12 (create_product -> create_subscription_plan).`,
+        statusBannerMessage: `PayPal Billing Plan ${plan.planId} (${plan.planName} · ${plan.amountValue} ${plan.currencyCode}/${plan.billingIntervalUnit}) activated.`,
       };
     }),
 
@@ -1299,7 +1299,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         ),
         executions: [exec, ...state.executions],
         auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
-        statusBannerMessage: `Enrolled subscriber ${subscriberEmail} onto Billing Plan ${planId} (${target.amountValue} ${target.currencyCode}/${target.billingIntervalUnit}) via PayPal MCP create_subscription (#34).`,
+        statusBannerMessage: `Enrolled subscriber ${subscriberEmail} onto Billing Plan ${planId} (${target.amountValue} ${target.currencyCode}/${target.billingIntervalUnit}).`,
       };
     }),
 
@@ -1330,7 +1330,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         ),
         executions: [exec, ...state.executions],
         auditLogs: appendChainedAuditLog(state.auditLogs, exec, "agent_service_m01"),
-        statusBannerMessage: `Updated Subscription Plan ${planId} cycle amount to ${normalized} ${target.currencyCode} via PayPal MCP update_subscription (API-12 · 2-decimal R-03 verified).`,
+        statusBannerMessage: `Updated Subscription Plan ${planId} cycle amount to ${normalized} ${target.currencyCode} (2-decimal string verified).`,
       };
     }),
 
@@ -1356,7 +1356,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         executions: [exec, ...state.executions.filter((e) => e.executionId !== exec.executionId)],
         auditLogs: appendChainedAuditLog(state.auditLogs, exec, "cosmos_policy_firewall"),
         hitlApprovalExecution: exec,
-        statusBannerMessage: `Subscription cancellation for ${planId} (${target.planName}) gated by Cosmos.AI L2 Passkey Policy (API-12 · cancel_subscription). Sign with FIDO2 Passkey to confirm.`,
+        statusBannerMessage: `Subscription cancellation for ${planId} (${target.planName}) gated by L2 Passkey Policy. Sign with FIDO2 Passkey to confirm.`,
       };
     }),
 
@@ -1402,7 +1402,7 @@ export const useCockpitStore = create<CockpitState>((set, get) => ({
         ...state.executions.filter((e) => e.executionId !== replayExec.executionId),
       ],
       auditLogs: appendChainedAuditLog(state.auditLogs, replayExec, "junodb_idempotency_guard"),
-      statusBannerMessage: `JunoDB 2PC Stress Test PASS (F-06 · R-02): Fired ${totalRequests} concurrent order capture requests for ${paypalRequestId} -> 1 ACQUIRED + ${totalRequests - 1} REPLAYED_FROM_JUNODB ($0.00 duplicate charge).`,
+      statusBannerMessage: `Idempotency Stress Test PASS: Fired ${totalRequests} concurrent order capture requests for ${paypalRequestId} -> 1 ACQUIRED + ${totalRequests - 1} deduplicated ($0.00 duplicate charge).`,
     });
 
     return {
