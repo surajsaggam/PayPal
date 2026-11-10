@@ -476,7 +476,7 @@ export default function ReceivablesTimeline() {
         <div className="overflow-x-auto rounded-xl border border-hairline bg-elevated shadow-xs">
           <table
             aria-label="Bryntum Receivables and Subscription Timeline"
-            className="w-full table-fixed border-collapse text-xs"
+            className="w-full min-w-[640px] table-fixed border-collapse text-xs"
           >
             <thead>
               <tr className="border-b border-hairline bg-surface/80 text-[10px] font-semibold uppercase tracking-[0.03em] text-ink-muted">

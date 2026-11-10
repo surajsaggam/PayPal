@@ -482,7 +482,6 @@ def main() -> None:
         d_imgs = [desktop_cache[name] for name in scene["desktop_images"]]
         m_img = mobile_cache[scene["mobile_image"]]
         subs = scene["subtitles"]
-        focus_boxes = scene["focus_boxes"]
 
         for f_idx in range(n_frames):
             progress = f_idx / float(max(1, n_frames - 1))

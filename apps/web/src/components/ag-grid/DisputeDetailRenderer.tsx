@@ -86,8 +86,8 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
   };
 
   return (
-    <div className="dot-grid-surface border-t border-b border-hairline p-5 sm:p-6 text-xs text-ink">
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+    <div className="dot-grid-surface border-t border-b border-hairline p-3.5 sm:p-6 text-xs text-ink">
+      <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3 max-w-[calc(100vw-7.5rem)] sm:max-w-none">
         {/* Card 1: Policy Guard & Duplicate-Charge Lock */}
         <div className="surface-card rounded-xl p-5 flex flex-col justify-between overflow-hidden">
           <div>

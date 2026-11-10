@@ -207,7 +207,7 @@ async function main() {
   });
   const mobileTargets = [
     { route: "/command-center", scrollY: 0, file: "mobile-01-command-center.png" },
-    { route: "/command-center", scrollY: 2220, file: "mobile-02-command-center-ledger.png" },
+    { route: "/command-center", scrollY: 3120, file: "mobile-02-command-center-ledger.png" },
     { route: "/policy-studio", scrollY: 0, file: "mobile-03-policy-studio.png" },
     { route: "/invoicing-scheduler", scrollY: 0, file: "mobile-04-invoicing-scheduler.png" },
     { route: "/dispute-war-room", scrollY: 0, file: "mobile-05-dispute-war-room.png" },
@@ -250,7 +250,7 @@ async function main() {
     });
   }
 
-  // Also test ultra-narrow 320px (iPhone SE) viewport across all core routes
+  // Also test ultra-narrow 320px (iPhone SE) viewport across all core routes + subscription action buttons
   const sePage = await browser.newPage({
     viewport: { width: 320, height: 568 },
     deviceScaleFactor: 2,
@@ -260,6 +260,15 @@ async function main() {
   for (const route of ["/command-center", "/policy-studio", "/invoicing-scheduler", "/dispute-war-room", "/checkout-bridge", "/about", "/privacy", "/terms"]) {
     await sePage.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded" });
     await sleep(500);
+    if (route === "/invoicing-scheduler") {
+      const plusSubBtn = sePage.locator("button:has-text('+Sub')").first();
+      const plusTenBtn = sePage.locator("button:has-text('+10%')").first();
+      const cancelBtn = sePage.locator("button:has-text('Cancel')").first();
+      if ((await plusSubBtn.count()) > 0) await plusSubBtn.click();
+      if ((await plusTenBtn.count()) > 0) await plusTenBtn.click();
+      if ((await cancelBtn.count()) > 0) await cancelBtn.click();
+      await sleep(200);
+    }
     const seOverflow = await sePage.evaluate(
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth
     );

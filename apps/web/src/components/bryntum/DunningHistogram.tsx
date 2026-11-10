@@ -138,6 +138,7 @@ export function DunningHistogram() {
       setBarsVisible(true);
       return;
     }
+    const fallbackTimer = setTimeout(() => setBarsVisible(true), 250);
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
@@ -145,10 +146,13 @@ export function DunningHistogram() {
           observer.disconnect();
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.05 }
     );
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      clearTimeout(fallbackTimer);
+      observer.disconnect();
+    };
   }, []);
 
   const buckets = useMemo(
@@ -241,7 +245,7 @@ export function DunningHistogram() {
                   title={`Projected Inflow (${b.dateLabel}): $${b.inflowUsd.toLocaleString()} USD`}
                 />
                 <div
-                  className="w-4 rounded-t-md bg-status-warning-bar/85 transition-all duration-700 ease-out"
+                  className="w-4 rounded-t-md bg-status-warning-bar opacity-85 transition-all duration-700 ease-out"
                   style={{
                     height: barsVisible ? `${Math.max(8, outPct)}%` : "5%",
                     transitionDelay: `${idx * 60 + 40}ms`,
