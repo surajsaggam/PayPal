@@ -118,7 +118,7 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
 
               <div className="flex items-center justify-between gap-2 py-2">
                 <dt className="text-ink-muted">JunoDB Lease</dt>
-                <dd className="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium text-status-success-text">
+                <dd className="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium text-status-success-text tabular-nums">
                   <span className="h-1.5 w-1.5 rounded-full bg-status-success-bar" />
                   {row.junodbLeaseStatus === "REPLAYED_FROM_JUNODB"
                     ? "Replayed (86,400s)"
@@ -128,7 +128,7 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
 
               <div className="flex items-center justify-between gap-2 pt-2">
                 <dt className="text-ink-muted">Request ID</dt>
-                <dd className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-secondary">
+                <dd className="inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-secondary tabular-nums">
                   <span title={row.paypalRequestId}>
                     {shortenMiddle(row.paypalRequestId, 10, 7)}
                   </span>
@@ -151,7 +151,7 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
         </div>
 
         {/* Card 2: M-04 GraphSAGE + LightGBM TreeSHAP Attribution */}
-        <div className="rounded-xl border border-hairline bg-elevated p-4 shadow-2xs flex flex-col justify-between overflow-hidden transition-all duration-200 ease-out hover:-translate-y-[1px] hover:border-border-strong hover:shadow-md">
+        <div className="surface-card rounded-xl p-5 flex flex-col justify-between overflow-hidden">
           <div>
             <div className="mb-3 flex items-center justify-between border-b border-border-subtle pb-2.5">
               <div className="flex items-center gap-2 font-semibold text-ink">
@@ -172,7 +172,7 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
                       <span className="font-medium text-ink-secondary">
                         {parsed.readable}
                       </span>
-                      <span className="shrink-0 font-mono text-[11px] font-semibold text-ink">
+                      <span className="shrink-0 font-mono text-[11px] font-semibold text-ink tabular-nums">
                         {parsed.formatted}
                       </span>
                     </div>
@@ -190,7 +190,7 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
         </div>
 
         {/* Card 3: SHA-256 Hash-Chained Audit Ledger & Actions */}
-        <div className="rounded-xl border border-hairline bg-elevated p-4 shadow-2xs flex flex-col justify-between overflow-hidden transition-all duration-200 ease-out hover:-translate-y-[1px] hover:border-border-strong hover:shadow-md">
+        <div className="surface-card rounded-xl p-5 flex flex-col justify-between overflow-hidden">
           <div>
             <div className="mb-3 flex items-center justify-between border-b border-border-subtle pb-2.5">
               <div className="flex items-center gap-2 font-semibold text-ink">

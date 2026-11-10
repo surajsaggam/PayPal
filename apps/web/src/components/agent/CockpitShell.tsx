@@ -7,7 +7,7 @@
  *  - Right: Minimalist ghost Workspace/Environment triggers + crisp dark 'Guided Pitch' button
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -46,6 +46,7 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [envPopoverOpen, setEnvPopoverOpen] = useState(false);
+  const envPopoverRef = useRef<HTMLDivElement>(null);
 
   const {
     workspaces,
@@ -97,6 +98,31 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
       }
     }
   }, [theme]);
+
+  // Close Environment popover on route change, outside pointerdown, or Escape
+  useEffect(() => {
+    setEnvPopoverOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!envPopoverOpen) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (envPopoverRef.current && !envPopoverRef.current.contains(e.target as Node)) {
+        setEnvPopoverOpen(false);
+      }
+    };
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setEnvPopoverOpen(false);
+      }
+    };
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [envPopoverOpen]);
 
   // Cmd+1..Cmd+5 keyboard shortcuts for the 5 Core Screens
   useEffect(() => {
@@ -211,7 +237,7 @@ export function CockpitShell({ children }: { children: React.ReactNode }) {
               })}
 
               {/* Origin-Anchored Environment Popover Trigger */}
-              <div className="relative">
+              <div ref={envPopoverRef} className="relative">
                 <button
                   type="button"
                   aria-expanded={envPopoverOpen}

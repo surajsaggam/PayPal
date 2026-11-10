@@ -251,7 +251,7 @@ export default function InvoicingSchedulerPage() {
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
+                    className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2 text-xs text-ink tabular-nums shadow-2xs focus:border-ink focus:outline-none"
                   />
                 </div>
 
@@ -322,7 +322,7 @@ export default function InvoicingSchedulerPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-ink-muted">Early-Pay Incentive</span>
-                    <span className="text-status-success-text font-medium">
+                    <span className="text-status-success-text font-medium tabular-nums">
                       {selectedInvoice.conditionalRule?.percentage}% off before{" "}
                       {selectedInvoice.conditionalRule?.triggerDate}
                     </span>

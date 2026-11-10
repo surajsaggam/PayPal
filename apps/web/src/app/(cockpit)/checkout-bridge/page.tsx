@@ -409,7 +409,7 @@ export default function CheckoutBridgePage() {
                     key={item.skuId}
                     type="button"
                     onClick={() => handleApplyNaturalPrompt(item)}
-                    className={`rounded-lg border px-3 py-1.5 text-xs transition-all duration-150 active:scale-[0.97] cursor-pointer ${
+                    className={`rounded-lg border px-3 py-1.5 text-xs tabular-nums transition-all duration-150 active:scale-[0.97] cursor-pointer ${
                       active
                         ? "border-accent-dark bg-accent-dark text-accent-dark-ink font-semibold shadow-2xs"
                         : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:text-ink"
@@ -537,7 +537,7 @@ export default function CheckoutBridgePage() {
                   setSelectedBridgeInvoiceId(e.target.value);
                   setSimulatedCorruptMemo(null);
                 }}
-                className="w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-xs font-medium text-ink shadow-2xs focus:border-ink focus:outline-none cursor-pointer"
+                className="w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-xs font-medium text-ink tabular-nums shadow-2xs focus:border-ink focus:outline-none cursor-pointer"
               >
                 {invoices.map((inv) => (
                   <option key={inv.invoiceId} value={inv.invoiceId}>
@@ -622,7 +622,7 @@ export default function CheckoutBridgePage() {
                   <button
                     type="button"
                     onClick={handleSimulateMemoErrorOnScreen}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-danger-border bg-status-danger-bg py-2 px-3 text-xs font-medium text-status-danger-text transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-danger-border bg-status-danger-bg py-2 px-3 text-xs font-medium text-status-danger-text transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
                   >
                     <AlertTriangle className="h-3.5 w-3.5" />
                     Test Missing Reference Guard
@@ -631,7 +631,7 @@ export default function CheckoutBridgePage() {
                   <button
                     type="button"
                     onClick={handleQuickDirectPyusdSettle}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-success-border bg-status-success-bg py-2 px-3 text-xs font-semibold text-status-success-text transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-success-border bg-status-success-bg py-2 px-3 text-xs font-semibold text-status-success-text transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
                     Instant Settle &amp; Mark Paid
@@ -654,7 +654,7 @@ export default function CheckoutBridgePage() {
                     role="status"
                     className="animate-tab-switch rounded-xl border border-status-success-border bg-status-success-bg p-3.5 text-xs space-y-1 text-status-success-text"
                   >
-                    <div className="flex items-center justify-between font-semibold">
+                    <div className="flex items-center justify-between font-semibold tabular-nums">
                       <span>✓ Supplier Invoice Settled in PYUSD</span>
                       <span>Confirmed in 1.2s</span>
                     </div>
@@ -686,7 +686,7 @@ export default function CheckoutBridgePage() {
                 <button
                   type="button"
                   onClick={handleVerifyHashChain}
-                  className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-2.5 py-1 text-xs font-medium text-status-success-text transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-2.5 py-1 text-xs font-medium text-status-success-text tabular-nums transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Verify Audit Log ({chainVerification.tamperedCount} Tampered)
@@ -694,7 +694,7 @@ export default function CheckoutBridgePage() {
                 <button
                   type="button"
                   onClick={() => setShowZapierPayload((v) => !v)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 text-xs font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 text-xs font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong active:scale-[0.97] cursor-pointer"
                 >
                   <Webhook className="h-3.5 w-3.5 text-ink-secondary" />
                   {showZapierPayload ? "Hide Alert Preview" : "Approval Alert Preview"}
@@ -705,7 +705,7 @@ export default function CheckoutBridgePage() {
             {chainVerifiedBanner && (
               <div
                 role="status"
-                className="animate-tab-switch rounded-xl border border-status-success-border bg-status-success-bg px-3.5 py-2 text-xs text-status-success-text flex items-center justify-between"
+                className="animate-tab-switch rounded-xl border border-status-success-border bg-status-success-bg px-3.5 py-2 text-xs text-status-success-text tabular-nums flex items-center justify-between"
               >
                 <span>{chainVerifiedBanner}</span>
                 <span className="rounded-pill bg-elevated border border-status-success-border px-2.5 py-0.5 text-xs font-semibold">

@@ -126,7 +126,7 @@ export function PyusdSolanaBridgeModal() {
         className="w-full max-w-xl rounded-3xl apple-glass-sheet text-ink overflow-hidden animate-pop-in"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-4.5">
+        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-5">
           <div className="flex items-center gap-3.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-status-success-border bg-status-success-bg text-status-success-text shadow-2xs">
               <Coins className="h-5 w-5" />
@@ -138,7 +138,7 @@ export function PyusdSolanaBridgeModal() {
               >
                 Instant PYUSD Supplier Settlement
               </h2>
-              <p className="text-xs text-ink-muted">
+              <p className="text-xs text-ink-muted tabular-nums">
                 Direct 1:1 USD settlement with automatic invoice reconciliation
               </p>
             </div>
@@ -171,7 +171,7 @@ export function PyusdSolanaBridgeModal() {
                 const chosen = invoices.find((inv) => inv.invoiceId === e.target.value);
                 if (chosen) openPyusdModal(chosen);
               }}
-              className="w-full rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-xs font-medium text-ink transition-colors focus:border-ink focus:outline-none"
+              className="w-full rounded-xl border border-hairline bg-surface px-3.5 py-2.5 text-xs font-medium text-ink tabular-nums transition-colors focus:border-ink focus:outline-none"
             >
               {invoices.map((inv) => (
                 <option key={inv.invoiceId} value={inv.invoiceId}>
@@ -192,7 +192,7 @@ export function PyusdSolanaBridgeModal() {
               <div className="text-base font-bold text-status-danger-text mt-1 tabular-nums">
                 $48.00 Fee + 3.2% FX Spread
               </div>
-              <div className="text-xs text-ink-muted mt-0.5">
+              <div className="text-xs text-ink-muted mt-0.5 tabular-nums">
                 3–4 Business Days · Manual Bank Matching
               </div>
             </div>
@@ -205,7 +205,7 @@ export function PyusdSolanaBridgeModal() {
               <div className="text-base font-bold text-status-success-text mt-1 tabular-nums">
                 $0.001 Network Fee · 1:1 USD
               </div>
-              <div className="text-xs text-status-success-text/90 mt-0.5">
+              <div className="text-xs text-status-success-text/90 mt-0.5 tabular-nums">
                 ~1.2 Seconds · Automatic Invoice Paid Status
               </div>
             </div>
@@ -215,7 +215,7 @@ export function PyusdSolanaBridgeModal() {
           <div className="rounded-2xl border border-hairline bg-surface/70 p-4 space-y-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-ink-muted">Selected Invoice</span>
-              <span className="text-ink font-semibold">
+              <span className="text-ink font-semibold tabular-nums">
                 Invoice {pyusdModalInvoice.invoiceNumber} ({pyusdModalInvoice.recipientEmail})
               </span>
             </div>
@@ -260,14 +260,14 @@ export function PyusdSolanaBridgeModal() {
               <button
                 type="button"
                 onClick={handleSimulateCorruptMemo}
-                className="rounded-lg border border-status-danger-border bg-status-danger-bg px-3 py-1 text-[11px] font-medium text-status-danger-text transition-all duration-150 hover:-translate-y-0.5 cursor-pointer"
+                className="rounded-lg border border-status-danger-border bg-status-danger-bg px-3 py-1 text-[11px] font-medium text-status-danger-text transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer"
               >
                 Test Missing Reference Guard
               </button>
               <button
                 type="button"
                 onClick={handleRestoreValidMemo}
-                className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-3 py-1 text-[11px] font-medium text-status-success-text transition-all duration-150 hover:-translate-y-0.5 cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-3 py-1 text-[11px] font-medium text-status-success-text transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.97] cursor-pointer"
               >
                 <RotateCcw className="h-3 w-3" />
                 Restore Valid Reference
@@ -309,7 +309,7 @@ export function PyusdSolanaBridgeModal() {
             type="button"
             disabled={settling}
             onClick={() => void handleSettle()}
-            className="btn-primary-mint px-4.5 py-2 text-xs font-semibold transition-all duration-200 ease-spring hover:-translate-y-0.5 hover:shadow-sm cursor-pointer"
+            className="btn-primary-mint px-5 py-2.5 text-xs font-semibold tabular-nums transition-all duration-200 ease-spring hover:-translate-y-0.5 hover:shadow-sm cursor-pointer"
           >
             <CheckCircle2 className="h-4 w-4" />
             <span>

@@ -91,7 +91,7 @@ export function HitlApprovalCard() {
         className="w-full max-w-lg rounded-3xl apple-glass-sheet text-ink overflow-hidden animate-pop-in"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-4.5">
+        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-5">
           <div className="flex items-center gap-3.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-status-warning-border bg-status-warning-bg text-status-warning-text shadow-2xs">
               <ShieldAlert className="h-5 w-5" />

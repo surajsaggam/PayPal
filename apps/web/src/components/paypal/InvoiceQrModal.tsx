@@ -233,7 +233,7 @@ export function InvoiceQrModal() {
         className="w-full max-w-lg rounded-3xl apple-glass-sheet text-ink overflow-hidden animate-pop-in"
       >
         {/* Minimal Editorial Header */}
-        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-4.5">
+        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-5">
           <div className="flex items-center gap-3.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-hairline bg-elevated text-ink shadow-2xs transition-transform duration-200 hover:scale-105">
               <QrCode className="h-5 w-5 text-ink" />
@@ -310,7 +310,7 @@ export function InvoiceQrModal() {
 
             {/* Clean Early-Payment Incentive Pill */}
             {qrModalInvoice.conditionalRule && (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-success-border bg-status-success-bg/85 px-3.5 py-2.5 text-xs text-status-success-text">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-success-border bg-status-success-bg/85 px-3.5 py-2.5 text-xs text-status-success-text tabular-nums">
                 <span className="inline-flex items-center gap-2 font-semibold">
                   <Sparkles className="h-4 w-4 shrink-0" />
                   <span>
@@ -319,7 +319,7 @@ export function InvoiceQrModal() {
                       : `${qrModalInvoice.conditionalRule.percentage}% Late-Payment Fee Applies After Due Date`}
                   </span>
                 </span>
-                <span className="rounded-pill bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-status-success-text shadow-2xs">
+                <span className="rounded-pill bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-status-success-text shadow-2xs tabular-nums">
                   Valid until {formatEditorialDate(qrModalInvoice.conditionalRule.triggerDate)}
                 </span>
               </div>

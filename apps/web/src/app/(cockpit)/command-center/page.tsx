@@ -229,7 +229,7 @@ export default function CommandCenterPage() {
       {/* SECTION 2: Structured 4-Column Apple KPI Cards (Generous Breathing Room & Tabular Numerals) */}
       <section
         aria-label="Executive North-Star KPI Ribbon (API-14)"
-        className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
       >
         <div className="surface-card p-6 flex flex-col justify-between">
           <div>
@@ -320,7 +320,7 @@ export default function CommandCenterPage() {
                   <div className="kpi-stat-value text-2xl">
                     {formatCurrencyAmount(48200, "USD", activeCurrency, true)}
                   </div>
-                  <div className="mt-1 text-xs text-ink-muted">
+                  <div className="mt-1 text-xs text-ink-muted tabular-nums">
                     30-Day Gross Invoiced Volume · Early-Pay Velocity +65.1%
                   </div>
                 </div>
@@ -408,7 +408,7 @@ export default function CommandCenterPage() {
                 </span>
               </div>
 
-              <dl className="divide-y divide-border-subtle text-xs">
+              <dl className="divide-y divide-border-subtle text-xs tabular-nums">
                 <div className="flex items-center justify-between py-2.5">
                   <dt className="text-ink-muted">Standard Transactions</dt>
                   <dd className="flex items-center gap-3 font-medium text-ink">

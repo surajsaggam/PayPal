@@ -237,7 +237,7 @@ export default function DisputeWarRoomPage() {
           <button
             type="button"
             onClick={() => handleSimulateWebhookClick("INR_340")}
-            className="btn-primary-mint h-10 rounded-xl px-4 text-xs font-semibold cursor-pointer"
+            className="btn-primary-mint h-10 rounded-xl px-4 text-xs font-semibold tabular-nums cursor-pointer"
           >
             <Zap className="h-3.5 w-3.5" />
             <span>Simulate Delivered Claim ($340)</span>
@@ -246,7 +246,7 @@ export default function DisputeWarRoomPage() {
           <button
             type="button"
             onClick={() => handleSimulateWebhookClick("INJECTION_2400")}
-            className="btn-outline-subtle h-10 rounded-xl px-4 text-xs shadow-2xs cursor-pointer"
+            className="btn-outline-subtle h-10 rounded-xl px-4 text-xs tabular-nums shadow-2xs cursor-pointer"
           >
             <ShieldAlert className="h-3.5 w-3.5 text-status-warning-text" />
             <span>Simulate High-Value Claim ($2,400)</span>
@@ -337,7 +337,7 @@ export default function DisputeWarRoomPage() {
 
       {uiState === "empty" || disputes.length === 0 ? (
         <div className="surface-bento rounded-2xl p-10 text-center space-y-4">
-          <p className="text-sm text-ink-secondary font-medium">
+          <p className="text-sm text-ink-secondary font-medium tabular-nums">
             All customer disputes have been resolved. Click{" "}
             <strong className="text-ink">Simulate Delivered Claim ($340)</strong> to preview
             automated evidence assembly.
@@ -345,7 +345,7 @@ export default function DisputeWarRoomPage() {
           <button
             type="button"
             onClick={() => handleSimulateWebhookClick("INR_340")}
-            className="btn-primary-mint px-4 py-2.5 text-xs font-semibold cursor-pointer"
+            className="btn-primary-mint px-4 py-2.5 text-xs font-semibold tabular-nums cursor-pointer"
           >
             <Zap className="h-4 w-4" />
             <span>Simulate Delivered Claim ($340)</span>
@@ -478,7 +478,7 @@ export default function DisputeWarRoomPage() {
                     <CheckCircle2 className="h-4 w-4" />
                     Defense Evidence Submitted to PayPal ({activeDispute.disputeId})
                   </span>
-                  <span className="rounded-pill bg-elevated border border-status-success-border px-2.5 py-0.5 text-xs font-semibold">
+                  <span className="rounded-pill bg-elevated border border-status-success-border px-2.5 py-0.5 text-xs font-semibold tabular-nums">
                     +
                     {formatCurrencyAmount(
                       activeDispute.disputedAmountValue,
@@ -519,7 +519,7 @@ export default function DisputeWarRoomPage() {
                   <div
                     role="region"
                     aria-label="Accessible Text Summary of 3-Hop GNN Fraud Graph"
-                    className="rounded-xl border border-hairline bg-elevated p-4 text-xs text-ink-secondary space-y-2 shadow-2xs"
+                    className="rounded-xl border border-hairline bg-elevated p-4 text-xs text-ink-secondary tabular-nums space-y-2 shadow-2xs"
                   >
                     <div>
                       • <strong className="text-ink">1. Verified Buyer Profile:</strong> Returning
@@ -783,7 +783,7 @@ export default function DisputeWarRoomPage() {
                           </button>
                         ))}
                       </div>
-                      <span className="inline-flex items-center gap-1 text-xs text-ink-secondary">
+                      <span className="inline-flex items-center gap-1 text-xs text-ink-secondary tabular-nums">
                         <Sparkles className="h-3.5 w-3.5" />
                         Signal Impact:{" "}
                         <strong className="font-semibold text-ink">
@@ -801,7 +801,7 @@ export default function DisputeWarRoomPage() {
                           {formatHopBadge(activeHopTelemetry.verdictBadge)}
                         </span>
                       </div>
-                      <ul className="space-y-1 text-ink-secondary text-xs pt-0.5">
+                      <ul className="space-y-1 text-ink-secondary text-xs tabular-nums pt-0.5">
                         {activeHopTelemetry.telemetryBullets.map((bullet) => (
                           <li key={bullet}>• {bullet}</li>
                         ))}
@@ -828,7 +828,7 @@ export default function DisputeWarRoomPage() {
                             {formatted.description}
                           </div>
                         </div>
-                        <span className="shrink-0 rounded-pill bg-surface px-2.5 py-1 text-xs font-medium text-ink border border-hairline">
+                        <span className="shrink-0 rounded-pill bg-surface px-2.5 py-1 text-xs font-medium text-ink tabular-nums border border-hairline">
                           {formatted.impact}
                         </span>
                       </div>
@@ -852,7 +852,7 @@ export default function DisputeWarRoomPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-lg border border-border-subtle bg-surface/70 p-3 space-y-1">
                     <div className="text-[11px] text-ink-muted">Order &amp; Payment Receipt</div>
-                    <div className="text-xs font-semibold text-ink">
+                    <div className="text-xs font-semibold text-ink tabular-nums">
                       Order #{activeDispute.orderId} ({activeDispute.disputedAmountValue}{" "}
                       {activeDispute.currencyCode})
                     </div>
@@ -863,10 +863,10 @@ export default function DisputeWarRoomPage() {
 
                   <div className="rounded-lg border border-border-subtle bg-surface/70 p-3 space-y-1">
                     <div className="text-[11px] text-ink-muted">Carrier Delivery Proof</div>
-                    <div className="text-xs font-semibold text-ink">
+                    <div className="text-xs font-semibold text-ink tabular-nums">
                       {formatCarrierName(activeDispute.carrierCode)} #{activeDispute.trackingNumber}
                     </div>
-                    <div className="text-[11px] text-status-success-text font-medium">
+                    <div className="text-[11px] text-status-success-text font-medium tabular-nums">
                       Delivered &amp; Signed by Recipient (96.4% Match)
                     </div>
                   </div>
@@ -889,7 +889,7 @@ export default function DisputeWarRoomPage() {
                   </div>
 
                   {showBhashiniOcrInspector && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs tabular-nums">
                       <div className="rounded-lg border border-hairline bg-elevated p-3.5 text-ink-secondary shadow-2xs space-y-1">
                         <div className="text-[10.5px] font-semibold uppercase tracking-wide text-ink-muted mb-1">
                           Original Regional Carrier Scan (Hindi)

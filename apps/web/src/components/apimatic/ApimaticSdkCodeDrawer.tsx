@@ -57,7 +57,7 @@ export function ApimaticSdkCodeDrawer() {
         className="h-full w-full max-w-2xl border-l border-hairline apple-glass-sheet flex flex-col text-ink animate-drawer-right"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-4.5">
+        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-5">
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-hairline bg-elevated text-ink shadow-2xs">
               <Code2 className="h-4 w-4" />

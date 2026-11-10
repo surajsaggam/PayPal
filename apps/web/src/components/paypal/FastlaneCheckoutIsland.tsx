@@ -298,7 +298,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
       <div className="dot-grid-surface rounded-xl border border-hairline p-4 text-xs space-y-1.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="font-medium text-ink">Pre-Checkout Protection Check</span>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 tabular-nums">
             <span
               className={`rounded-pill border px-2.5 py-0.5 text-xs font-medium ${
                 isOverProcurementCap
@@ -334,7 +334,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
           type="button"
           disabled={processing || uiState === "loading"}
           onClick={() => void handleCheckout("FASTLANE")}
-          className="sm:col-span-2 btn-primary-mint py-3 px-4 text-xs font-semibold cursor-pointer"
+          className="sm:col-span-2 btn-primary-mint py-3 px-4 text-xs font-semibold tabular-nums cursor-pointer"
         >
           <Zap className="h-4 w-4" />
           <span>
@@ -382,7 +382,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
           type="button"
           disabled={processing}
           onClick={handleStressTest10x}
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-success-border bg-status-success-bg py-2.5 px-3 text-xs font-semibold text-status-success-text shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-success-border bg-status-success-bg py-2.5 px-3 text-xs font-semibold text-status-success-text tabular-nums shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           <span>Test 10x Duplicate Click Protection</span>
@@ -393,15 +393,15 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
       {stressTestResult && (
         <div
           role="status"
-          className="animate-tab-switch rounded-xl border border-status-success-border bg-status-success-bg p-3.5 text-xs space-y-1 text-status-success-text"
+          className="animate-tab-switch rounded-xl border border-status-success-border bg-status-success-bg p-3.5 text-xs space-y-1 text-status-success-text tabular-nums"
         >
           <div className="flex items-center justify-between font-semibold">
             <span>Duplicate-Click Protection Verified</span>
-            <span className="rounded-pill bg-elevated border border-status-success-border px-2.5 py-0.5 text-xs text-status-success-text">
+            <span className="rounded-pill bg-elevated border border-status-success-border px-2.5 py-0.5 text-xs text-status-success-text tabular-nums">
               $0.00 Extra Charges
             </span>
           </div>
-          <div className="text-ink-secondary">
+          <div className="text-ink-secondary tabular-nums">
             Simulated <strong>{stressTestResult.totalRequests}</strong> rapid checkout clicks —{" "}
             <strong className="text-status-success-text">
               {stressTestResult.acquiredCount} order processed
@@ -414,7 +414,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
       {/* Post-Capture Shipment Tracking Sync & Policy-Guarded Refund Tester */}
       {capturedOrderId && (
         <div className="surface-card rounded-xl p-4 text-xs space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 font-semibold text-ink">
+          <div className="flex flex-wrap items-center justify-between gap-2 font-semibold text-ink tabular-nums">
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-status-success-bar" />
               Order #{capturedOrderId} Confirmed &amp; Tracking Linked
@@ -444,12 +444,12 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
           {/* Policy-Guarded Refund Test Controls */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
             <span className="text-xs text-ink-muted">Test Refund Protection Rules:</span>
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 tabular-nums">
               <button
                 type="button"
                 disabled={processing}
                 onClick={() => void handlePolicyGuardedRefund("120.00")}
-                className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-2.5 py-1 text-xs font-medium text-status-success-text transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-lg border border-status-success-border bg-status-success-bg px-2.5 py-1 text-xs font-medium text-status-success-text transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
               >
                 <RotateCcw className="h-3 w-3" />
                 Refund $120 (Auto-Approved)
@@ -458,7 +458,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
                 type="button"
                 disabled={processing}
                 onClick={() => void handlePolicyGuardedRefund("420.00")}
-                className="inline-flex items-center gap-1 rounded-lg border border-status-warning-border bg-status-warning-bg px-2.5 py-1 text-xs font-medium text-status-warning-text transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-lg border border-status-warning-border bg-status-warning-bg px-2.5 py-1 text-xs font-medium text-status-warning-text transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
               >
                 <AlertTriangle className="h-3 w-3" />
                 Refund $420 (Passkey Hold)
@@ -467,7 +467,7 @@ export function FastlaneCheckoutIsland({ selectedSku }: FastlaneCheckoutIslandPr
           </div>
 
           {refundVerdictMsg && (
-            <div className="rounded-lg border border-hairline bg-surface px-3 py-2 text-xs text-ink">
+            <div className="rounded-lg border border-hairline bg-surface px-3 py-2 text-xs text-ink tabular-nums">
               {refundVerdictMsg.detail}
             </div>
           )}

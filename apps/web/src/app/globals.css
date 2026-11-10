@@ -587,24 +587,44 @@ html.dark {
  * (SKILL.md §14 — Respond to three independent user preference signals)
  * ============================================================================ */
 
+@keyframes appleReducedFade {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: 180ms !important;
+    animation-duration: 160ms !important;
     animation-delay: 0ms !important;
-    transition-duration: 150ms !important;
+    transition-duration: 120ms !important;
     scroll-behavior: auto !important;
   }
 
   .animate-pop-in,
   .animate-tab-switch,
   .animate-popover-origin,
-  .animate-drawer-right,
+  .animate-drawer-right {
+    animation-name: appleReducedFade !important;
+    transform: none !important;
+  }
+
   .surface-card:hover,
   .btn-primary-mint:hover,
+  .btn-primary-mint:active,
   .btn-secondary-dark:hover,
-  .btn-outline-subtle:hover {
+  .btn-secondary-dark:active,
+  .btn-outline-subtle:hover,
+  .btn-outline-subtle:active,
+  button:hover,
+  button:active,
+  a:hover,
+  a:active {
     transform: none !important;
   }
 }
@@ -616,6 +636,12 @@ html.dark {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
+
+  .apple-modal-scrim {
+    background-color: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 @media (prefers-contrast: more) {
@@ -623,8 +649,23 @@ html.dark {
   html.light {
     --border-hairline: #94a3b8;
     --border-subtle: #cbd5e1;
-    --border-strong: #475569;
+    --border-strong: #334155;
     --text-muted: #334155;
+    --text-faint: #475569;
+  }
+
+  html.dark {
+    --border-hairline: #475569;
+    --border-subtle: #334155;
+    --border-strong: #94a3b8;
+    --text-muted: #cbd5e1;
+    --text-faint: #94a3b8;
+  }
+
+  .apple-glass-nav,
+  .apple-glass-sheet {
+    background-color: var(--bg-elevated) !important;
+    border-color: var(--border-strong) !important;
   }
 }
 

@@ -53,7 +53,7 @@ export function McpToolTraceDrawer() {
       </div>
 
       {/* Session Circuit Breaker Telemetry (E-03, R-10) */}
-      <div className="grid grid-cols-3 gap-2 border-b border-hairline bg-surface/60 px-4 py-2 text-[11px] font-mono">
+      <div className="grid grid-cols-3 gap-2 border-b border-hairline bg-surface/60 px-5 py-2.5 text-[11px] font-mono tabular-nums">
         <div>
           <span className="text-ink-muted">Hop Cap (R-10):</span>{" "}
           <span className="text-status-success-text font-semibold">Step 2/6</span>
@@ -69,7 +69,7 @@ export function McpToolTraceDrawer() {
       </div>
 
       {/* 6 Deterministic Pipeline Gates */}
-      <div className="max-h-80 overflow-y-auto divide-y divide-border-subtle p-4 space-y-2.5">
+      <div className="max-h-80 overflow-y-auto divide-y divide-border-subtle p-5 space-y-3">
         {activeTraceSteps.map((step) => {
           const badgeColor =
             step.status === "PASS"
@@ -81,7 +81,7 @@ export function McpToolTraceDrawer() {
           return (
             <div
               key={step.stepIndex}
-              className="pt-2.5 first:pt-0 flex items-start justify-between gap-3"
+              className="pt-3 first:pt-0 flex items-start justify-between gap-3"
             >
               <div className="flex items-start gap-2.5">
                 {step.status === "PASS" ? (
@@ -95,12 +95,12 @@ export function McpToolTraceDrawer() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-ink">{step.label}</span>
                     <span
-                      className={`rounded-pill border px-2 py-0.2 font-mono text-[10px] font-medium ${badgeColor}`}
+                      className={`rounded-pill border px-2 py-0.5 font-mono text-[10px] font-medium ${badgeColor}`}
                     >
                       {step.status}
                     </span>
                   </div>
-                  <p className="text-xs text-ink-secondary mt-0.5">{step.detail}</p>
+                  <p className="text-xs text-ink-secondary mt-0.5 tabular-nums">{step.detail}</p>
                 </div>
               </div>
               <span className="font-mono text-[11px] text-ink-muted shrink-0 tabular-nums">
@@ -113,8 +113,8 @@ export function McpToolTraceDrawer() {
 
       {/* Action Footer */}
       {latest && (
-        <div className="flex items-center justify-between border-t border-hairline bg-surface px-4 py-3 text-xs">
-          <div className="flex items-center gap-1.5 font-mono text-[11px] text-ink">
+        <div className="flex items-center justify-between border-t border-hairline bg-surface px-5 py-3.5 text-xs">
+          <div className="flex items-center gap-1.5 font-mono text-[11px] text-ink tabular-nums">
             <Activity className="h-3.5 w-3.5 text-ink-secondary" />
             <span className="font-semibold">{latest.toolName}</span>
             <span className="text-ink-muted">·</span>

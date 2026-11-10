@@ -66,6 +66,7 @@ export default function ReceivablesTimeline() {
   } = useCockpitStore();
 
   const [draggingInvoiceId, setDraggingInvoiceId] = useState<string | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
   const [syncingInvoiceId, setSyncingInvoiceId] = useState<string | null>(null);
   const [syncToast, setSyncToast] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -74,6 +75,7 @@ export default function ReceivablesTimeline() {
 
   const handleMilestoneDrop = async (invoice: PayPalInvoiceRecord, targetDate: string) => {
     setDraggingInvoiceId(null);
+    setDragOverSlot(null);
     setSelectedInvoiceId(invoice.invoiceId);
 
     if (uiState === "error") {
@@ -536,11 +538,17 @@ export default function ReceivablesTimeline() {
                     {TIMELINE_DATES.map((slotDate) => {
                       const isTriggerSlot = slotDate === triggerDate;
                       const isDueSlot = slotDate === inv.dueDate;
+                      const slotKey = `${inv.invoiceId}:${slotDate}`;
+                      const isDragOverTarget = dragOverSlot === slotKey;
 
                       return (
                         <td
                           key={slotDate}
                           onDragOver={(e) => e.preventDefault()}
+                          onDragEnter={() => setDragOverSlot(slotKey)}
+                          onDragLeave={() =>
+                            setDragOverSlot((prev) => (prev === slotKey ? null : prev))
+                          }
                           onDrop={(e) => {
                             e.stopPropagation();
                             void handleMilestoneDrop(inv, slotDate);
@@ -549,13 +557,21 @@ export default function ReceivablesTimeline() {
                             e.stopPropagation();
                             void handleMilestoneDrop(inv, slotDate);
                           }}
-                          className="py-3.5 px-1.5 border-l border-border-subtle text-center cursor-pointer transition-colors hover:bg-surface"
+                          className={`py-3.5 px-1.5 border-l border-border-subtle text-center cursor-pointer transition-colors hover:bg-surface ${
+                            isDragOverTarget
+                              ? "bg-paypal-blue/10 ring-1 ring-inset ring-paypal-blue/40"
+                              : ""
+                          }`}
                           title={`Click or drop milestone bar to reschedule ${inv.invoiceNumber} reminder to ${slotDate}`}
                         >
                           {isTriggerSlot && (
                             <div
                               draggable
                               onDragStart={() => setDraggingInvoiceId(inv.invoiceId)}
+                              onDragEnd={() => {
+                                setDraggingInvoiceId(null);
+                                setDragOverSlot(null);
+                              }}
                               className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold tabular-nums shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.97] cursor-grab whitespace-nowrap ${
                                 isEarlyDiscount
                                   ? "border-status-success-border bg-status-success-bg text-status-success-text"
@@ -633,27 +649,29 @@ export default function ReceivablesTimeline() {
               {/* Recurring Invoice Series Lanes */}
               {recurringSeries.map((series) => (
                 <tr key={series.seriesId} className="ledger-row">
-                  <td className="py-2.5 px-2.5">
-                    <div className="flex items-center gap-1 text-xs font-semibold text-ink">
-                      <Repeat className="h-3 w-3 text-ink-secondary" />
+                  <td className="py-3.5 px-3.5">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+                      <Repeat className="h-3.5 w-3.5 text-ink-secondary" />
                       {series.seriesId}
                     </div>
-                    <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
+                    <div className="mt-0.5 text-[11px] text-ink-muted truncate max-w-[160px]">
                       {series.seriesName}
                     </div>
-                    <div className="text-xs font-semibold text-ink tabular-nums">
+                    <div className="mt-1 text-xs font-semibold text-ink tabular-nums">
                       {formatCurrencyAmount(series.amountValue, series.currencyCode, activeCurrency)}{" "}
                       / {series.cadence === "MONTHLY" ? "Month" : series.cadence}
                     </div>
                   </td>
-                  <td colSpan={7} className="px-2.5 py-2 border-l border-border-subtle">
-                    <div className="w-full rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs text-ink-secondary flex items-center justify-between gap-2">
+                  <td colSpan={7} className="px-3.5 py-3 border-l border-border-subtle">
+                    <div className="w-full rounded-xl border border-hairline bg-surface px-3.5 py-2 text-xs text-ink-secondary flex items-center justify-between gap-3">
                       <span className="truncate">
                         Monthly Retainer Schedule · Next Billing:{" "}
-                        <strong className="font-semibold text-ink">{series.nextTriggerDate}</strong>
+                        <strong className="font-semibold text-ink tabular-nums">
+                          {series.nextTriggerDate}
+                        </strong>
                       </span>
                       <span
-                        className={`shrink-0 rounded-pill border px-2 py-0.5 text-[10px] font-medium ${
+                        className={`shrink-0 rounded-pill border px-2.5 py-0.5 text-[11px] font-medium ${
                           series.status === "ACTIVE"
                             ? "border-status-success-border bg-status-success-bg text-status-success-text"
                             : "border-status-warning-border bg-status-warning-bg text-status-warning-text"
@@ -663,20 +681,20 @@ export default function ReceivablesTimeline() {
                       </span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 border-l border-border-subtle text-right">
+                  <td className="py-3.5 px-3 border-l border-border-subtle text-right">
                     <button
                       type="button"
                       onClick={() => toggleRecurringSeriesStatus(series.seriesId)}
-                      className="inline-flex items-center gap-1 rounded-md border border-hairline bg-elevated px-2 py-0.5 text-[10px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 text-[11px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong active:scale-[0.96] cursor-pointer"
                     >
                       {series.status === "ACTIVE" ? (
                         <>
-                          <Pause className="h-2.5 w-2.5" />
+                          <Pause className="h-3 w-3" />
                           Pause
                         </>
                       ) : (
                         <>
-                          <Play className="h-2.5 w-2.5" />
+                          <Play className="h-3 w-3" />
                           Resume
                         </>
                       )}
@@ -688,24 +706,24 @@ export default function ReceivablesTimeline() {
               {/* Subscription Billing Cycle Lanes */}
               {subscriptionPlans.map((plan) => (
                 <tr key={plan.planId} className="ledger-row">
-                  <td className="py-2.5 px-2.5">
-                    <div className="flex items-center gap-1 text-xs font-semibold text-ink">
-                      <Repeat className="h-3 w-3 text-ink-secondary" />
+                  <td className="py-3.5 px-3.5">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-ink">
+                      <Repeat className="h-3.5 w-3.5 text-ink-secondary" />
                       {plan.planName.split("—")[0]?.trim() || "Retainer Plan"}
                     </div>
-                    <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
+                    <div className="mt-0.5 text-[11px] text-ink-muted truncate max-w-[160px]">
                       {plan.planName}
                     </div>
-                    <div className="text-xs font-semibold text-ink tabular-nums">
+                    <div className="mt-1 text-xs font-semibold text-ink tabular-nums">
                       {formatCurrencyAmount(plan.amountValue, plan.currencyCode, activeCurrency)} /{" "}
                       {plan.billingIntervalUnit === "MONTH" ? "Month" : "Year"}
                     </div>
                   </td>
-                  <td colSpan={7} className="px-2.5 py-2 border-l border-border-subtle">
-                    <div className="w-full rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs text-ink-secondary flex items-center justify-between gap-2">
+                  <td colSpan={7} className="px-3.5 py-3 border-l border-border-subtle">
+                    <div className="w-full rounded-xl border border-hairline bg-surface px-3.5 py-2 text-xs text-ink-secondary flex items-center justify-between gap-3">
                       <span className="truncate">Recurring Subscription Plan · Auto-Renewing</span>
                       <span
-                        className={`shrink-0 rounded-pill border px-2 py-0.5 text-[10px] font-medium ${
+                        className={`shrink-0 rounded-pill border px-2.5 py-0.5 text-[11px] font-medium ${
                           plan.status === "ACTIVE"
                             ? "border-status-success-border bg-status-success-bg text-status-success-text"
                             : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
@@ -715,12 +733,12 @@ export default function ReceivablesTimeline() {
                       </span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 border-l border-border-subtle text-right text-[10px]">
-                    <div className="inline-flex flex-wrap items-center justify-end gap-1">
+                  <td className="py-3.5 px-3 border-l border-border-subtle text-right text-[11px]">
+                    <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
                       <button
                         type="button"
                         onClick={() => activateSubscriberOnPlan(plan.planId)}
-                        className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
+                        className="rounded-lg border border-hairline bg-elevated px-2 py-1 text-[11px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong active:scale-[0.96] cursor-pointer"
                         title="Add Subscriber"
                       >
                         +Sub
@@ -731,7 +749,7 @@ export default function ReceivablesTimeline() {
                           const nextAmt = ((parseFloat(plan.amountValue) || 500) * 1.1).toFixed(2);
                           updateSubscriptionPlanPricing(plan.planId, nextAmt);
                         }}
-                        className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong cursor-pointer"
+                        className="rounded-lg border border-hairline bg-elevated px-2 py-1 text-[11px] font-medium text-ink tabular-nums shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong active:scale-[0.96] cursor-pointer"
                         title="Adjust Plan Price (+10%)"
                       >
                         +10%
@@ -739,7 +757,7 @@ export default function ReceivablesTimeline() {
                       <button
                         type="button"
                         onClick={() => cancelSubscriptionPlanWithGuard(plan.planId)}
-                        className="rounded-md border border-status-warning-border bg-status-warning-bg px-1.5 py-0.5 text-[9.5px] font-semibold text-status-warning-text shadow-2xs transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                        className="rounded-lg border border-status-warning-border bg-status-warning-bg px-2 py-1 text-[11px] font-semibold text-status-warning-text shadow-2xs transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.96] cursor-pointer"
                         title="Cancel Subscription Plan"
                       >
                         Cancel
@@ -752,15 +770,15 @@ export default function ReceivablesTimeline() {
               {/* Dispute SLA Response Deadlines Lane */}
               {disputes.slice(0, 2).map((dispute) => (
                 <tr key={dispute.disputeId} className="ledger-row">
-                  <td className="py-2.5 px-2.5">
-                    <div className="flex items-center gap-1 text-xs font-semibold text-status-warning-text">
-                      <AlertCircle className="h-3 w-3" />
+                  <td className="py-3.5 px-3.5">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-status-warning-text">
+                      <AlertCircle className="h-3.5 w-3.5" />
                       {dispute.disputeId}
                     </div>
-                    <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
+                    <div className="mt-0.5 text-[11px] text-ink-muted truncate max-w-[160px]">
                       Order {dispute.orderId}
                     </div>
-                    <div className="text-xs font-semibold text-ink tabular-nums">
+                    <div className="mt-1 text-xs font-semibold text-ink tabular-nums">
                       {formatCurrencyAmount(
                         dispute.disputedAmountValue,
                         dispute.currencyCode,
@@ -769,18 +787,21 @@ export default function ReceivablesTimeline() {
                       Hold
                     </div>
                   </td>
-                  <td colSpan={7} className="px-2.5 py-2 border-l border-border-subtle">
-                    <div className="w-full rounded-lg border border-status-warning-border bg-status-warning-bg px-3 py-1.5 text-xs text-status-warning-text flex items-center justify-between gap-2">
+                  <td colSpan={7} className="px-3.5 py-3 border-l border-border-subtle">
+                    <div className="w-full rounded-xl border border-status-warning-border bg-status-warning-bg px-3.5 py-2 text-xs text-status-warning-text flex items-center justify-between gap-3">
                       <span className="truncate">
-                        Evidence Due: <strong>{dispute.responseDueIso.slice(0, 10)}</strong> ·{" "}
-                        {dispute.carrierCode.replace("_", " ")} (Delivered)
+                        Evidence Due:{" "}
+                        <strong className="tabular-nums">
+                          {dispute.responseDueIso.slice(0, 10)}
+                        </strong>{" "}
+                        · {dispute.carrierCode.replace("_", " ")} (Delivered)
                       </span>
-                      <span className="shrink-0 rounded-pill bg-elevated px-2 py-0.5 text-[10px] font-medium border border-status-warning-border">
+                      <span className="shrink-0 rounded-pill bg-elevated px-2.5 py-0.5 text-[11px] font-medium border border-status-warning-border">
                         Proof Ready
                       </span>
                     </div>
                   </td>
-                  <td className="py-2.5 px-2 border-l border-border-subtle text-right text-[10px] font-medium text-ink-secondary whitespace-nowrap">
+                  <td className="py-3.5 px-3 border-l border-border-subtle text-right text-[11px] font-medium text-ink-secondary whitespace-nowrap">
                     Auto-Defend
                   </td>
                 </tr>

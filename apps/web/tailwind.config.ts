@@ -128,6 +128,9 @@ const config: Config = {
         glass: "var(--shadow-glass)",
         "row-active": "var(--shadow-row-active)",
       },
+      spacing: {
+        "4.5": "1.125rem",
+      },
       transitionTimingFunction: {
         spring: "var(--ease-spring)",
         "spring-snappy": "var(--ease-spring-snappy)",

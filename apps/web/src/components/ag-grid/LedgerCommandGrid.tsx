@@ -235,7 +235,7 @@ export function LedgerCommandGrid() {
             <Layers className="h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-105" />
             <span>Group by Currency</span>
             {groupByCurrency && (
-              <span className="ml-0.5 rounded-pill bg-white/20 px-1.5 py-0.2 font-mono text-[10px]">
+              <span className="ml-0.5 rounded-pill bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">
                 ON
               </span>
             )}
@@ -308,7 +308,7 @@ export function LedgerCommandGrid() {
                 )}
                 <span>{tab.label}</span>
                 <span
-                  className={`rounded-pill px-1.5 py-0.2 font-mono text-[10px] tabular-nums transition-colors ${
+                  className={`rounded-pill px-1.5 py-0.5 font-mono text-[10px] tabular-nums transition-colors ${
                     active
                       ? "bg-subtle text-ink font-semibold"
                       : "bg-elevated/80 text-ink-faint"
@@ -522,7 +522,7 @@ export function LedgerCommandGrid() {
                                   <span className="truncate font-semibold text-ink transition-colors group-hover:text-ink">
                                     {formatToolTitle(row.toolName)}
                                   </span>
-                                  <span className="shrink-0 rounded bg-surface px-1.5 py-0.2 font-mono text-[10.5px] text-ink-muted border border-transparent transition-colors group-hover:border-hairline group-hover:bg-elevated">
+                                  <span className="shrink-0 rounded bg-surface px-1.5 py-0.5 font-mono text-[10.5px] text-ink-muted border border-transparent transition-colors group-hover:border-hairline group-hover:bg-elevated">
                                     {row.executionId}
                                   </span>
                                 </div>
