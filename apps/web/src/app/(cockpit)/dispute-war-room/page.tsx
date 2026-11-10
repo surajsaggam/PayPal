@@ -216,15 +216,15 @@ export default function DisputeWarRoomPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1160px] space-y-8 pb-12 animate-pop-in">
+    <div className="mx-auto max-w-[1280px] space-y-10 pb-16 animate-pop-in">
       {/* Editorial Section Header */}
       <header className="flex flex-col justify-between gap-6 border-b border-hairline pb-8 lg:flex-row lg:items-end">
-        <div className="max-w-2xl space-y-3">
-          <div className="badge-lime px-3 py-1 text-xs">
+        <div className="max-w-2xl space-y-3.5">
+          <div className="badge-lime px-3.5 py-1 text-xs shadow-2xs">
             <Swords className="h-3.5 w-3.5" />
             <span>Automated Dispute Defense</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.12]">
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.025em] text-ink leading-[1.12]">
             Protect revenue from friendly-fraud claims.{" "}
             <span className="font-normal text-ink-muted">
               Automatically match carrier delivery proof, buyer order history, and regional
@@ -233,11 +233,11 @@ export default function DisputeWarRoomPage() {
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() => handleSimulateWebhookClick("INR_340")}
-            className="btn-primary-mint h-9 rounded-xl px-4 text-xs font-semibold cursor-pointer"
+            className="btn-primary-mint h-10 rounded-xl px-4 text-xs font-semibold cursor-pointer"
           >
             <Zap className="h-3.5 w-3.5" />
             <span>Simulate Delivered Claim ($340)</span>
@@ -246,7 +246,7 @@ export default function DisputeWarRoomPage() {
           <button
             type="button"
             onClick={() => handleSimulateWebhookClick("INJECTION_2400")}
-            className="btn-outline-subtle h-9 rounded-xl px-3.5 text-xs shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm cursor-pointer"
+            className="btn-outline-subtle h-10 rounded-xl px-4 text-xs shadow-2xs cursor-pointer"
           >
             <ShieldAlert className="h-3.5 w-3.5 text-status-warning-text" />
             <span>Simulate High-Value Claim ($2,400)</span>
@@ -258,7 +258,7 @@ export default function DisputeWarRoomPage() {
       {uiState === "offline" && (
         <div
           role="status"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-warning-border bg-status-warning-bg px-4 py-2.5 text-xs text-status-warning-text"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-warning-border bg-status-warning-bg px-4 py-3 text-xs text-status-warning-text"
         >
           <span className="inline-flex items-center gap-2">
             <WifiOff className="h-4 w-4 shrink-0" />
@@ -268,7 +268,7 @@ export default function DisputeWarRoomPage() {
           <button
             type="button"
             onClick={() => setUiState("success")}
-            className="btn-outline-subtle px-2.5 py-0.5 text-[11px] cursor-pointer"
+            className="btn-outline-subtle px-3 py-1 text-[11px] cursor-pointer"
           >
             Reconnect Live Feed
           </button>
@@ -278,7 +278,7 @@ export default function DisputeWarRoomPage() {
       {uiState === "loading" && (
         <div
           aria-busy="true"
-          className="surface-bento rounded-2xl p-5 space-y-3 text-xs text-ink-secondary"
+          className="surface-bento rounded-2xl p-6 space-y-3 text-xs text-ink-secondary"
         >
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-2 font-semibold text-ink">
@@ -286,7 +286,7 @@ export default function DisputeWarRoomPage() {
               Verifying carrier delivery status, buyer device history, and seller protection
               eligibility...
             </span>
-            <span className="text-xs text-status-success-text font-semibold">
+            <span className="text-xs text-status-success-text font-semibold tabular-nums">
               Response Target &lt; 4.0s
             </span>
           </div>
@@ -299,7 +299,7 @@ export default function DisputeWarRoomPage() {
       {uiState === "error" && activeDispute && (
         <div
           role="alert"
-          className="rounded-xl border border-status-danger-border bg-status-danger-bg p-4 space-y-3 text-xs text-status-danger-text"
+          className="rounded-xl border border-status-danger-border bg-status-danger-bg p-5 space-y-3 text-xs text-status-danger-text"
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="inline-flex items-center gap-2 font-semibold">
@@ -308,7 +308,7 @@ export default function DisputeWarRoomPage() {
               delivery receipt scan below to verify manually:
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-status-danger-border bg-elevated p-3">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-status-danger-border bg-elevated p-3.5">
             <UploadCloud className="h-5 w-5 text-ink-secondary shrink-0" />
             <input
               type="text"
@@ -326,7 +326,7 @@ export default function DisputeWarRoomPage() {
                   manualTrackingInput
                 )
               }
-              className="btn-primary-mint px-3 py-1.5 text-xs font-semibold cursor-pointer"
+              className="btn-primary-mint px-3.5 py-1.5 text-xs font-semibold cursor-pointer"
             >
               <UploadCloud className="h-3.5 w-3.5" />
               <span>Upload Delivery Receipt</span>
@@ -336,7 +336,7 @@ export default function DisputeWarRoomPage() {
       )}
 
       {uiState === "empty" || disputes.length === 0 ? (
-        <div className="surface-bento rounded-2xl p-10 text-center space-y-3">
+        <div className="surface-bento rounded-2xl p-10 text-center space-y-4">
           <p className="text-sm text-ink-secondary font-medium">
             All customer disputes have been resolved. Click{" "}
             <strong className="text-ink">Simulate Delivered Claim ($340)</strong> to preview
@@ -345,20 +345,20 @@ export default function DisputeWarRoomPage() {
           <button
             type="button"
             onClick={() => handleSimulateWebhookClick("INR_340")}
-            className="btn-primary-mint px-4 py-2 text-xs font-semibold cursor-pointer"
+            className="btn-primary-mint px-4 py-2.5 text-xs font-semibold cursor-pointer"
           >
             <Zap className="h-4 w-4" />
             <span>Simulate Delivered Claim ($340)</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
           {/* Left 5 Columns: Active Dispute Queue */}
           <section
             aria-label="Active PayPal Dispute Queue (E-08)"
-            className="lg:col-span-5 surface-bento rounded-2xl p-6 space-y-4 animate-pop-in delay-75"
+            className="lg:col-span-5 surface-bento rounded-2xl p-6 sm:p-7 space-y-5 animate-pop-in delay-75"
           >
-            <div className="flex items-center justify-between border-b border-hairline pb-3.5">
+            <div className="flex items-center justify-between border-b border-hairline pb-4">
               <div>
                 <h2 className="text-base font-semibold tracking-tight text-ink">
                   Open Customer Disputes
@@ -367,12 +367,12 @@ export default function DisputeWarRoomPage() {
                   Select a claim to inspect delivery verification and defense evidence
                 </p>
               </div>
-              <span className="rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 text-xs font-medium text-ink-secondary">
+              <span className="rounded-pill border border-hairline bg-elevated px-3 py-1 text-xs font-medium text-ink-secondary tabular-nums">
                 {disputes.length} Active
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {disputes.map((d) => {
                 const isSelected = d.disputeId === activeDispute?.disputeId;
                 const isHighFraud = d.gnnRiskScore >= 0.7;
@@ -389,19 +389,19 @@ export default function DisputeWarRoomPage() {
                   <div
                     key={d.disputeId}
                     onClick={() => setSelectedDisputeId(d.disputeId)}
-                    className={`group rounded-xl border p-4 cursor-pointer transition-all duration-200 ease-out space-y-2.5 ${
+                    className={`group rounded-xl border p-4 sm:p-5 cursor-pointer transition-all duration-200 active:scale-[0.985] space-y-3 ${
                       isSelected
-                        ? "border-ink bg-elevated shadow-md -translate-y-[2px]"
+                        ? "border-ink bg-elevated shadow-md -translate-y-[2px] ring-1 ring-slate-900/5"
                         : "border-hairline bg-elevated/80 hover:border-border-strong hover:bg-elevated hover:-translate-y-[2px] hover:shadow-sm"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="flex items-center gap-1.5 text-xs">
-                          <span className="font-semibold text-ink">{d.disputeId}</span>
-                          <span className="text-ink-muted">· Order #{d.orderId}</span>
+                          <span className="font-semibold text-ink tabular-nums">{d.disputeId}</span>
+                          <span className="text-ink-muted tabular-nums">· Order #{d.orderId}</span>
                         </div>
-                        <div className="mt-0.5 text-xs font-medium text-ink-secondary">
+                        <div className="mt-1 text-xs font-medium text-ink-secondary">
                           {formatReasonLabel(d.reasonCode)}
                         </div>
                       </div>
@@ -413,7 +413,7 @@ export default function DisputeWarRoomPage() {
                             activeCurrency
                           )}
                         </div>
-                        <div className="text-[10.5px] text-ink-muted">{dualAmt.secondary}</div>
+                        <div className="text-[11px] text-ink-muted">{dualAmt.secondary}</div>
                       </div>
                     </div>
 
@@ -428,7 +428,7 @@ export default function DisputeWarRoomPage() {
 
                       <span
                         title={`Response Deadlines:\n• ${sla.tooltipTimezones.utc}\n• ${sla.tooltipTimezones.ist}`}
-                        className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-[11px] font-medium ${
+                        className={`inline-flex items-center gap-1 rounded-pill border px-2.5 py-0.5 text-[11px] font-medium tabular-nums ${
                           sla.isUrgent
                             ? "border-status-warning-border bg-status-warning-bg text-status-warning-text"
                             : "border-hairline bg-surface text-ink-secondary"
@@ -439,7 +439,7 @@ export default function DisputeWarRoomPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
+                    <div className="flex items-center justify-between pt-2.5 border-t border-border-subtle text-xs">
                       <span className="text-ink-muted">Recommended Action</span>
                       <span
                         className={`rounded-pill border px-2.5 py-0.5 text-[11px] font-medium ${
@@ -466,7 +466,7 @@ export default function DisputeWarRoomPage() {
             <section
               key={activeDispute.disputeId}
               aria-label="Multi-Hop GNN Fraud Graph and Compelling Evidence Bundle"
-              className="lg:col-span-7 surface-bento rounded-2xl p-6 space-y-5 animate-tab-switch"
+              className="lg:col-span-7 surface-bento rounded-2xl p-6 sm:p-7 space-y-6 animate-tab-switch"
             >
               {/* Success Stamp when Evidence is Submitted */}
               {submittedIds[activeDispute.disputeId] && (

@@ -80,7 +80,7 @@ export const HitlInlineActionCell = memo(function HitlInlineActionCell({
             e.stopPropagation();
             openHitlApproval(row);
           }}
-          className="inline-flex items-center gap-1 rounded-lg border border-status-warning-border bg-status-warning-bg px-2.5 py-1 text-[11px] font-semibold text-status-warning-text shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0 cursor-pointer"
+          className="inline-flex items-center gap-1 rounded-lg border border-status-warning-border bg-status-warning-bg px-2.5 py-1 text-[11px] font-semibold text-status-warning-text shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.96] cursor-pointer"
         >
           <KeyRound className="h-3 w-3 shrink-0" />
           <span>Approve / Reject</span>
@@ -95,7 +95,7 @@ export const HitlInlineActionCell = memo(function HitlInlineActionCell({
             e.stopPropagation();
             openQrModal(invoices[0] ?? null);
           }}
-          className="inline-flex items-center gap-1 rounded-lg border border-status-info-border bg-status-info-bg px-2.5 py-1 text-[11px] font-medium text-status-info-text shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0 cursor-pointer"
+          className="inline-flex items-center gap-1 rounded-lg border border-status-info-border bg-status-info-bg px-2.5 py-1 text-[11px] font-medium text-status-info-text shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.96] cursor-pointer"
         >
           <QrCode className="h-3 w-3 shrink-0" />
           <span>QR</span>
@@ -110,7 +110,7 @@ export const HitlInlineActionCell = memo(function HitlInlineActionCell({
             e.stopPropagation();
             void handleInlineRefund();
           }}
-          className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:border-border-strong hover:bg-surface hover:text-ink hover:shadow-sm active:translate-y-0 cursor-pointer"
+          className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:border-border-strong hover:bg-surface hover:text-ink hover:shadow-sm active:scale-[0.96] cursor-pointer"
         >
           <RotateCcw className="h-3 w-3 shrink-0" />
           <span>Refund</span>
@@ -124,7 +124,7 @@ export const HitlInlineActionCell = memo(function HitlInlineActionCell({
           e.stopPropagation();
           openApimaticDrawer(row);
         }}
-        className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 font-mono text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:border-accent-dark hover:bg-accent-dark hover:text-accent-dark-ink hover:shadow-sm active:translate-y-0 cursor-pointer"
+        className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-2.5 py-1 font-mono text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:border-accent-dark hover:bg-accent-dark hover:text-accent-dark-ink hover:shadow-sm active:scale-[0.96] cursor-pointer"
       >
         <Code2 className="h-3 w-3 shrink-0" />
         <span>SDK</span>

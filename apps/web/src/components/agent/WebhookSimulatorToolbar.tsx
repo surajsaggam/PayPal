@@ -206,20 +206,20 @@ export function WebhookSimulatorToolbar() {
               </div>
             </div>
 
-            {/* 8 Clean Rail Tiles (Icon Box + Readable Title + Readable Subtitle) */}
+            {/* 8 Clean Rail Tiles (Icon Box + Readable Title + Readable Subtitle + Instant Press Feedback) */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {/* Tile 1: Smart Invoice + QR */}
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[0])}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-mint/40 text-accent-mint-ink">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-mint/40 text-accent-mint-ink shadow-2xs">
                   <QrCode className="h-4 w-4" />
                 </span>
                 <div>
                   <div className="text-xs font-semibold text-ink">1. Smart Invoice &amp; QR</div>
-                  <div className="text-[11px] text-ink-muted">$1,850 · 2% Early-Pay Discount</div>
+                  <div className="text-[11px] text-ink-muted tabular-nums">$1,850 · 2% Early-Pay Discount</div>
                 </div>
               </button>
 
@@ -227,14 +227,14 @@ export function WebhookSimulatorToolbar() {
               <button
                 type="button"
                 onClick={() => void handleBryntumDunningDragShortcut()}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-info-bg text-status-info-text">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-info-bg text-status-info-text shadow-2xs">
                   <CalendarClock className="h-4 w-4" />
                 </span>
                 <div>
                   <div className="text-xs font-semibold text-ink">2. Payment Reminders</div>
-                  <div className="text-[11px] text-ink-muted">72-Hour Customer Quiet Period</div>
+                  <div className="text-[11px] text-ink-muted tabular-nums">72-Hour Customer Quiet Period</div>
                 </div>
               </button>
 
@@ -242,14 +242,14 @@ export function WebhookSimulatorToolbar() {
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[1])}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-success-bg text-status-success-text">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-success-bg text-status-success-text shadow-2xs">
                   <Swords className="h-4 w-4" />
                 </span>
                 <div>
                   <div className="text-xs font-semibold text-ink">3. Dispute Protection</div>
-                  <div className="text-[11px] text-ink-muted">$340 · Signed Delivery Proof</div>
+                  <div className="text-[11px] text-ink-muted tabular-nums">$340 · Signed Delivery Proof</div>
                 </div>
               </button>
 
@@ -257,14 +257,14 @@ export function WebhookSimulatorToolbar() {
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[2])}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-warning-bg text-status-warning-text">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-warning-bg text-status-warning-text shadow-2xs">
                   <ShieldAlert className="h-4 w-4" />
                 </span>
                 <div>
                   <div className="text-xs font-semibold text-ink">4. High-Value Refund Gate</div>
-                  <div className="text-[11px] text-ink-muted">$2,400 · Passkey Approval</div>
+                  <div className="text-[11px] text-ink-muted tabular-nums">$2,400 · Passkey Approval</div>
                 </div>
               </button>
 
@@ -272,14 +272,14 @@ export function WebhookSimulatorToolbar() {
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[3])}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ink">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ink shadow-2xs">
                   <Coins className="h-4 w-4" />
                 </span>
                 <div>
                   <div className="text-xs font-semibold text-ink">PYUSD Supplier Settlement</div>
-                  <div className="text-[11px] text-ink-muted">$650 · 1.2s Global Payout</div>
+                  <div className="text-[11px] text-ink-muted tabular-nums">$650 · 1.2s Global Payout</div>
                 </div>
               </button>
 
@@ -295,9 +295,9 @@ export function WebhookSimulatorToolbar() {
                   });
                   simulateDisputeWebhook("INR_340");
                 }}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-success-bg text-status-success-text">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-success-bg text-status-success-text shadow-2xs">
                   <Zap className="h-4 w-4" />
                 </span>
                 <div>
@@ -318,9 +318,9 @@ export function WebhookSimulatorToolbar() {
                   });
                   simulateDisputeWebhook("INJECTION_2400");
                 }}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-danger-bg text-status-danger-text">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-danger-bg text-status-danger-text shadow-2xs">
                   <ShieldAlert className="h-4 w-4" />
                 </span>
                 <div>
@@ -336,9 +336,9 @@ export function WebhookSimulatorToolbar() {
                 onClick={() => {
                   void simulateUpstreamHttp429CircuitBreaker("/api/v1/agent/execute");
                 }}
-                className="group flex items-center gap-3 rounded-xl border border-transparent p-2.5 text-left transition-all duration-200 hover:-translate-y-[1px] hover:border-hairline hover:bg-elevated hover:shadow-xs cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ink-secondary">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ink-secondary shadow-2xs">
                   <WifiOff className="h-4 w-4" />
                 </span>
                 <div>
@@ -351,7 +351,7 @@ export function WebhookSimulatorToolbar() {
 
           {/* Right Column: Clean Editorial Workflow Preview Card + Overlapping Settlement Card */}
           <div className="relative lg:col-span-6">
-            <div className="rounded-2xl bg-[#11191F] p-6 pb-16 text-slate-200 shadow-elevated space-y-4">
+            <div className="rounded-2xl bg-[#11191F] p-6 pb-16 text-slate-200 shadow-elevated space-y-4 ring-1 ring-white/10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 text-xs">
                 <span className="font-medium text-slate-300">
                   Live Workflow Protection Preview
@@ -362,14 +362,14 @@ export function WebhookSimulatorToolbar() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-1">
                   <div className="text-[11px] text-slate-400">Current Workflow</div>
                   <div className="font-semibold text-white">{readableOp.title}</div>
                   <div className="text-[11px] text-emerald-400">{readableOp.category}</div>
                 </div>
 
-                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-1">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-1">
                   <div className="text-[11px] text-slate-400">Policy Verification</div>
                   <div className="font-semibold text-white">{readableVerdict.label}</div>
                   <div className="text-[11px] text-slate-400">
@@ -384,13 +384,13 @@ export function WebhookSimulatorToolbar() {
             </div>
 
             {/* Overlapping Crisp White Financial Card */}
-            <div className="relative -mt-10 ml-6 mr-2 rounded-xl border border-hairline bg-elevated p-4 shadow-elevated sm:ml-12 transition-transform duration-200 hover:-translate-y-[2px]">
+            <div className="relative -mt-10 ml-6 mr-2 rounded-xl border border-hairline bg-elevated p-4 sm:p-5 shadow-elevated sm:ml-12 transition-transform duration-200 ease-spring hover:-translate-y-[2px]">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="kpi-stat-value text-2xl">
                     ${latestExec?.amountValue ?? "1,850.00"}
                   </div>
-                  <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-muted">
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-muted">
                     <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-status-success-bg text-status-success-text">
                       <Check className="h-2.5 w-2.5" />
                     </span>
@@ -399,7 +399,7 @@ export function WebhookSimulatorToolbar() {
                     <span>Single-Charge Lock Active</span>
                   </div>
                 </div>
-                <span className="inline-flex items-center gap-1 rounded-pill border border-status-success-border bg-status-success-bg px-2.5 py-1 text-xs font-medium text-status-success-text shrink-0">
+                <span className="inline-flex items-center gap-1 rounded-pill border border-status-success-border bg-status-success-bg px-3 py-1 text-xs font-medium text-status-success-text shrink-0">
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Verified
                 </span>
@@ -408,7 +408,7 @@ export function WebhookSimulatorToolbar() {
           </div>
         </div>
 
-        {/* Clean, Human-Readable Walkthrough Status Bar (No raw hashes, contract addresses, or judge tags) */}
+        {/* Clean, Human-Readable Walkthrough Status Bar */}
         {(activePitchScenario || circuitBreakerTripped) && (
           <div
             aria-label="Guided Pitch Choreography & Sandbox Resource ID Callout Strip"
@@ -437,7 +437,7 @@ export function WebhookSimulatorToolbar() {
               <button
                 type="button"
                 onClick={() => router.push(activePitchScenario.targetRoute)}
-                className="inline-flex items-center gap-1 rounded-lg border border-hairline bg-elevated px-3 py-1 text-xs font-semibold text-ink shadow-2xs transition-all hover:-translate-y-[1px] cursor-pointer"
+                className="btn-outline-subtle rounded-lg px-3 py-1 text-xs font-semibold cursor-pointer"
               >
                 <span>Open Screen</span>
                 <ArrowUpRight className="h-3.5 w-3.5" />

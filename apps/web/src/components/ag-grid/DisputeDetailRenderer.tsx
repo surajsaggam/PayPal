@@ -86,10 +86,10 @@ export function DisputeDetailRenderer({ row }: DisputeDetailRendererProps) {
   };
 
   return (
-    <div className="dot-grid-surface border-t border-b border-hairline p-4 sm:p-5 text-xs text-ink">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <div className="dot-grid-surface border-t border-b border-hairline p-5 sm:p-6 text-xs text-ink">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Card 1: Cosmos.AI Policy Firewall & JunoDB 2PC */}
-        <div className="rounded-xl border border-hairline bg-elevated p-4 shadow-2xs flex flex-col justify-between overflow-hidden transition-all duration-200 ease-out hover:-translate-y-[1px] hover:border-border-strong hover:shadow-md">
+        <div className="surface-card rounded-xl p-5 flex flex-col justify-between overflow-hidden">
           <div>
             <div className="mb-3 flex items-center justify-between border-b border-border-subtle pb-2.5">
               <div className="flex items-center gap-2 font-semibold text-ink">

@@ -27,16 +27,16 @@ export function McpToolTraceDrawer() {
   return (
     <aside
       aria-label="Live PayPal MCP Tool Execution Trace Drawer"
-      className="fixed bottom-6 right-6 z-40 w-full max-w-xl rounded-2xl border border-hairline bg-elevated shadow-lg text-ink overflow-hidden"
+      className="fixed bottom-6 right-6 z-40 w-full max-w-xl rounded-2xl apple-glass-sheet text-ink overflow-hidden animate-pop-in"
     >
-      <div className="flex items-center justify-between border-b border-hairline bg-surface px-4 py-3.5">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-5 py-4">
+        <div className="flex items-center gap-2.5">
           <Cpu className="h-4 w-4 text-ink-secondary" />
           <div>
-            <h3 className="text-xs font-semibold text-ink">
+            <h3 className="text-xs font-semibold tracking-tight text-ink">
               Dual-Layer PayPal MCP Control Plane Trace (F-01 · ADR-0003)
             </h3>
-            <p className="text-[10.5px] font-mono text-ink-muted">
+            <p className="text-[10.5px] font-mono text-ink-muted tabular-nums">
               W3C traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 ·{" "}
               {totalLatencyMs}ms
             </p>
@@ -46,7 +46,7 @@ export function McpToolTraceDrawer() {
           type="button"
           onClick={() => setTraceDrawerOpen(false)}
           aria-label="Close MCP Trace Drawer"
-          className="rounded-lg p-1 text-ink-muted hover:bg-subtle hover:text-ink cursor-pointer"
+          className="rounded-lg p-1.5 text-ink-muted hover:bg-subtle hover:text-ink active:scale-[0.95] cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>

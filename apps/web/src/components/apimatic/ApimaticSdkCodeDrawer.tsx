@@ -49,17 +49,21 @@ export function ApimaticSdkCodeDrawer() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="apimatic-drawer-title"
-      className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/35 backdrop-blur-xs"
+      onClick={() => openApimaticDrawer(null)}
+      className="fixed inset-0 z-50 flex items-center justify-end apple-modal-scrim"
     >
-      <div className="h-full w-full max-w-2xl border-l border-hairline bg-elevated shadow-lg flex flex-col text-ink">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="h-full w-full max-w-2xl border-l border-hairline apple-glass-sheet flex flex-col text-ink animate-drawer-right"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-hairline bg-surface px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-hairline bg-elevated text-ink shadow-2xs">
+        <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-4.5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-hairline bg-elevated text-ink shadow-2xs">
               <Code2 className="h-4 w-4" />
             </span>
             <div>
-              <h2 id="apimatic-drawer-title" className="text-sm font-semibold text-ink">
+              <h2 id="apimatic-drawer-title" className="text-sm font-semibold tracking-tight text-ink">
                 APIMatic Context Plugin — Verified PayPal Server SDK Exporter
               </h2>
               <p className="text-[11px] font-mono text-ink-muted">
@@ -70,7 +74,8 @@ export function ApimaticSdkCodeDrawer() {
           <button
             type="button"
             onClick={() => openApimaticDrawer(null)}
-            className="rounded-lg p-1.5 text-ink-muted hover:bg-subtle hover:text-ink cursor-pointer"
+            aria-label="Close APIMatic SDK Drawer"
+            className="rounded-xl p-2 text-ink-muted hover:bg-subtle hover:text-ink active:scale-[0.95] cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -89,7 +94,7 @@ export function ApimaticSdkCodeDrawer() {
                 {snippetEntry.endpoint}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2 font-mono text-[11px] text-ink pt-1">
+            <div className="grid grid-cols-3 gap-2 font-mono text-[11px] text-ink pt-1 tabular-nums">
               <div>
                 <span className="text-ink-muted">Tool:</span> {apimaticDrawerExecution.toolName}
               </div>
@@ -117,7 +122,7 @@ export function ApimaticSdkCodeDrawer() {
                 onChange={(e) => setTestAmountInput(e.target.value)}
                 aria-label="Test Monetary Amount String"
                 placeholder='e.g. "2450.00" or invalid "2450.5"'
-                className="rounded-lg border border-hairline bg-elevated px-3 py-1.5 font-mono text-xs text-ink flex-1 shadow-2xs focus:border-ink focus:outline-none"
+                className="rounded-lg border border-hairline bg-elevated px-3 py-1.5 font-mono text-xs text-ink tabular-nums flex-1 shadow-2xs focus:border-ink focus:outline-none"
               />
               <span
                 className={`rounded-pill border px-2.5 py-1 font-mono text-xs font-semibold ${
@@ -138,11 +143,11 @@ export function ApimaticSdkCodeDrawer() {
 
           {/* Language Switcher & Copy Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex rounded-xl border border-hairline bg-subtle/60 p-1">
+            <div className="apple-segmented-track">
               <button
                 type="button"
                 onClick={() => setLang("ts")}
-                className={`rounded-lg px-3 py-1 text-xs font-mono font-medium transition cursor-pointer ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-mono font-medium transition active:scale-[0.97] cursor-pointer ${
                   lang === "ts"
                     ? "bg-elevated text-ink font-semibold shadow-2xs border border-hairline"
                     : "text-ink-muted hover:text-ink"
@@ -153,7 +158,7 @@ export function ApimaticSdkCodeDrawer() {
               <button
                 type="button"
                 onClick={() => setLang("python")}
-                className={`rounded-lg px-3 py-1 text-xs font-mono font-medium transition cursor-pointer ${
+                className={`rounded-lg px-3 py-1.5 text-xs font-mono font-medium transition active:scale-[0.97] cursor-pointer ${
                   lang === "python"
                     ? "bg-elevated text-ink font-semibold shadow-2xs border border-hairline"
                     : "text-ink-muted hover:text-ink"

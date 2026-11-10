@@ -198,17 +198,17 @@ export function LedgerCommandGrid() {
         </div>
 
         {/* Ordered Top-Right Controls — Single Horizontal Line on Desktop */}
-        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 shrink-0">
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2.5 shrink-0">
           {/* 1. Quick Search Filter */}
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-ink-faint pointer-events-none" />
+            <Search className="absolute left-3.5 top-3 h-3.5 w-3.5 text-ink-faint pointer-events-none" />
             <input
               type="text"
               value={quickFilter}
               onChange={(e) => setQuickFilter(e.target.value)}
               placeholder="Search executions..."
               aria-label="AG Grid Quick Search Filter"
-              className="h-9 w-44 focus:w-52 rounded-xl border border-hairline bg-elevated pl-8 pr-7 text-xs text-ink placeholder-ink-faint shadow-2xs transition-all duration-200 ease-out hover:border-border-strong focus:border-ink focus:ring-2 focus:ring-ink/5 focus:outline-none"
+              className="h-9 w-48 focus:w-56 rounded-xl border border-hairline bg-elevated pl-9 pr-7 text-xs text-ink placeholder-ink-faint shadow-2xs transition-all duration-200 hover:border-border-strong focus:border-ink focus:ring-2 focus:ring-ink/5 focus:outline-none"
             />
             {quickFilter && (
               <button
@@ -226,7 +226,7 @@ export function LedgerCommandGrid() {
           <button
             type="button"
             onClick={() => setGroupByCurrency(!groupByCurrency)}
-            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0 cursor-pointer ${
+            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3.5 text-xs font-medium shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer ${
               groupByCurrency
                 ? "border-accent-dark bg-accent-dark text-accent-dark-ink"
                 : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:bg-surface hover:text-ink"
@@ -245,7 +245,7 @@ export function LedgerCommandGrid() {
           <button
             type="button"
             onClick={toggle10kBenchmark}
-            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium shadow-2xs transition-all duration-200 ease-out hover:-translate-y-[1px] hover:shadow-sm active:translate-y-0 cursor-pointer ${
+            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3.5 text-xs font-medium shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer ${
               benchmarkMode10k
                 ? "border-status-success-border bg-status-success-bg text-status-success-text"
                 : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:bg-surface hover:text-ink"
@@ -259,7 +259,7 @@ export function LedgerCommandGrid() {
           <button
             type="button"
             onClick={handleExportCsv}
-            className="group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border border-accent-dark bg-accent-dark px-3.5 text-xs font-medium text-accent-dark-ink shadow-xs transition-all duration-200 ease-out hover:bg-accent-dark-hover hover:-translate-y-[1px] hover:shadow-md active:translate-y-0 cursor-pointer"
+            className="group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border border-accent-dark bg-accent-dark px-4 text-xs font-medium text-accent-dark-ink shadow-xs transition-all duration-200 hover:bg-accent-dark-hover hover:-translate-y-[1px] hover:shadow-md active:scale-[0.975] cursor-pointer"
           >
             <Download className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-y-[1px]" />
             <span>Export CSV</span>
@@ -269,7 +269,7 @@ export function LedgerCommandGrid() {
 
       {/* Row 2: Interactive Segmented Verdict Filter Tabs + Quick Inspector Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex flex-wrap items-center gap-1 rounded-xl border border-hairline bg-subtle/60 p-1 shadow-2xs">
+        <div className="apple-segmented-track">
           {[
             { id: "ALL", label: "All Executions", count: counts.all, dotClass: null },
             {
@@ -297,7 +297,7 @@ export function LedgerCommandGrid() {
                 key={tab.id}
                 type="button"
                 onClick={() => setVerdictFilter(tab.id)}
-                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ease-out cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 active:scale-[0.975] cursor-pointer ${
                   active
                     ? "bg-elevated text-ink font-semibold shadow-xs border border-hairline/80"
                     : "text-ink-muted hover:bg-elevated/60 hover:text-ink"
@@ -308,7 +308,7 @@ export function LedgerCommandGrid() {
                 )}
                 <span>{tab.label}</span>
                 <span
-                  className={`rounded-pill px-1.5 py-0.2 font-mono text-[10px] transition-colors ${
+                  className={`rounded-pill px-1.5 py-0.2 font-mono text-[10px] tabular-nums transition-colors ${
                     active
                       ? "bg-subtle text-ink font-semibold"
                       : "bg-elevated/80 text-ink-faint"
@@ -326,7 +326,7 @@ export function LedgerCommandGrid() {
           <button
             type="button"
             onClick={toggleAllRowsInspector}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-elevated px-2.5 text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 hover:border-border-strong hover:bg-surface hover:text-ink cursor-pointer"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-elevated px-3 text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 hover:border-border-strong hover:bg-surface hover:text-ink active:scale-[0.975] cursor-pointer"
           >
             <ChevronsUpDown className="h-3.5 w-3.5 text-ink-muted" />
             <span>{hasExpandedRows ? "Collapse Inspector" : "Expand Top Row"}</span>

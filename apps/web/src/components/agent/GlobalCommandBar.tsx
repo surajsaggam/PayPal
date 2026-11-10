@@ -223,131 +223,133 @@ export function GlobalCommandBar() {
   return (
     <footer
       aria-label="Global PayPal MCP Agent Command Bar"
-      className="mt-16 border-t border-hairline bg-surface px-4 py-10 text-ink sm:px-8"
+      className="mt-12 border-t border-hairline bg-surface/60 px-6 py-12 text-ink sm:px-10"
     >
-      <div className="mx-auto max-w-[1280px] space-y-6">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div>
-            <span className="badge-lime mb-2 px-2.5 py-0.5 text-xs">
-              Sentinel Assistant · Cmd+K
-            </span>
-            <h3 className="text-xl editorial-heading">
-              Natural-Language Payment Assistant.{" "}
-              <span className="editorial-subcopy">
-                Create smart invoices, respond to customer disputes, and place wholesale orders in
-                plain English.
+      <div className="mx-auto max-w-[1280px]">
+        <div className="surface-bento rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
+            <div>
+              <span className="badge-lime mb-2.5 px-3 py-1 text-xs shadow-2xs">
+                Sentinel Assistant · Cmd+K
               </span>
-            </h3>
+              <h3 className="text-xl editorial-heading">
+                Natural-Language Payment Assistant.{" "}
+                <span className="editorial-subcopy">
+                  Create smart invoices, respond to customer disputes, and place wholesale orders in
+                  plain English.
+                </span>
+              </h3>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 text-xs">
+              <label className="inline-flex items-center gap-2 cursor-pointer select-none rounded-xl border border-hairline bg-elevated px-3.5 py-2 text-xs font-medium text-ink-secondary shadow-2xs transition-colors hover:border-border-strong">
+                <input
+                  type="checkbox"
+                  checked={dryRun}
+                  onChange={(e) => setDryRun(e.target.checked)}
+                  className="h-3.5 w-3.5 accent-ink rounded"
+                />
+                <span>Preview Mode:</span>
+                <span
+                  className={
+                    dryRun
+                      ? "text-status-warning-text font-semibold"
+                      : "text-status-success-text font-semibold"
+                  }
+                >
+                  {dryRun ? "Safe Preview" : "Live"}
+                </span>
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setTraceDrawerOpen(!traceDrawerOpen)}
+                className="btn-outline-subtle h-9 px-3.5 text-xs cursor-pointer"
+              >
+                <Layers className="h-3.5 w-3.5 text-ink-secondary" />
+                Activity Steps
+              </button>
+
+              {latestExecution && (
+                <button
+                  type="button"
+                  onClick={() => openApimaticDrawer(latestExecution)}
+                  className="btn-outline-subtle h-9 px-3.5 text-xs cursor-pointer"
+                >
+                  <Code2 className="h-3.5 w-3.5 text-ink-secondary" />
+                  Developer SDK
+                </button>
+              )}
+
+              {latestExecution?.policyVerdict === "HELD_FOR_L2_PASSKEY" && (
+                <button
+                  type="button"
+                  onClick={() => openHitlApproval(latestExecution)}
+                  className="badge-lime h-9 px-3.5 text-xs active:scale-[0.975] cursor-pointer"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  1 Pending Approval
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <label className="inline-flex items-center gap-1.5 cursor-pointer select-none rounded-lg border border-hairline bg-elevated px-3 py-1.5 text-xs font-medium text-ink-secondary">
+          {/* Main Command Input Row */}
+          <form onSubmit={(e) => void handleRunCommand(e)} className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1 flex items-center">
+              <Terminal className="absolute left-4 h-4 w-4 text-ink-muted pointer-events-none" />
               <input
-                type="checkbox"
-                checked={dryRun}
-                onChange={(e) => setDryRun(e.target.checked)}
-                className="h-3.5 w-3.5 accent-ink rounded"
+                ref={inputRef}
+                type="text"
+                value={commandPrompt}
+                onChange={(e) => setCommandPrompt(e.target.value)}
+                placeholder='Ask Sentinel (e.g., "Send $1,850 invoice to Acme Robotics with 2% early discount")...'
+                aria-label="Global PayPal MCP Agent Command Input"
+                className="w-full rounded-2xl border border-hairline bg-elevated pl-11 pr-24 py-3.5 text-sm text-ink placeholder-ink-faint shadow-xs transition-all duration-200 focus:border-ink focus:ring-4 focus:ring-slate-900/5 focus:outline-none"
               />
-              <span>Preview Mode:</span>
-              <span
-                className={
-                  dryRun
-                    ? "text-status-warning-text font-semibold"
-                    : "text-status-success-text font-semibold"
-                }
-              >
-                {dryRun ? "Safe Preview" : "Live"}
-              </span>
-            </label>
+              <kbd className="hidden sm:inline-block absolute right-3.5 rounded-lg border border-hairline bg-surface px-2.5 py-1 text-[11px] font-medium text-ink-muted shadow-2xs">
+                Cmd+K
+              </kbd>
+            </div>
 
             <button
-              type="button"
-              onClick={() => setTraceDrawerOpen(!traceDrawerOpen)}
-              className="btn-outline-subtle px-3 py-1.5 text-xs cursor-pointer"
+              type="submit"
+              disabled={executing}
+              className="btn-primary-mint disabled:opacity-50 rounded-2xl px-6 py-3.5 text-xs font-semibold shadow-xs cursor-pointer"
             >
-              <Layers className="h-3.5 w-3.5 text-ink-secondary" />
-              Activity Steps
+              <Play className="h-3.5 w-3.5 fill-current" />
+              {executing ? "Running Request..." : "Run Assistant"}
             </button>
+          </form>
 
-            {latestExecution && (
-              <button
-                type="button"
-                onClick={() => openApimaticDrawer(latestExecution)}
-                className="btn-outline-subtle px-3 py-1.5 text-xs cursor-pointer"
-              >
-                <Code2 className="h-3.5 w-3.5 text-ink-secondary" />
-                Developer SDK
-              </button>
-            )}
+          {/* Quick Prompt Chips & Status */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted">
+                <Sparkles className="h-3.5 w-3.5" />
+                Suggested actions:
+              </span>
+              {QUICK_PROMPTS.map((chip) => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  onClick={() => {
+                    setCommandPrompt(chip.prompt);
+                    void handleRunCommand(undefined, chip.prompt);
+                  }}
+                  className="rounded-pill border border-hairline bg-elevated px-3.5 py-1.5 text-xs font-medium text-ink-secondary shadow-2xs hover:border-border-strong hover:text-ink transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
 
-            {latestExecution?.policyVerdict === "HELD_FOR_L2_PASSKEY" && (
-              <button
-                type="button"
-                onClick={() => openHitlApproval(latestExecution)}
-                className="badge-lime px-3 py-1.5 text-xs cursor-pointer"
-              >
-                <AlertTriangle className="h-3.5 w-3.5" />
-                1 Pending Approval
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Main Command Input Row */}
-        <form onSubmit={(e) => void handleRunCommand(e)} className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1 flex items-center">
-            <Terminal className="absolute left-3.5 h-4 w-4 text-ink-muted pointer-events-none" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={commandPrompt}
-              onChange={(e) => setCommandPrompt(e.target.value)}
-              placeholder='Ask Sentinel (e.g., "Send $1,850 invoice to Acme Robotics with 2% early discount")...'
-              aria-label="Global PayPal MCP Agent Command Input"
-              className="w-full rounded-xl border border-hairline bg-elevated pl-10 pr-24 py-3 text-sm text-ink placeholder-ink-faint shadow-xs focus:border-ink focus:outline-none"
-            />
-            <kbd className="hidden sm:inline-block absolute right-3 rounded-md border border-hairline bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-muted">
-              Cmd+K
-            </kbd>
-          </div>
-
-          <button
-            type="submit"
-            disabled={executing}
-            className="btn-primary-mint disabled:opacity-50 rounded-xl px-5 py-3 text-xs font-semibold shadow-xs cursor-pointer"
-          >
-            <Play className="h-3.5 w-3.5 fill-current" />
-            {executing ? "Running Request..." : "Run Assistant"}
-          </button>
-        </form>
-
-        {/* Quick Prompt Chips & Status */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-ink-muted">
-              <Sparkles className="h-3 w-3" />
-              Suggested actions:
-            </span>
-            {QUICK_PROMPTS.map((chip) => (
-              <button
-                key={chip.label}
-                type="button"
-                onClick={() => {
-                  setCommandPrompt(chip.prompt);
-                  void handleRunCommand(undefined, chip.prompt);
-                }}
-                className="rounded-pill border border-hairline bg-elevated px-3 py-1 text-xs text-ink-secondary hover:border-border-strong hover:text-ink transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-ink-muted">
-            <span className="inline-flex items-center gap-1 text-status-success-text font-medium">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Policy Protection Active
-            </span>
+            <div className="flex items-center gap-2 text-xs text-ink-muted">
+              <span className="inline-flex items-center gap-1.5 text-status-success-text font-medium">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Policy Protection Active
+              </span>
+            </div>
           </div>
         </div>
       </div>

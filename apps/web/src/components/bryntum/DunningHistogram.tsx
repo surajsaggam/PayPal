@@ -180,7 +180,7 @@ export function DunningHistogram() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-7 gap-3 pt-1">
+      <div className="grid grid-cols-2 sm:grid-cols-7 gap-3.5 pt-2">
         {buckets.map((b) => {
           const inPct = Math.round((b.inflowUsd / maxVal) * 100);
           const outPct = Math.round((b.outflowUsd / maxVal) * 100);
@@ -189,34 +189,34 @@ export function DunningHistogram() {
           return (
             <div
               key={b.isoDate}
-              className={`group flex flex-col justify-end rounded-xl border p-3 space-y-2.5 transition-all duration-200 ease-out hover:-translate-y-[2px] hover:shadow-md ${
+              className={`group flex flex-col justify-end rounded-xl border p-3.5 space-y-3 transition-all duration-200 hover:-translate-y-[2px] hover:shadow-md ${
                 hasInvoices
-                  ? "border-status-success-border bg-elevated shadow-2xs"
+                  ? "border-status-success-border bg-elevated shadow-2xs ring-1 ring-emerald-500/10"
                   : "border-hairline bg-elevated/80 hover:border-border-strong"
               }`}
             >
-              <div className="h-24 flex items-end justify-center gap-2 border-b border-border-subtle pb-1.5">
+              <div className="h-24 flex items-end justify-center gap-2 border-b border-border-subtle pb-2">
                 <div
-                  className="w-4 rounded-t-md bg-status-success-bar transition-all duration-300 ease-out group-hover:brightness-110"
+                  className="w-4 rounded-t-md bg-status-success-bar transition-all duration-300 group-hover:brightness-110"
                   style={{ height: `${Math.max(12, inPct)}%` }}
                   title={`Projected Inflow (${b.dateLabel}): $${b.inflowUsd.toLocaleString()} USD`}
                 />
                 <div
-                  className="w-4 rounded-t-md bg-status-warning-bar/85 transition-all duration-300 ease-out"
+                  className="w-4 rounded-t-md bg-status-warning-bar/85 transition-all duration-300"
                   style={{ height: `${Math.max(8, outPct)}%` }}
                   title={`Scheduled Supplier Payout (${b.dateLabel}): $${b.outflowUsd.toLocaleString()} USD`}
                 />
               </div>
               <div className="text-center tabular-nums">
                 <div className="text-xs font-semibold text-ink">{b.dateLabel}</div>
-                <div className="text-[11px] font-semibold text-status-success-text">
+                <div className="mt-0.5 text-[11px] font-semibold text-status-success-text">
                   +{formatCurrencyAmount(b.inflowUsd, "USD", activeCurrency, true)}
                 </div>
                 <div className="text-[10.5px] text-ink-muted">
                   -{formatCurrencyAmount(b.outflowUsd, "USD", activeCurrency, true)}
                 </div>
                 <div
-                  className="text-[10px] text-ink-muted truncate mt-0.5"
+                  className="text-[10px] text-ink-muted truncate mt-1"
                   title={b.note}
                 >
                   {b.note}

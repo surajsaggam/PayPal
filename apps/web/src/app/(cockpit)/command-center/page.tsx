@@ -57,26 +57,26 @@ export default function CommandCenterPage() {
   ).length;
 
   return (
-    <div className="space-y-16">
-      {/* SECTION 1: Increase.com Open Full-Bleed Hero + Immersive 3D Folded Ribbon */}
+    <div className="space-y-14 sm:space-y-16 animate-pop-in">
+      {/* SECTION 1: Open Full-Bleed Hero + Immersive 3D Folded Ribbon */}
       <div>
-        <section className="relative min-h-[500px] sm:min-h-[550px] lg:min-h-[580px] pt-12 sm:pt-16 pb-24">
-          {/* Upper-Left Editorial Copy & Action Pair (Modeled on Increase Hero) */}
-          <div className="relative z-10 max-w-[610px] space-y-6">
+        <section className="relative min-h-[480px] sm:min-h-[530px] lg:min-h-[560px] pt-10 sm:pt-14 pb-24">
+          {/* Upper-Left Editorial Copy & Action Pair */}
+          <div className="relative z-10 max-w-[620px] space-y-6">
             {/* Signature Acid Lime Announcement Pill */}
             <div className="inline-flex">
               <button
                 type="button"
                 onClick={() => runFullGuidedPitchWalkthrough()}
-                className="group inline-flex items-center gap-1.5 rounded-md bg-[#E2FF66] px-3 py-1 text-[12.5px] font-medium text-[#111827] transition-all duration-200 ease-spring hover:bg-[#d8f850] hover:-translate-y-0.5 cursor-pointer"
+                className="group badge-lime px-3.5 py-1.5 text-[12.5px] transition-all duration-200 ease-spring hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
               >
                 <span>Introducing PayPal Sentinel, Autonomous CFO</span>
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </button>
             </div>
 
-            {/* 3-Line Dual-Tone Editorial Headline */}
-            <h1 className="text-[32px] sm:text-[40px] leading-[1.16] tracking-[-0.03em] font-semibold text-ink">
+            {/* 3-Line Dual-Tone Optical Display Headline */}
+            <h1 className="text-[34px] sm:text-[44px] leading-[1.1] tracking-[-0.03em] font-semibold text-ink">
               Autonomous payment operations{" "}
               <br className="hidden sm:inline" />
               for ambitious merchants.{" "}
@@ -85,25 +85,25 @@ export default function CommandCenterPage() {
               </span>
             </h1>
 
-            {/* Mint & White CTA Pair (Exact Match to Increase 'Contact sales' + 'Sign up') */}
-            <div className="flex flex-wrap items-center gap-3 pt-1">
+            {/* Tactile Mint & White CTA Pair */}
+            <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <button
                 type="button"
                 onClick={() => runFullGuidedPitchWalkthrough()}
-                className="rounded-lg bg-[#77E6B6] px-4 py-2 text-[13.5px] font-medium text-[#064E3B] shadow-2xs transition-all duration-200 ease-spring hover:bg-[#5EDBA5] hover:-translate-y-0.5 cursor-pointer"
+                className="btn-primary-mint rounded-xl px-5 py-2.5 text-[13.5px] cursor-pointer"
               >
                 Start walkthrough
               </button>
               <a
                 href="#live-execution-ledger"
-                className="rounded-lg border border-hairline bg-elevated px-4 py-2 text-[13.5px] font-medium text-ink shadow-2xs transition-all duration-200 ease-spring hover:border-border-strong hover:bg-surface hover:-translate-y-0.5"
+                className="btn-outline-subtle rounded-xl px-5 py-2.5 text-[13.5px]"
               >
                 Inspect ledger
               </a>
             </div>
           </div>
 
-          {/* Immersive Full-Scale 3D Folded Accordion Ribbon (Flushes into bottom floor line & bleeds right) */}
+          {/* Immersive Full-Scale 3D Folded Accordion Ribbon */}
           <div
             aria-hidden="true"
             className="pointer-events-none select-none absolute bottom-0 left-[-4%] sm:left-[6%] lg:left-[12%] right-[-18%] sm:right-[-14%] lg:right-[-16%] z-0 flex items-end justify-end overflow-visible"
@@ -195,48 +195,50 @@ export default function CommandCenterPage() {
           </div>
         </section>
 
-        {/* Full-Width Hairline Floor Divider + Typographic Partner Logo Strip (Exact Match to Increase Bottom Hero Bar) */}
-        <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen border-t border-b border-hairline bg-canvas/95 py-7">
-          <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-8 px-6 sm:px-10 text-ink">
-            <span className="text-[17px] font-bold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+        {/* Full-Width Hairline Floor Divider + Typographic Partner Logo Strip */}
+        <div className="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] w-screen border-t border-b border-hairline bg-surface/60 backdrop-blur-md py-6">
+          <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-8 px-6 sm:px-10 text-ink">
+            <span className="text-[16px] font-bold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
               ≈payops
             </span>
-            <span className="text-[16px] font-extrabold tracking-[0.14em] uppercase opacity-80 hover:opacity-100 transition-opacity">
+            <span className="text-[15px] font-extrabold tracking-[0.14em] uppercase opacity-80 hover:opacity-100 transition-opacity">
               PAYPAL MCP
             </span>
-            <span className="text-[17px] font-semibold tracking-tight opacity-80 hover:opacity-100 transition-opacity">
+            <span className="text-[16px] font-semibold tracking-tight opacity-80 hover:opacity-100 transition-opacity">
               AG Grid<sup className="text-[9px] font-mono ml-0.5">32</sup>
             </span>
-            <span className="text-[17px] font-bold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+            <span className="text-[16px] font-bold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
               bryntum
             </span>
-            <span className="text-[17px] font-extrabold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+            <span className="text-[16px] font-extrabold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
               elastic
             </span>
-            <span className="text-[15px] font-bold tracking-[0.08em] uppercase opacity-80 hover:opacity-100 transition-opacity">
+            <span className="text-[14px] font-bold tracking-[0.08em] uppercase opacity-80 hover:opacity-100 transition-opacity">
               APIMATIC
             </span>
-            <span className="text-[17px] font-semibold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
+            <span className="text-[16px] font-semibold tracking-tight opacity-85 hover:opacity-100 transition-opacity">
               PYUSD<span className="font-normal text-ink-muted ml-1 text-xs">↗</span>
             </span>
-            <span className="text-[16px] font-bold tracking-tight opacity-75 hover:opacity-100 transition-opacity">
+            <span className="text-[15px] font-bold tracking-tight opacity-75 hover:opacity-100 transition-opacity">
               ◎ JunoDB
             </span>
           </div>
         </div>
       </div>
 
-      {/* SECTION 2: Architectural 4-Column Stat Strip (Modeled on PDF Page 2: $500B+ / 99.9999% / 9M+) */}
+      {/* SECTION 2: Structured 4-Column Apple KPI Cards (Generous Breathing Room & Tabular Numerals) */}
       <section
         aria-label="Executive North-Star KPI Ribbon (API-14)"
-        className="grid grid-cols-1 gap-8 border-b border-hairline pb-14 pt-2 sm:grid-cols-2 lg:grid-cols-4"
+        className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4"
       >
-        <div className="text-center sm:text-left">
-          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
-            {formatCurrencyAmount(insights.annualizedSavingsUsd, "USD", activeCurrency, true)}
+        <div className="surface-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-ink-muted">{strings.kpiAnmpr}</div>
+            <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[36px]">
+              {formatCurrencyAmount(insights.annualizedSavingsUsd, "USD", activeCurrency, true)}
+            </div>
           </div>
-          <div className="mt-2.5 text-xs font-medium text-ink-muted">{strings.kpiAnmpr}</div>
-          <div className="mt-1 font-mono text-[11px] text-status-success-text">
+          <div className="mt-4 pt-3 border-t border-border-subtle font-mono text-[11px] text-status-success-text tabular-nums">
             {anmprBonusUsd > 0
               ? `+${formatCurrencyAmount(anmprBonusUsd, "USD", activeCurrency)} Live`
               : "+38.4% YoY"}
@@ -244,48 +246,54 @@ export default function CommandCenterPage() {
           </div>
         </div>
 
-        <div className="text-center sm:text-left">
-          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
-            {insights.dsoDaysCurrent.toFixed(1)} Days
+        <div className="surface-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-ink-muted">{strings.kpiDso}</div>
+            <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[36px]">
+              {insights.dsoDaysCurrent.toFixed(1)} Days
+            </div>
           </div>
-          <div className="mt-2.5 text-xs font-medium text-ink-muted">{strings.kpiDso}</div>
-          <div className="mt-1 font-mono text-[11px] text-ink-secondary">
+          <div className="mt-4 pt-3 border-t border-border-subtle font-mono text-[11px] text-ink-secondary tabular-nums">
             -{insights.dsoReductionPct}% vs 28d Baseline · 2% Net-10
           </div>
         </div>
 
-        <div className="text-center sm:text-left">
-          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
-            {insights.disputeWinRatePct.toFixed(1)}%
+        <div className="surface-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-ink-muted">
+              {strings.kpiDisputeWinRate}
+            </div>
+            <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[36px]">
+              {insights.disputeWinRatePct.toFixed(1)}%
+            </div>
           </div>
-          <div className="mt-2.5 text-xs font-medium text-ink-muted">
-            {strings.kpiDisputeWinRate}
-          </div>
-          <div className="mt-1 text-xs text-status-success-text font-medium">
+          <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-status-success-text font-medium tabular-nums">
             +42.0 pts Lift · Automated Delivery Proof
           </div>
         </div>
 
-        <div className="text-center sm:text-left">
-          <div className="text-3xl sm:text-[40px] font-normal tracking-tight text-ink tabular-nums">
-            100.0%
+        <div className="surface-card p-6 flex flex-col justify-between">
+          <div>
+            <div className="text-xs font-medium text-ink-muted">
+              {strings.kpiPolicyFirewall}
+            </div>
+            <div className="mt-2.5 kpi-stat-value text-3xl sm:text-[36px]">
+              100.0%
+            </div>
           </div>
-          <div className="mt-2.5 text-xs font-medium text-ink-muted">
-            {strings.kpiPolicyFirewall}
-          </div>
-          <div className="mt-1 text-xs text-ink-secondary">
+          <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-ink-secondary tabular-nums">
             Zero Duplicate Charges · {heldCount} Pending Review
           </div>
         </div>
       </section>
 
-      {/* SECTION 3: Interactive Rail & Scenario Showcase (PDF Pages 2–3 "Bare metal payments on every US rail") */}
+      {/* SECTION 3: Interactive Rail & Scenario Showcase */}
       <WebhookSimulatorToolbar />
 
-      {/* SECTION 4: 2-Column Bento Cards (Modeled on PDF Pages 3–4 "Flexibly-titled bank accounts" & "Modular compliance") */}
+      {/* SECTION 4: 2-Column Concentric Bento Cards */}
       <section
         aria-label="AG Charts Enterprise Financial Telemetry"
-        className="grid grid-cols-1 gap-6 lg:grid-cols-2"
+        className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8"
       >
         {/* Left Bento Card: 30-Day Cash Inflow & DSO Waterfall */}
         <div className="surface-bento rounded-2xl p-6 sm:p-8 flex flex-col justify-between">

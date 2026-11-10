@@ -463,17 +463,17 @@ export default function ReceivablesTimeline() {
             className="w-full border-collapse text-xs"
           >
             <thead>
-              <tr className="border-b border-hairline bg-surface/80 text-[10px] font-semibold uppercase tracking-[0.04em] text-ink-muted">
-                <th className="py-2.5 px-2.5 text-left w-36">Customer / Invoice</th>
+              <tr className="border-b border-hairline bg-surface/80 text-[11px] font-semibold uppercase tracking-[0.04em] text-ink-muted">
+                <th className="py-3 px-3.5 text-left w-44">Customer / Invoice</th>
                 {TIMELINE_DATES.map((dt) => (
                   <th
                     key={dt}
-                    className="py-2.5 px-0.5 text-center border-l border-border-subtle text-[10px] font-medium"
+                    className="py-3 px-1.5 text-center border-l border-border-subtle text-[11px] font-medium tabular-nums"
                   >
                     {dt.slice(5)}
                   </th>
                 ))}
-                <th className="py-2.5 px-2 text-right border-l border-border-subtle w-28">Actions</th>
+                <th className="py-3 px-3 text-right border-l border-border-subtle w-36">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-subtle">
@@ -490,19 +490,19 @@ export default function ReceivablesTimeline() {
                     onClick={() => setSelectedInvoiceId(inv.invoiceId)}
                     className={`cursor-pointer ${isSelected ? "ledger-row-active" : "ledger-row"}`}
                   >
-                    <td className="py-2.5 px-2.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-semibold text-ink">
+                    <td className="py-3.5 px-3.5">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-xs font-semibold text-ink tabular-nums">
                           {inv.invoiceNumber}
                         </span>
-                        <div className="flex items-center gap-0.5">
+                        <div className="flex items-center gap-1">
                           {isPendingSync && (
-                            <span className="rounded-pill border border-status-warning-border bg-status-warning-bg px-1 py-0.2 text-[8.5px] font-semibold text-status-warning-text">
+                            <span className="rounded-pill border border-status-warning-border bg-status-warning-bg px-1.5 py-0.5 text-[10px] font-semibold text-status-warning-text">
                               Queued
                             </span>
                           )}
                           <span
-                            className={`rounded-pill border px-1.5 py-0.2 text-[9.5px] font-medium ${
+                            className={`rounded-pill border px-2 py-0.5 text-[10px] font-medium ${
                               inv.status === "PAID"
                                 ? "border-status-success-border bg-status-success-bg text-status-success-text"
                                 : inv.status === "OVERDUE"
@@ -514,14 +514,14 @@ export default function ReceivablesTimeline() {
                           </span>
                         </div>
                       </div>
-                      <div className="text-[10.5px] text-ink-muted truncate max-w-[132px]">
+                      <div className="mt-0.5 text-[11px] text-ink-muted truncate max-w-[160px]">
                         {inv.recipientEmail}
                       </div>
-                      <div className="mt-0.5 flex items-baseline gap-1 tabular-nums">
+                      <div className="mt-1 flex items-baseline gap-1.5 tabular-nums">
                         <span className="text-xs font-semibold text-ink">
                           {formatCurrencyAmount(inv.amountValue, inv.currencyCode, activeCurrency)}
                         </span>
-                        <span className="text-[9.5px] text-ink-muted">
+                        <span className="text-[10.5px] text-ink-muted">
                           {
                             formatDualCurrency(
                               inv.amountValue,
@@ -549,14 +549,14 @@ export default function ReceivablesTimeline() {
                             e.stopPropagation();
                             void handleMilestoneDrop(inv, slotDate);
                           }}
-                          className="py-2 px-0.5 border-l border-border-subtle text-center cursor-pointer transition-colors hover:bg-surface"
+                          className="py-3.5 px-1.5 border-l border-border-subtle text-center cursor-pointer transition-colors hover:bg-surface"
                           title={`Click or drop milestone bar to reschedule ${inv.invoiceNumber} reminder to ${slotDate}`}
                         >
                           {isTriggerSlot && (
                             <div
                               draggable
                               onDragStart={() => setDraggingInvoiceId(inv.invoiceId)}
-                              className={`inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[9.5px] font-semibold shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:shadow-sm cursor-grab whitespace-nowrap ${
+                              className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold tabular-nums shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.97] cursor-grab whitespace-nowrap ${
                                 isEarlyDiscount
                                   ? "border-status-success-border bg-status-success-bg text-status-success-text"
                                   : "border-status-warning-border bg-status-warning-bg text-status-warning-text"
@@ -569,7 +569,7 @@ export default function ReceivablesTimeline() {
                           )}
 
                           {isDueSlot && !isTriggerSlot && (
-                            <div className="inline-flex items-center rounded-md border border-status-info-border bg-status-info-bg px-1.5 py-0.5 text-[9.5px] font-medium text-status-info-text whitespace-nowrap">
+                            <div className="inline-flex items-center rounded-lg border border-status-info-border bg-status-info-bg px-2 py-1 text-[11px] font-medium text-status-info-text whitespace-nowrap">
                               Due
                             </div>
                           )}
@@ -578,16 +578,16 @@ export default function ReceivablesTimeline() {
                     })}
 
                     <td
-                      className="py-2 px-2 border-l border-border-subtle text-right"
+                      className="py-3.5 px-3 border-l border-border-subtle text-right"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex flex-col items-end gap-1">
+                      <div className="flex flex-col items-end gap-1.5">
                         {/* WCAG 2.2 AA Criterion 2.5.7: Keyboard-Accessible Date Popover Selector */}
                         <select
                           aria-label={`Reschedule dunning date for ${inv.invoiceNumber} without dragging (WCAG 2.5.7)`}
                           value={triggerDate}
                           onChange={(e) => void handleMilestoneDrop(inv, e.target.value)}
-                          className="w-full rounded-md border border-hairline bg-surface px-1 py-0.5 text-[9.5px] font-medium text-ink cursor-pointer hover:border-border-strong"
+                          className="w-full rounded-lg border border-hairline bg-surface px-2 py-1 text-[11px] font-medium text-ink tabular-nums cursor-pointer hover:border-border-strong"
                         >
                           {TIMELINE_DATES.map((dt) => (
                             <option key={dt} value={dt}>
@@ -600,7 +600,7 @@ export default function ReceivablesTimeline() {
                           <button
                             type="button"
                             onClick={() => openQrModal(inv)}
-                            className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink-secondary shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong hover:text-ink cursor-pointer"
+                            className="rounded-lg border border-hairline bg-elevated px-2 py-1 text-[10.5px] font-medium text-ink-secondary shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong hover:text-ink active:scale-[0.96] cursor-pointer"
                             title="View QR Payment Code"
                           >
                             QR
@@ -609,7 +609,7 @@ export default function ReceivablesTimeline() {
                           <button
                             type="button"
                             onClick={() => void handleMilestoneDrop(inv, "2026-11-18")}
-                            className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 text-[9.5px] font-medium text-ink-secondary shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong hover:text-ink cursor-pointer"
+                            className="rounded-lg border border-hairline bg-elevated px-2 py-1 text-[10.5px] font-medium text-ink-secondary shadow-2xs transition-all duration-150 hover:-translate-y-[1px] hover:border-border-strong hover:text-ink active:scale-[0.96] cursor-pointer"
                             title="Send Friendly Reminder"
                           >
                             Remind
@@ -618,7 +618,7 @@ export default function ReceivablesTimeline() {
                           <button
                             type="button"
                             onClick={() => openPyusdModal(inv)}
-                            className="rounded-md border border-status-success-border bg-status-success-bg px-1.5 py-0.5 text-[9.5px] font-semibold text-status-success-text shadow-2xs transition-all duration-150 hover:-translate-y-[1px] cursor-pointer"
+                            className="rounded-lg border border-status-success-border bg-status-success-bg px-2 py-1 text-[10.5px] font-semibold text-status-success-text shadow-2xs transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.96] cursor-pointer"
                             title="Settle via PYUSD"
                           >
                             PYUSD

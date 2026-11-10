@@ -226,11 +226,11 @@ export function InvoiceQrModal() {
       aria-modal="true"
       aria-labelledby="invoice-qr-modal-title"
       onClick={() => openQrModal(null)}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 backdrop-blur-sm p-4 sm:p-6 transition-opacity duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center apple-modal-scrim p-4 sm:p-6 transition-opacity duration-200"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg rounded-3xl border border-hairline bg-elevated shadow-popover text-ink overflow-hidden animate-pop-in"
+        className="w-full max-w-lg rounded-3xl apple-glass-sheet text-ink overflow-hidden animate-pop-in"
       >
         {/* Minimal Editorial Header */}
         <div className="flex items-center justify-between border-b border-hairline bg-surface/80 px-6 py-4.5">
@@ -253,7 +253,7 @@ export function InvoiceQrModal() {
                   {statusConfig.label}
                 </span>
               </div>
-              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-muted">
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-muted tabular-nums">
                 <span>Invoice {qrModalInvoice.invoiceNumber}</span>
                 <span>·</span>
                 <span className="inline-flex items-center gap-1">
@@ -268,7 +268,7 @@ export function InvoiceQrModal() {
             type="button"
             onClick={() => openQrModal(null)}
             aria-label="Close QR Invoice Card"
-            className="rounded-xl p-2 text-ink-muted transition-all duration-200 hover:bg-subtle hover:text-ink hover:rotate-90 cursor-pointer"
+            className="rounded-xl p-2 text-ink-muted transition-all duration-200 hover:bg-subtle hover:text-ink active:scale-[0.95] cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>

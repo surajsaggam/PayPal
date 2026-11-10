@@ -240,15 +240,15 @@ export default function CheckoutBridgePage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1160px] space-y-8 pb-12 animate-pop-in">
+    <div className="mx-auto max-w-[1280px] space-y-10 pb-16 animate-pop-in">
       {/* Editorial Section Header */}
       <header className="flex flex-col justify-between gap-6 border-b border-hairline pb-8 lg:flex-row lg:items-end">
-        <div className="max-w-2xl space-y-3">
-          <div className="badge-lime px-3 py-1 text-xs">
+        <div className="max-w-2xl space-y-3.5">
+          <div className="badge-lime px-3.5 py-1 text-xs shadow-2xs">
             <Coins className="h-3.5 w-3.5" />
             <span>B2B Procurement &amp; Instant PYUSD Settlement</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.12]">
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.025em] text-ink leading-[1.12]">
             Wholesale purchasing and instant global settlement.{" "}
             <span className="font-normal text-ink-muted">
               Source verified B2B inventory, check out in one click with PayPal Fastlane, and
@@ -258,7 +258,7 @@ export default function CheckoutBridgePage() {
         </div>
 
         {/* Interactive UI State Switcher Pill Track */}
-        <div className="flex flex-wrap items-center gap-1 rounded-xl border border-hairline bg-subtle/60 p-1 shrink-0">
+        <div className="apple-segmented-track shrink-0">
           {(["success", "empty", "loading", "error", "offline"] as InteractiveUiState[]).map(
             (st) => {
               const active = uiState === st;
@@ -281,7 +281,7 @@ export default function CheckoutBridgePage() {
                       setUiState(st);
                     }
                   }}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all duration-150 cursor-pointer ${
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-[0.97] cursor-pointer ${
                     active
                       ? "bg-elevated text-ink font-semibold shadow-2xs border border-hairline"
                       : "text-ink-muted hover:text-ink"
@@ -299,7 +299,7 @@ export default function CheckoutBridgePage() {
       {uiState === "offline" && (
         <div
           role="status"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-warning-border bg-status-warning-bg px-4 py-2.5 text-xs text-status-warning-text"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-warning-border bg-status-warning-bg px-4 py-3 text-xs text-status-warning-text"
         >
           <span className="inline-flex items-center gap-2">
             <WifiOff className="h-4 w-4 shrink-0" />
@@ -309,7 +309,7 @@ export default function CheckoutBridgePage() {
           <button
             type="button"
             onClick={() => setUiState("success")}
-            className="btn-outline-subtle px-2.5 py-1 text-xs cursor-pointer"
+            className="btn-outline-subtle px-3 py-1 text-xs cursor-pointer"
           >
             Return to Live Mode
           </button>
@@ -319,7 +319,7 @@ export default function CheckoutBridgePage() {
       {uiState === "loading" && (
         <div
           aria-busy="true"
-          className="flex items-center justify-between rounded-xl border border-status-info-border bg-status-info-bg px-4 py-2.5 text-xs text-status-info-text"
+          className="flex items-center justify-between rounded-xl border border-status-info-border bg-status-info-bg px-4 py-3 text-xs text-status-info-text"
         >
           <span className="inline-flex items-center gap-2">
             <RefreshCw className="h-4 w-4 animate-spin shrink-0" />
@@ -333,7 +333,7 @@ export default function CheckoutBridgePage() {
       {uiState === "error" && (
         <div
           role="alert"
-          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-danger-border bg-status-danger-bg px-4 py-2.5 text-xs text-status-danger-text"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-status-danger-border bg-status-danger-bg px-4 py-3 text-xs text-status-danger-text"
         >
           <span className="inline-flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -343,7 +343,7 @@ export default function CheckoutBridgePage() {
           <button
             type="button"
             onClick={handleRestoreValidMemoOnScreen}
-            className="btn-primary-mint px-3 py-1 text-xs font-semibold cursor-pointer"
+            className="btn-primary-mint px-3.5 py-1.5 text-xs font-semibold cursor-pointer"
           >
             <RotateCcw className="h-3 w-3" />
             <span>Restore Valid Invoice Reference</span>
@@ -352,7 +352,7 @@ export default function CheckoutBridgePage() {
       )}
 
       {uiState === "empty" && (
-        <div className="surface-bento rounded-2xl p-8 text-center space-y-3">
+        <div className="surface-bento rounded-2xl p-10 text-center space-y-4">
           <p className="text-sm font-semibold text-ink">
             No Wholesale Items Selected
           </p>
@@ -360,13 +360,13 @@ export default function CheckoutBridgePage() {
             Choose a wholesale supply item below to preview one-click checkout and instant supplier
             settlement.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2.5">
             {NATURAL_LANGUAGE_PROCUREMENT_PROMPTS.slice(0, 3).map((p) => (
               <button
                 key={p.skuId}
                 type="button"
                 onClick={() => handleApplyNaturalPrompt(p)}
-                className="btn-outline-subtle px-3 py-1.5 text-xs cursor-pointer"
+                className="btn-outline-subtle px-3.5 py-2 text-xs cursor-pointer"
               >
                 {p.label}
               </button>
@@ -375,14 +375,14 @@ export default function CheckoutBridgePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
         {/* Left Column (6 cols): Wholesale B2B Catalog & PayPal Fastlane Checkout */}
         <section
           aria-label="Channel3 MCP B2B Product Discovery and Fastlane Checkout"
-          className="lg:col-span-6 space-y-6 animate-pop-in delay-75"
+          className="lg:col-span-6 space-y-6 lg:space-y-8 animate-pop-in delay-75"
         >
-          <div className="surface-bento rounded-2xl p-6 space-y-4">
-            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline pb-3.5">
+          <div className="surface-bento rounded-2xl p-6 sm:p-7 space-y-5">
+            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline pb-4">
               <div>
                 <div className="flex items-center gap-2">
                   <ShoppingBag className="h-4 w-4 text-ink-secondary" />
@@ -395,13 +395,13 @@ export default function CheckoutBridgePage() {
                   sign-off
                 </p>
               </div>
-              <span className="rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 text-xs font-medium text-ink-secondary">
+              <span className="rounded-pill border border-hairline bg-elevated px-3 py-1 text-xs font-medium text-ink-secondary">
                 4 Verified Suppliers
               </span>
             </div>
 
             {/* Quick Item Selector Pills */}
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
               {NATURAL_LANGUAGE_PROCUREMENT_PROMPTS.map((item) => {
                 const active = selectedSku.skuId === item.skuId;
                 return (
@@ -409,7 +409,7 @@ export default function CheckoutBridgePage() {
                     key={item.skuId}
                     type="button"
                     onClick={() => handleApplyNaturalPrompt(item)}
-                    className={`rounded-lg border px-3 py-1 text-xs transition-all duration-150 cursor-pointer ${
+                    className={`rounded-lg border px-3 py-1.5 text-xs transition-all duration-150 active:scale-[0.97] cursor-pointer ${
                       active
                         ? "border-accent-dark bg-accent-dark text-accent-dark-ink font-semibold shadow-2xs"
                         : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:text-ink"
@@ -423,19 +423,19 @@ export default function CheckoutBridgePage() {
 
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-ink-faint" />
+              <Search className="absolute left-3.5 top-3 h-3.5 w-3.5 text-ink-faint" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search wholesale packaging, labels, yarn, or ink..."
                 aria-label="Search Channel3 B2B Catalog"
-                className="w-full rounded-xl border border-hairline bg-elevated pl-8 pr-4 py-2 text-xs text-ink placeholder-ink-faint shadow-2xs focus:border-ink focus:outline-none"
+                className="w-full rounded-xl border border-hairline bg-elevated pl-9 pr-4 py-2.5 text-xs text-ink placeholder-ink-faint shadow-2xs focus:border-ink focus:outline-none"
               />
             </div>
 
             {/* Catalog SKU Cards */}
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {filteredCatalog.map((item) => {
                 const isSelected = item.skuId === selectedSku.skuId;
                 const numericTotal = parseFloat(item.totalPriceUsd) || 0;
@@ -450,20 +450,20 @@ export default function CheckoutBridgePage() {
                   <div
                     key={item.skuId}
                     onClick={() => setSelectedSku(item)}
-                    className={`rounded-xl border p-4 cursor-pointer transition-all duration-200 ease-out flex items-center justify-between gap-3 ${
+                    className={`rounded-xl border p-4 sm:p-5 cursor-pointer transition-all duration-200 active:scale-[0.985] flex items-center justify-between gap-4 ${
                       isSelected
-                        ? "border-ink bg-elevated shadow-md -translate-y-[2px]"
+                        ? "border-ink bg-elevated shadow-md -translate-y-[2px] ring-1 ring-slate-900/5"
                         : "border-hairline bg-elevated/80 hover:border-border-strong hover:bg-elevated hover:-translate-y-[2px] hover:shadow-sm"
                     }`}
                   >
-                    <div className="space-y-1 min-w-0">
+                    <div className="space-y-1.5 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="rounded-md bg-surface px-2 py-0.5 text-[11px] font-medium text-ink-secondary border border-hairline">
+                        <span className="rounded-md bg-surface px-2.5 py-0.5 text-[11px] font-medium text-ink-secondary border border-hairline">
                           {item.category}
                         </span>
                         <span className="font-semibold text-ink truncate">{item.title}</span>
                       </div>
-                      <div className="text-xs text-ink-muted">
+                      <div className="text-xs text-ink-muted tabular-nums">
                         {item.vendorName} · {item.packSize} units (${item.unitPriceUsd} each) ·{" "}
                         {item.leadTimeDays}-day delivery ·{" "}
                         <span className="text-status-success-text font-medium">
@@ -476,9 +476,9 @@ export default function CheckoutBridgePage() {
                       <div className="text-sm font-semibold text-ink">
                         {formatCurrencyAmount(item.totalPriceUsd, "USD", activeCurrency)}
                       </div>
-                      <div className="text-[10.5px] text-ink-muted">{dualSkuPrice.secondary}</div>
+                      <div className="text-[11px] text-ink-muted">{dualSkuPrice.secondary}</div>
                       <div
-                        className={`mt-0.5 text-[11px] font-medium ${
+                        className={`mt-1 text-[11px] font-medium ${
                           exceedsAutoCap
                             ? "text-status-warning-text"
                             : "text-status-success-text"
@@ -500,10 +500,10 @@ export default function CheckoutBridgePage() {
         {/* Right Column (6 cols): Instant PYUSD Settlement & Activity Log */}
         <section
           aria-label="Cross-Border PYUSD Solana Bridge and Elastic Audit Telemetry"
-          className="lg:col-span-6 space-y-6 animate-pop-in delay-150"
+          className="lg:col-span-6 space-y-6 lg:space-y-8 animate-pop-in delay-150"
         >
           {/* PYUSD Cross-Border Supplier Settlement Card */}
-          <div className="surface-bento rounded-2xl p-6 space-y-4">
+          <div className="surface-bento rounded-2xl p-6 sm:p-7 space-y-5">
             <div className="flex flex-wrap items-start justify-between gap-2 border-b border-hairline pb-3.5">
               <div>
                 <div className="flex items-center gap-2">

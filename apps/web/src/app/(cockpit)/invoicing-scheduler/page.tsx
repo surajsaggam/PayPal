@@ -118,15 +118,15 @@ export default function InvoicingSchedulerPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1160px] space-y-8 pb-12 animate-pop-in">
+    <div className="mx-auto max-w-[1280px] space-y-10 pb-16 animate-pop-in">
       {/* Editorial Section Header */}
       <header className="flex flex-col justify-between gap-6 border-b border-hairline pb-8 lg:flex-row lg:items-end">
-        <div className="max-w-2xl space-y-3">
-          <div className="badge-lime px-3 py-1 text-xs">
+        <div className="max-w-2xl space-y-3.5">
+          <div className="badge-lime px-3.5 py-1 text-xs shadow-2xs">
             <CalendarClock className="h-3.5 w-3.5" />
             <span>Smart Invoicing &amp; Cash-Flow Scheduler</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-ink leading-[1.12]">
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-[-0.025em] text-ink leading-[1.12]">
             Automated receivables and cash-flow scheduling.{" "}
             <span className="font-normal text-ink-muted">
               Offer early-payment incentives, schedule polite payment reminders, and manage
@@ -136,11 +136,11 @@ export default function InvoicingSchedulerPage() {
         </div>
 
         {selectedInvoice && (
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               type="button"
               onClick={() => openQrModal(selectedInvoice)}
-              className="btn-outline-subtle h-9 rounded-xl px-3.5 text-xs shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm cursor-pointer"
+              className="btn-outline-subtle h-10 rounded-xl px-4 text-xs shadow-2xs cursor-pointer"
             >
               <QrCode className="h-3.5 w-3.5" />
               <span>View QR Link ({selectedInvoice.invoiceNumber})</span>
@@ -148,7 +148,7 @@ export default function InvoicingSchedulerPage() {
             <button
               type="button"
               onClick={() => openPyusdModal(selectedInvoice)}
-              className="btn-secondary-dark h-9 rounded-xl px-4 text-xs shadow-xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-md cursor-pointer"
+              className="btn-secondary-dark h-10 rounded-xl px-4 text-xs shadow-xs cursor-pointer"
             >
               <Coins className="h-3.5 w-3.5" />
               <span>Settle via PYUSD</span>
@@ -157,9 +157,9 @@ export default function InvoicingSchedulerPage() {
         )}
       </header>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-12 xl:gap-8">
         {/* Left 8 Columns: Receivables Timeline & Working Capital Histogram */}
-        <div className="xl:col-span-8 space-y-6 animate-pop-in delay-75">
+        <div className="xl:col-span-8 space-y-6 lg:space-y-8 animate-pop-in delay-75">
           <ReceivablesTimeline />
           <DunningHistogram />
         </div>
@@ -167,21 +167,21 @@ export default function InvoicingSchedulerPage() {
         {/* Right 4 Columns: Smart Invoice Creator & Recurring Plan Creator */}
         <aside
           aria-label="Autonomous Smart Invoice v2 Creator and QR Preview"
-          className="xl:col-span-4 space-y-6 animate-pop-in delay-150"
+          className="xl:col-span-4 space-y-6 lg:space-y-8 animate-pop-in delay-150"
         >
           {/* Card 1: Smart Invoice Creator */}
-          <div className="surface-bento rounded-2xl p-6 space-y-4">
-            <div className="border-b border-hairline pb-3.5">
+          <div className="surface-bento rounded-2xl p-6 sm:p-7 space-y-5">
+            <div className="border-b border-hairline pb-4">
               <span className="inline-flex items-center gap-1.5 rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 text-xs font-medium text-ink-secondary">
                 <Sparkles className="h-3 w-3" />
                 Instant Invoice &amp; QR Link
               </span>
-              <h2 className="mt-2 text-base font-semibold tracking-tight text-ink">
+              <h2 className="mt-2.5 text-base font-semibold tracking-tight text-ink">
                 Create Smart Invoice
               </h2>
             </div>
 
-            <form onSubmit={(e) => void handleCreateInvoice(e)} className="space-y-3.5 text-xs">
+            <form onSubmit={(e) => void handleCreateInvoice(e)} className="space-y-4 text-xs">
               <div>
                 <label
                   htmlFor="invoice-recipient-email"
@@ -195,7 +195,7 @@ export default function InvoicingSchedulerPage() {
                   required
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3.5 py-2.5 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
                 />
               </div>
 
@@ -359,10 +359,10 @@ export default function InvoicingSchedulerPage() {
           {/* Card 2: Recurring Subscription Plan Creator */}
           <form
             onSubmit={(e) => void handleCreateSubscriptionPlan(e)}
-            className="surface-bento rounded-2xl p-6 space-y-3.5 text-xs"
+            className="surface-bento rounded-2xl p-6 sm:p-7 space-y-4 text-xs"
           >
-            <div className="flex items-center justify-between border-b border-hairline pb-3">
-              <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <div className="flex items-center justify-between border-b border-hairline pb-3.5">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold tracking-tight text-ink">
                 <Repeat className="h-4 w-4 text-ink-secondary" />
                 Recurring Subscription Plan
               </span>
@@ -384,11 +384,11 @@ export default function InvoicingSchedulerPage() {
                 required
                 value={planName}
                 onChange={(e) => setPlanName(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
+                className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3.5 py-2.5 text-xs text-ink shadow-2xs focus:border-ink focus:outline-none"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3.5">
               <div>
                 <label
                   htmlFor="sub-plan-amount"
@@ -402,7 +402,7 @@ export default function InvoicingSchedulerPage() {
                   required
                   value={planAmount}
                   onChange={(e) => setPlanAmount(e.target.value)}
-                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3 py-2 text-sm font-semibold text-ink tabular-nums shadow-2xs focus:border-ink focus:outline-none"
+                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-3.5 py-2 text-sm font-semibold text-ink tabular-nums shadow-2xs focus:border-ink focus:outline-none"
                 />
               </div>
 
@@ -417,7 +417,7 @@ export default function InvoicingSchedulerPage() {
                   id="sub-plan-interval"
                   value={planInterval}
                   onChange={(e) => setPlanInterval(e.target.value as "MONTH" | "YEAR")}
-                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2 text-xs font-medium text-ink shadow-2xs focus:border-ink focus:outline-none cursor-pointer"
+                  className="mt-1.5 w-full rounded-xl border border-hairline bg-elevated px-2.5 py-2.5 text-xs font-medium text-ink shadow-2xs focus:border-ink focus:outline-none cursor-pointer"
                 >
                   <option value="MONTH">Monthly</option>
                   <option value="YEAR">Annual</option>
