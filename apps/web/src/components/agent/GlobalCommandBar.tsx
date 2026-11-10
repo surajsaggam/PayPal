@@ -2,10 +2,13 @@
 
 /**
  * PayOps AI (PayPal Sentinel) — Natural-Language Agent Command Studio (Cmd+K)
- * Positioned as a clean editorial footer section rather than a viewport-blocking sticky bar.
+ * Provides:
+ * 1. Top-of-page Inline Command Bar (`InlineCommandStudio`) for instant above-the-fold AI access
+ * 2. Floating Apple Spotlight Modal (`commandBarOpen` via Cmd+K or Navbar trigger) accessible on any route
  */
 
 import React, { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   Terminal,
   Sparkles,
@@ -14,6 +17,8 @@ import {
   Play,
   Layers,
   AlertTriangle,
+  X,
+  CheckCircle2,
 } from "lucide-react";
 import { executeAgentPrompt } from "../../lib/api-client";
 import { LOCALE_DICTIONARY, normalizeMultilingualAgentPrompt } from "../../lib/formatters";
@@ -47,13 +52,16 @@ const QUICK_PROMPTS = [
   },
 ];
 
-export function GlobalCommandBar() {
-  const inputRef = useRef<HTMLInputElement>(null);
+export function useAgentCommandRunner() {
   const {
+    workspaces,
     activeWorkspaceId,
     activeLocale,
+    apiMode,
     commandPrompt,
     setCommandPrompt,
+    commandBarOpen,
+    setCommandBarOpen,
     dryRun,
     setDryRun,
     traceDrawerOpen,
@@ -61,49 +69,14 @@ export function GlobalCommandBar() {
     prependExecution,
     openApimaticDrawer,
     openHitlApproval,
-    openQrModal,
-    openPyusdModal,
     setStatusBanner,
   } = useCockpitStore();
 
   const [executing, setExecuting] = useState(false);
-  const [detectedDomain, setDetectedDomain] = useState("INVOICES · 6/35 Tools");
+  const [detectedDomain, setDetectedDomain] = useState("INVOICING v2 · 8/35 Tools");
   const strings = LOCALE_DICTIONARY[activeLocale];
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "d") {
-        e.preventDefault();
-        const nextDry = !useCockpitStore.getState().dryRun;
-        setDryRun(nextDry);
-        setStatusBanner(
-          nextDry
-            ? "Keyboard Shortcut (Cmd/Ctrl+Shift+D): Dry-Run Counterfactual Mode ENABLED (US-02 · 0 Sandbox Mutations)."
-            : "Keyboard Shortcut (Cmd/Ctrl+Shift+D): Dry-Run Mode DISABLED -> Live PayPal Sandbox Execution active."
-        );
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        inputRef.current?.focus();
-      } else if (e.key === "Escape") {
-        setTraceDrawerOpen(false);
-        openHitlApproval(null);
-        openApimaticDrawer(null);
-        openQrModal(null);
-        openPyusdModal(null);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    openApimaticDrawer,
-    openHitlApproval,
-    openPyusdModal,
-    openQrModal,
-    setDryRun,
-    setStatusBanner,
-    setTraceDrawerOpen,
-  ]);
+  const activeWorkspace =
+    workspaces.find((w) => w.workspaceId === activeWorkspaceId) ?? workspaces[0];
 
   useEffect(() => {
     const lower = commandPrompt.toLowerCase();
@@ -116,7 +89,7 @@ export function GlobalCommandBar() {
       lower.includes("override") ||
       lower.includes("ignore")
     ) {
-      setDetectedDomain(`ORDERS + M-02 INJECTION GUARD${langTag}`);
+      setDetectedDomain(`ORDERS + PROMPT GUARD${langTag}`);
     } else if (norm.inferredIntent === "ORDER" || lower.includes("sku")) {
       setDetectedDomain(`CATALOG + ORDERS v2 · 7/35 Tools${langTag}`);
     } else if (lower.includes("pyusd") || lower.includes("solana")) {
@@ -139,49 +112,62 @@ export function GlobalCommandBar() {
         dryRun,
       });
 
+      const autonomyLevel = activeWorkspace?.autonomyLevel ?? "L3";
       const isBlocked = response.execution.policyVerdict === "BLOCKED_SECURITY_INJECTION";
-      const isHeld = response.execution.policyVerdict === "HELD_FOR_L2_PASSKEY";
+      const isForcedHoldByAutonomy =
+        !isBlocked && (autonomyLevel === "L0" || autonomyLevel === "L2");
+      const finalVerdict = isBlocked
+        ? "BLOCKED_SECURITY_INJECTION"
+        : isForcedHoldByAutonomy
+          ? "HELD_FOR_L2_PASSKEY"
+          : response.execution.policyVerdict;
+      const isHeld = finalVerdict === "HELD_FOR_L2_PASSKEY";
+
+      const updatedExecution = {
+        ...response.execution,
+        policyVerdict: finalVerdict,
+      };
 
       const steps: McpTraceStep[] = [
         {
           stepIndex: 1,
           stage: "M-02_ROUTER",
-          label: "M-02 Intent Router & XML Sandboxing (GPT-4o-mini)",
+          label: "Intent Router & Prompt Guard (Gemini 2.5 Flash)",
           detail: isBlocked
             ? "ALERT: Imperative prompt injection detected inside <untrusted_external_data> (Score: 0.94)."
-            : `Routed to ${detectedDomain} in 78ms. Zero prompt injection patterns.`,
-          latencyMs: 78,
+            : `Routed to ${detectedDomain} in 64ms. Zero prompt injection patterns.`,
+          latencyMs: 64,
           status: isBlocked ? "BLOCK" : "PASS",
         },
         {
           stepIndex: 2,
           stage: "M-01_PLANNER",
-          label: "M-01 PayPal MCP Orchestrator (Claude 3.5 Sonnet)",
-          detail: `Selected @paypal/agent-toolkit tool '${response.execution.toolName}' (Hop 2 of 6 max · R-10 budget OK).`,
-          latencyMs: 340,
+          label: "PayPal Agent Toolkit MCP Orchestrator (Gemini 2.5 Flash)",
+          detail: `Selected @paypal/agent-toolkit tool '${updatedExecution.toolName}' (Hop 2 of 6 max · 35 MCP tools active).`,
+          latencyMs: 210,
           status: "PASS",
         },
         {
           stepIndex: 3,
           stage: "F-09_APIMATIC",
-          label: "F-09 APIMatic Context Plugin Schema Validator",
-          detail: `Validated 2-decimal ISO-4217 amount="${response.execution.amountValue}" ${response.execution.currencyCode} (R-03 PASS).`,
+          label: "APIMatic Context Plugin Schema Validator",
+          detail: `Validated 2-decimal ISO-4217 amount="${updatedExecution.amountValue}" ${updatedExecution.currencyCode} (Strict Schema PASS).`,
           latencyMs: 2,
           status: "PASS",
         },
         {
           stepIndex: 4,
           stage: "F-02_COSMOS_DSL",
-          label: "F-02 Cosmos.AI Deterministic Policy Firewall",
-          detail: `Verdict: ${response.execution.policyVerdict} (${response.execution.reasonCode}) · GNN Score: ${response.execution.gnnRiskScore.toFixed(2)}.`,
+          label: `Cosmos.AI Policy Firewall (Autonomy Tier ${autonomyLevel})`,
+          detail: `Verdict: ${finalVerdict} (${updatedExecution.reasonCode}) · GNN Risk Score: ${updatedExecution.gnnRiskScore.toFixed(2)}.`,
           latencyMs: 3,
           status: isBlocked ? "BLOCK" : isHeld ? "HOLD" : "PASS",
         },
         {
           stepIndex: 5,
           stage: "F-06_JUNODB",
-          label: "F-06 JunoDB 2PC Idempotency State Store",
-          detail: `Lease ${response.execution.junodbLeaseStatus} for PayPal-Request-Id: ${response.execution.paypalRequestId}.`,
+          label: "JunoDB 2PC Idempotency Lock & Neon PostgreSQL 16",
+          detail: `Lease ${updatedExecution.junodbLeaseStatus} for PayPal-Request-Id: ${updatedExecution.paypalRequestId}.`,
           latencyMs: 4,
           status: "PASS",
         },
@@ -189,170 +175,309 @@ export function GlobalCommandBar() {
           stepIndex: 6,
           stage: "PAYPAL_SANDBOX",
           label: dryRun
-            ? "Dry-Run Counterfactual Mode (0 Sandbox Mutations · US-02)"
-            : "PayPal Sandbox REST v2 / MCP Execution",
+            ? "Dry-Run Counterfactual Mode (0 Sandbox Mutations)"
+            : `PayPal Sandbox REST v2 (${apiMode === "live" ? "api-m.sandbox.paypal.com · LIVE" : "Sandbox Verified"})`,
           detail: dryRun
             ? "Simulation complete. No mutation sent to api-m.sandbox.paypal.com."
             : isBlocked || isHeld
-              ? "Sandbox call intercepted by Policy Firewall prior to network dispatch."
-              : `Executed ${response.execution.toolName} on api-m.sandbox.paypal.com.`,
-          latencyMs: dryRun || isBlocked || isHeld ? 1 : 285,
+              ? `Sandbox call intercepted by ${autonomyLevel} Policy Firewall prior to network dispatch.`
+              : `Executed ${updatedExecution.toolName} on api-m.sandbox.paypal.com (PayPal-Request-Id verified).`,
+          latencyMs: dryRun || isBlocked || isHeld ? 1 : 245,
           status: isBlocked ? "BLOCK" : isHeld ? "HOLD" : "PASS",
         },
       ];
 
-      prependExecution(response.execution, steps);
+      prependExecution(updatedExecution, steps);
+      setCommandBarOpen(false);
       setTraceDrawerOpen(true);
 
       if (isHeld || isBlocked) {
-        openHitlApproval(response.execution);
+        openHitlApproval(updatedExecution);
       }
 
       setStatusBanner(
         dryRun
-          ? `[DRY-RUN PREVIEW] ${response.execution.toolName} (${response.execution.amountValue} ${response.execution.currencyCode}) -> Verdict: ${response.execution.policyVerdict} (${response.execution.reasonCode}). Zero Sandbox mutations.`
-          : `Executed ${response.execution.toolName} (${response.execution.amountValue} ${response.execution.currencyCode}) -> Verdict: ${response.execution.policyVerdict} · PayPal-Request-Id: ${response.execution.paypalRequestId}`
+          ? `[DRY-RUN PREVIEW] ${updatedExecution.toolName} (${updatedExecution.amountValue} ${updatedExecution.currencyCode}) -> Verdict: ${finalVerdict}. Zero Sandbox mutations.`
+          : `Executed ${updatedExecution.toolName} (${updatedExecution.amountValue} ${updatedExecution.currencyCode}) -> Verdict: ${finalVerdict} · PayPal-Request-Id: ${updatedExecution.paypalRequestId}`
       );
     } finally {
       setExecuting(false);
     }
   };
 
+  return {
+    commandPrompt,
+    setCommandPrompt,
+    commandBarOpen,
+    setCommandBarOpen,
+    dryRun,
+    setDryRun,
+    traceDrawerOpen,
+    setTraceDrawerOpen,
+    openApimaticDrawer,
+    openHitlApproval,
+    executing,
+    detectedDomain,
+    strings,
+    activeWorkspace,
+    apiMode,
+    handleRunCommand,
+  };
+}
+
+export function InlineCommandStudio({ inputRef }: { inputRef?: React.RefObject<HTMLInputElement> }) {
+  const {
+    commandPrompt,
+    setCommandPrompt,
+    dryRun,
+    setDryRun,
+    traceDrawerOpen,
+    setTraceDrawerOpen,
+    openApimaticDrawer,
+    openHitlApproval,
+    executing,
+    detectedDomain,
+    activeWorkspace,
+    apiMode,
+    handleRunCommand,
+  } = useAgentCommandRunner();
+
   const latestExecution = useCockpitStore((s) => s.executions[0]);
 
   return (
-    <footer
-      aria-label="Global PayPal MCP Agent Command Bar"
-      className="mt-12 border-t border-hairline bg-surface/60 px-6 py-12 text-ink sm:px-10"
-    >
-      <div className="mx-auto max-w-[1280px]">
-        <div className="surface-bento rounded-3xl p-6 sm:p-8 space-y-6">
-          <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-            <div>
-              <span className="badge-lime mb-2.5 px-3 py-1 text-xs shadow-2xs">
-                Sentinel Assistant · Cmd+K
+    <div className="surface-card rounded-2xl p-5 sm:p-6 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="badge-lime px-3 py-1 text-xs font-semibold shadow-2xs">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Sentinel AI Assistant · Cmd+K</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-pill border border-status-success-border bg-status-success-bg px-2.5 py-0.5 text-[11px] font-medium text-status-success-text">
+            <CheckCircle2 className="h-3 w-3" />
+            {apiMode === "live"
+              ? "Live PayPal Sandbox + Gemini 2.5 Flash"
+              : "PayPal Sandbox Ready"}
+          </span>
+          <span className="hidden md:inline-block font-mono text-[11px] text-ink-muted">
+            {detectedDomain} · Tier {activeWorkspace?.autonomyLevel ?? "L3"}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <label className="inline-flex items-center gap-2 cursor-pointer select-none rounded-xl border border-hairline bg-elevated px-3 py-1.5 text-xs font-medium text-ink-secondary shadow-2xs transition-colors hover:border-border-strong">
+            <input
+              type="checkbox"
+              checked={dryRun}
+              onChange={(e) => setDryRun(e.target.checked)}
+              className="h-3.5 w-3.5 accent-ink rounded"
+            />
+            <span>Mode:</span>
+            <span
+              className={
+                dryRun
+                  ? "text-status-warning-text font-semibold"
+                  : "text-status-success-text font-semibold"
+              }
+            >
+              {dryRun ? "Safe Preview" : "Live Execution"}
+            </span>
+          </label>
+
+          <button
+            type="button"
+            onClick={() => setTraceDrawerOpen(!traceDrawerOpen)}
+            className="btn-outline-subtle h-8 px-3 text-xs cursor-pointer"
+          >
+            <Layers className="h-3.5 w-3.5 text-ink-secondary" />
+            Trace ({useCockpitStore.getState().activeTraceSteps.length || 6})
+          </button>
+
+          {latestExecution && (
+            <button
+              type="button"
+              onClick={() => openApimaticDrawer(latestExecution)}
+              className="btn-outline-subtle h-8 px-3 text-xs cursor-pointer"
+            >
+              <Code2 className="h-3.5 w-3.5 text-ink-secondary" />
+              SDK Code
+            </button>
+          )}
+
+          {latestExecution?.policyVerdict === "HELD_FOR_L2_PASSKEY" && (
+            <button
+              type="button"
+              onClick={() => openHitlApproval(latestExecution)}
+              className="badge-lime h-8 px-3 text-xs active:scale-[0.975] cursor-pointer"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Pending Passkey
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Main Command Input Row */}
+      <form onSubmit={(e) => void handleRunCommand(e)} className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1 flex items-center">
+          <Terminal className="absolute left-4 h-4 w-4 text-ink-muted pointer-events-none" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={commandPrompt}
+            onChange={(e) => setCommandPrompt(e.target.value)}
+            placeholder='Tell Sentinel what to do (e.g., "Send $1,850 invoice to Acme Robotics with 2% early discount & QR")...'
+            aria-label="Global PayPal MCP Agent Command Input"
+            className="w-full rounded-xl border border-hairline bg-elevated pl-11 pr-20 py-3 text-sm text-ink placeholder-ink-faint shadow-xs transition-all duration-200 focus:border-ink focus:ring-4 focus:ring-slate-900/5 focus:outline-none"
+          />
+          <kbd className="hidden sm:inline-block absolute right-3.5 rounded-lg border border-hairline bg-surface px-2 py-0.5 text-[11px] font-mono text-ink-muted shadow-2xs">
+            ⌘K
+          </kbd>
+        </div>
+
+        <button
+          type="submit"
+          disabled={executing}
+          className="btn-primary-mint disabled:opacity-50 rounded-xl px-5 py-3 text-xs font-semibold shadow-xs cursor-pointer shrink-0"
+        >
+          <Play className="h-3.5 w-3.5 fill-current" />
+          {executing ? "Executing..." : "Run Agent"}
+        </button>
+      </form>
+
+      {/* Quick Prompt Chips */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[11px] font-medium text-ink-muted mr-1">Try:</span>
+          {QUICK_PROMPTS.map((chip) => (
+            <button
+              key={chip.label}
+              type="button"
+              onClick={() => {
+                setCommandPrompt(chip.prompt);
+                void handleRunCommand(undefined, chip.prompt);
+              }}
+              className="rounded-pill border border-hairline bg-elevated px-3 py-1 text-[11px] font-medium text-ink-secondary shadow-2xs hover:border-border-strong hover:text-ink transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        <span className="hidden lg:inline-flex items-center gap-1 text-[11px] text-status-success-text font-medium">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Cosmos.AI Guardrail Active
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function GlobalCommandBar() {
+  const pathname = usePathname();
+  const modalInputRef = useRef<HTMLInputElement>(null);
+  const footerInputRef = useRef<HTMLInputElement>(null);
+  const {
+    commandBarOpen,
+    setCommandBarOpen,
+    setDryRun,
+    setTraceDrawerOpen,
+    openApimaticDrawer,
+    openHitlApproval,
+    openQrModal,
+    openPyusdModal,
+    setStatusBanner,
+  } = useCockpitStore();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        const nextDry = !useCockpitStore.getState().dryRun;
+        setDryRun(nextDry);
+        setStatusBanner(
+          nextDry
+            ? "Keyboard Shortcut (Cmd/Ctrl+Shift+D): Safe Preview Mode ENABLED (0 Sandbox Mutations)."
+            : "Keyboard Shortcut (Cmd/Ctrl+Shift+D): Live PayPal Sandbox Execution active."
+        );
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandBarOpen(!useCockpitStore.getState().commandBarOpen);
+      } else if (e.key === "Escape") {
+        setCommandBarOpen(false);
+        setTraceDrawerOpen(false);
+        openHitlApproval(null);
+        openApimaticDrawer(null);
+        openQrModal(null);
+        openPyusdModal(null);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    openApimaticDrawer,
+    openHitlApproval,
+    openPyusdModal,
+    openQrModal,
+    setCommandBarOpen,
+    setDryRun,
+    setStatusBanner,
+    setTraceDrawerOpen,
+  ]);
+
+  useEffect(() => {
+    if (commandBarOpen) {
+      setTimeout(() => modalInputRef.current?.focus(), 40);
+    }
+  }, [commandBarOpen]);
+
+  const isCommandCenter = pathname === "/command-center" || pathname === "/";
+
+  return (
+    <>
+      {/* Floating Apple Spotlight Modal (Accessible via Cmd+K or Top Navbar from ANY screen) */}
+      {commandBarOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Sentinel AI Spotlight Command Palette"
+          className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 apple-modal-scrim animate-pop-in"
+          onClick={() => setCommandBarOpen(false)}
+        >
+          <div
+            className="w-full max-w-3xl rounded-2xl apple-glass-sheet p-2 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-2 border-b border-hairline">
+              <span className="text-xs font-semibold text-ink">
+                PayPal Sentinel Spotlight · Natural-Language CFO Agent
               </span>
-              <h3 className="text-xl editorial-heading">
-                Natural-Language Payment Assistant.{" "}
-                <span className="editorial-subcopy">
-                  Create smart invoices, respond to customer disputes, and place wholesale orders in
-                  plain English.
-                </span>
-              </h3>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5 text-xs">
-              <label className="inline-flex items-center gap-2 cursor-pointer select-none rounded-xl border border-hairline bg-elevated px-3.5 py-2 text-xs font-medium text-ink-secondary shadow-2xs transition-colors hover:border-border-strong">
-                <input
-                  type="checkbox"
-                  checked={dryRun}
-                  onChange={(e) => setDryRun(e.target.checked)}
-                  className="h-3.5 w-3.5 accent-ink rounded"
-                />
-                <span>Preview Mode:</span>
-                <span
-                  className={
-                    dryRun
-                      ? "text-status-warning-text font-semibold"
-                      : "text-status-success-text font-semibold"
-                  }
-                >
-                  {dryRun ? "Safe Preview" : "Live"}
-                </span>
-              </label>
-
               <button
                 type="button"
-                onClick={() => setTraceDrawerOpen(!traceDrawerOpen)}
-                className="btn-outline-subtle h-9 px-3.5 text-xs cursor-pointer"
+                onClick={() => setCommandBarOpen(false)}
+                aria-label="Close Spotlight Command Palette"
+                className="rounded-lg p-1 text-ink-muted hover:bg-subtle hover:text-ink cursor-pointer"
               >
-                <Layers className="h-3.5 w-3.5 text-ink-secondary" />
-                Activity Steps
+                <X className="h-4 w-4" />
               </button>
-
-              {latestExecution && (
-                <button
-                  type="button"
-                  onClick={() => openApimaticDrawer(latestExecution)}
-                  className="btn-outline-subtle h-9 px-3.5 text-xs cursor-pointer"
-                >
-                  <Code2 className="h-3.5 w-3.5 text-ink-secondary" />
-                  Developer SDK
-                </button>
-              )}
-
-              {latestExecution?.policyVerdict === "HELD_FOR_L2_PASSKEY" && (
-                <button
-                  type="button"
-                  onClick={() => openHitlApproval(latestExecution)}
-                  className="badge-lime h-9 px-3.5 text-xs active:scale-[0.975] cursor-pointer"
-                >
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  1 Pending Approval
-                </button>
-              )}
             </div>
-          </div>
-
-          {/* Main Command Input Row */}
-          <form onSubmit={(e) => void handleRunCommand(e)} className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1 flex items-center">
-              <Terminal className="absolute left-4 h-4 w-4 text-ink-muted pointer-events-none" />
-              <input
-                ref={inputRef}
-                type="text"
-                value={commandPrompt}
-                onChange={(e) => setCommandPrompt(e.target.value)}
-                placeholder='Ask Sentinel (e.g., "Send $1,850 invoice to Acme Robotics with 2% early discount")...'
-                aria-label="Global PayPal MCP Agent Command Input"
-                className="w-full rounded-2xl border border-hairline bg-elevated pl-11 pr-24 py-3.5 text-sm text-ink placeholder-ink-faint shadow-xs transition-all duration-200 focus:border-ink focus:ring-4 focus:ring-slate-900/5 focus:outline-none"
-              />
-              <kbd className="hidden sm:inline-block absolute right-3.5 rounded-lg border border-hairline bg-surface px-2.5 py-1 text-[11px] font-medium text-ink-muted shadow-2xs">
-                Cmd+K
-              </kbd>
-            </div>
-
-            <button
-              type="submit"
-              disabled={executing}
-              className="btn-primary-mint disabled:opacity-50 rounded-2xl px-6 py-3.5 text-xs font-semibold shadow-xs cursor-pointer"
-            >
-              <Play className="h-3.5 w-3.5 fill-current" />
-              {executing ? "Running Request..." : "Run Assistant"}
-            </button>
-          </form>
-
-          {/* Quick Prompt Chips & Status */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ink-muted">
-                <Sparkles className="h-3.5 w-3.5" />
-                Suggested actions:
-              </span>
-              {QUICK_PROMPTS.map((chip) => (
-                <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => {
-                    setCommandPrompt(chip.prompt);
-                    void handleRunCommand(undefined, chip.prompt);
-                  }}
-                  className="rounded-pill border border-hairline bg-elevated px-3.5 py-1.5 text-xs font-medium text-ink-secondary shadow-2xs hover:border-border-strong hover:text-ink transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-ink-muted">
-              <span className="inline-flex items-center gap-1.5 text-status-success-text font-medium">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                Policy Protection Active
-              </span>
+            <div className="p-2">
+              <InlineCommandStudio inputRef={modalInputRef} />
             </div>
           </div>
         </div>
-      </div>
-    </footer>
+      )}
+
+      {/* Render Footer Command Studio on secondary screens so every screen has direct access */}
+      {!isCommandCenter && (
+        <footer
+          aria-label="Global PayPal MCP Agent Command Bar"
+          className="mt-8 border-t border-hairline bg-surface/60 px-6 py-8 text-ink sm:px-10"
+        >
+          <div className="mx-auto max-w-[1280px]">
+            <InlineCommandStudio inputRef={footerInputRef} />
+          </div>
+        </footer>
+      )}
+    </>
   );
 }

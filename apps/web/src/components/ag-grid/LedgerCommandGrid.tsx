@@ -2,14 +2,16 @@
 
 /**
  * PayOps AI (PayPal Sentinel) — Screen 1: AG Grid Enterprise 32.3.2 Financial Command Center
- * Increase.com Editorial Light Table:
- *  - Clean single-line top-right control sequence (Search -> Group by Currency -> 10k Benchmark -> Export CSV)
- *  - Strict 5-column fixed layout (`table-fixed w-full`) so 100% of columns & buttons fit with zero clipping
- *  - Coordinated row hover transitions, rotating expand chevrons, and tactile button micro-interactions
- *  - Preserves all Zustand bindings, SSE stream (`applyTransactionAsync`), 10k benchmark, CSV export, and ARIA treegrid
+ * Mounts both:
+ *  - Expandable 3-Card Master-Detail Treegrid View (`role="treegrid"`)
+ *  - Real `<AgGridReact>` 32.3.2 Virtualized DOM Canvas (for 10,000-row benchmark & AG Grid sponsor inspection)
  */
 
 import React, { useMemo, useRef, useState } from "react";
+import { AgGridReact } from "ag-grid-react";
+import type { ColDef } from "ag-grid-community";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
 import {
   ChevronRight,
   Download,
@@ -22,7 +24,9 @@ import {
   CheckCircle2,
   X,
   ChevronsUpDown,
+  Table2,
 } from "lucide-react";
+import type { AgentToolExecution } from "@payops/shared";
 import { generateHighDensityLedgerRows, MOCK_EXECUTIONS } from "@payops/shared/mock-fixtures";
 import { useSseExecutionStream } from "../../hooks/useSseExecutionStream";
 import { formatDualCurrency } from "../../lib/formatters";
@@ -52,16 +56,19 @@ export function LedgerCommandGrid() {
     uiState,
     setUiState,
     setStatusBanner,
+    openApimaticDrawer,
+    openHitlApproval,
   } = useCockpitStore();
 
   const [quickFilter, setQuickFilter] = useState("");
   const [verdictFilter, setVerdictFilter] = useState<string>("ALL");
   const [groupByCurrency, setGroupByCurrency] = useState<boolean>(false);
   const [benchmarkMode10k, setBenchmarkMode10k] = useState<boolean>(false);
+  const [useNativeAgGridCanvas, setUseNativeAgGridCanvas] = useState<boolean>(false);
   const [expandedRowIds, setExpandedRowIds] = useState<Record<string, boolean>>({
     ex_9041: true,
   });
-  const [, setLastRenderLatencyMs] = useState<number>(11.4);
+  const [lastRenderLatencyMs, setLastRenderLatencyMs] = useState<number>(11.4);
 
   const gridApiRef = useRef<{
     applyTransactionAsync: (tx: { add?: unknown[] }) => void;
@@ -80,16 +87,18 @@ export function LedgerCommandGrid() {
       const highDensity = generateHighDensityLedgerRows(10000, activeWorkspaceId);
       setExecutionsList(highDensity);
       setBenchmarkMode10k(true);
+      setUseNativeAgGridCanvas(true);
       const elapsed = Number((performance.now() - t0).toFixed(1));
       setLastRenderLatencyMs(elapsed);
       setStatusBanner(
-        `US-12 Stress Benchmark Active: Generated & virtualized 10,000 ledger rows in ${elapsed}ms (<800ms SLA, 60fps DOM window)`
+        `AG Grid 32 Benchmark Active: Virtualized 10,000 ledger rows in ${elapsed}ms (60fps DOM viewport).`
       );
     } else {
       setExecutionsList(MOCK_EXECUTIONS);
       setBenchmarkMode10k(false);
+      setUseNativeAgGridCanvas(false);
       setLastRenderLatencyMs(9.8);
-      setStatusBanner("Restored 9 core Kaveri Sustainable Knitwear agent executions.");
+      setStatusBanner("Restored 9 core merchant agent executions.");
     }
   };
 
@@ -125,8 +134,68 @@ export function LedgerCommandGrid() {
   const visibleSlice = useMemo(() => {
     const rows = filteredRows.slice(0, 80);
     if (!groupByCurrency) return rows;
-    return [...rows].sort((a, b) => (a.currencyCode ?? "USD").localeCompare(b.currencyCode ?? "USD"));
+    return [...rows].sort((a, b) =>
+      (a.currencyCode ?? "USD").localeCompare(b.currencyCode ?? "USD")
+    );
   }, [filteredRows, groupByCurrency]);
+
+  const agGridColumnDefs = useMemo<ColDef<AgentToolExecution>[]>(
+    () => [
+      {
+        headerName: "Execution ID",
+        field: "executionId",
+        width: 125,
+        sortable: true,
+        filter: true,
+      },
+      {
+        headerName: "PayPal MCP Tool",
+        field: "toolName",
+        flex: 1.2,
+        minWidth: 180,
+        sortable: true,
+        filter: true,
+        valueFormatter: (p) => (p.value ? formatToolTitle(String(p.value)) : ""),
+      },
+      {
+        headerName: `Amount (${activeCurrency})`,
+        field: "amountValue",
+        width: 150,
+        sortable: true,
+        valueFormatter: (p) =>
+          p.value ? `${p.value} ${p.data?.currencyCode ?? "USD"}` : "—",
+      },
+      {
+        headerName: "Fraud Risk Score",
+        field: "gnnRiskScore",
+        width: 145,
+        sortable: true,
+        valueFormatter: (p) =>
+          typeof p.value === "number" ? `${(p.value * 100).toFixed(0)}% Risk` : "0%",
+      },
+      {
+        headerName: "Policy Verdict",
+        field: "policyVerdict",
+        flex: 1,
+        minWidth: 175,
+        sortable: true,
+        filter: true,
+      },
+      {
+        headerName: "2PC Lease",
+        field: "junodbLeaseStatus",
+        width: 140,
+        sortable: true,
+      },
+      {
+        headerName: "PayPal-Request-Id",
+        field: "paypalRequestId",
+        flex: 1.2,
+        minWidth: 200,
+      },
+    ],
+    [activeCurrency]
+  );
 
   const hasExpandedRows = useMemo(
     () => Object.values(expandedRowIds).some(Boolean),
@@ -185,20 +254,25 @@ export function LedgerCommandGrid() {
       aria-label="AG Grid Enterprise Financial Command Center Ledger"
       className="surface-bento ag-theme-increase rounded-2xl p-6 sm:p-8 space-y-5"
     >
-      {/* Row 1: Editorial Title + Ordered Top-Right Action Sequence (1. Search -> 2. Group -> 3. Benchmark -> 4. Export CSV) */}
+      {/* Row 1: Editorial Title + Ordered Top-Right Action Sequence */}
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold tracking-tight text-ink">
-            Autonomous Execution &amp; Dispute Ledger
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold tracking-tight text-ink">
+              Autonomous Execution &amp; Dispute Ledger
+            </h2>
+            <span className="rounded-pill border border-hairline bg-elevated px-2.5 py-0.5 font-mono text-[10px] font-medium text-ink-secondary">
+              AG Grid 32.3.2 · {filteredRows.length.toLocaleString()} rows · {lastRenderLatencyMs}ms
+            </span>
+          </div>
           <p className="mt-1 text-xs text-ink-muted">
-            Click any execution row to inspect Cosmos.AI policy guardrails, M-04 GNN risk signals,
-            and SHA-256 audit hashes.
+            Click any execution row to inspect policy guardrails, fraud risk signals, and SHA-256
+            audit hashes.
           </p>
         </div>
 
-        {/* Ordered Top-Right Controls — Single Horizontal Line on Desktop */}
-        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2.5 shrink-0">
+        {/* Ordered Top-Right Controls */}
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 shrink-0">
           {/* 1. Quick Search Filter */}
           <div className="relative">
             <Search className="absolute left-3.5 top-3 h-3.5 w-3.5 text-ink-faint pointer-events-none" />
@@ -208,7 +282,7 @@ export function LedgerCommandGrid() {
               onChange={(e) => setQuickFilter(e.target.value)}
               placeholder="Search executions..."
               aria-label="AG Grid Quick Search Filter"
-              className="h-9 w-48 focus:w-56 rounded-xl border border-hairline bg-elevated pl-9 pr-7 text-xs text-ink placeholder-ink-faint shadow-2xs transition-all duration-200 hover:border-border-strong focus:border-ink focus:ring-2 focus:ring-ink/5 focus:outline-none"
+              className="h-9 w-44 focus:w-52 rounded-xl border border-hairline bg-elevated pl-9 pr-7 text-xs text-ink placeholder-ink-faint shadow-2xs transition-all duration-200 hover:border-border-strong focus:border-ink focus:ring-2 focus:ring-ink/5 focus:outline-none"
             />
             {quickFilter && (
               <button
@@ -222,11 +296,25 @@ export function LedgerCommandGrid() {
             )}
           </div>
 
-          {/* 2. Group by Currency Toggle */}
+          {/* 2. Toggle Real AG Grid 32 Virtualized Canvas vs Master-Detail Inspector (C-2) */}
+          <button
+            type="button"
+            onClick={() => setUseNativeAgGridCanvas((v) => !v)}
+            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium shadow-2xs transition-all duration-200 hover:-translate-y-[1px] active:scale-[0.975] cursor-pointer ${
+              useNativeAgGridCanvas
+                ? "border-accent-dark bg-accent-dark text-accent-dark-ink"
+                : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:bg-surface hover:text-ink"
+            }`}
+          >
+            <Table2 className="h-3.5 w-3.5" />
+            <span>{useNativeAgGridCanvas ? "Inspector View" : "AG Grid Canvas"}</span>
+          </button>
+
+          {/* 3. Group by Currency Toggle */}
           <button
             type="button"
             onClick={() => setGroupByCurrency(!groupByCurrency)}
-            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3.5 text-xs font-medium shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer ${
+            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer ${
               groupByCurrency
                 ? "border-accent-dark bg-accent-dark text-accent-dark-ink"
                 : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:bg-surface hover:text-ink"
@@ -234,18 +322,13 @@ export function LedgerCommandGrid() {
           >
             <Layers className="h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-105" />
             <span>Group by Currency</span>
-            {groupByCurrency && (
-              <span className="ml-0.5 rounded-pill bg-white/20 px-1.5 py-0.5 font-mono text-[10px]">
-                ON
-              </span>
-            )}
           </button>
 
-          {/* 3. 10,000-Row Stress Benchmark (US-12) */}
+          {/* 4. 10,000-Row Stress Benchmark */}
           <button
             type="button"
             onClick={toggle10kBenchmark}
-            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3.5 text-xs font-medium shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer ${
+            className={`group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-xs font-medium shadow-2xs transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm active:scale-[0.975] cursor-pointer ${
               benchmarkMode10k
                 ? "border-status-success-border bg-status-success-bg text-status-success-text"
                 : "border-hairline bg-elevated text-ink-secondary hover:border-border-strong hover:bg-surface hover:text-ink"
@@ -255,11 +338,11 @@ export function LedgerCommandGrid() {
             <span>{benchmarkMode10k ? "Reset 9 Rows" : "10k Benchmark"}</span>
           </button>
 
-          {/* 4. Primary Export CSV Action (Far Top-Right Corner) */}
+          {/* 5. Primary Export CSV Action */}
           <button
             type="button"
             onClick={handleExportCsv}
-            className="group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border border-accent-dark bg-accent-dark px-4 text-xs font-medium text-accent-dark-ink shadow-xs transition-all duration-200 hover:bg-accent-dark-hover hover:-translate-y-[1px] hover:shadow-md active:scale-[0.975] cursor-pointer"
+            className="group inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border border-accent-dark bg-accent-dark px-3.5 text-xs font-medium text-accent-dark-ink shadow-xs transition-all duration-200 hover:bg-accent-dark-hover hover:-translate-y-[1px] hover:shadow-md active:scale-[0.975] cursor-pointer"
           >
             <Download className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-y-[1px]" />
             <span>Export CSV</span>
@@ -274,13 +357,13 @@ export function LedgerCommandGrid() {
             { id: "ALL", label: "All Executions", count: counts.all, dotClass: null },
             {
               id: "APPROVED_L3_AUTO",
-              label: "Auto-Approved (L3)",
+              label: "Auto-Approved",
               count: counts.allow,
               dotClass: "bg-status-success-bar",
             },
             {
               id: "HELD_FOR_L2_PASSKEY",
-              label: "Passkey Hold (L2)",
+              label: "Passkey Hold",
               count: counts.hold,
               dotClass: "bg-status-warning-bar",
             },
@@ -321,16 +404,17 @@ export function LedgerCommandGrid() {
           })}
         </div>
 
-        {/* Right Side of Filter Row: Inspector Collapse/Expand Button + Hidden Accessible Select */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleAllRowsInspector}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-elevated px-3 text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 hover:border-border-strong hover:bg-surface hover:text-ink active:scale-[0.975] cursor-pointer"
-          >
-            <ChevronsUpDown className="h-3.5 w-3.5 text-ink-muted" />
-            <span>{hasExpandedRows ? "Collapse Inspector" : "Expand Top Row"}</span>
-          </button>
+          {!useNativeAgGridCanvas && (
+            <button
+              type="button"
+              onClick={toggleAllRowsInspector}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-elevated px-3 text-[11px] font-medium text-ink-secondary shadow-2xs transition-all duration-200 hover:border-border-strong hover:bg-surface hover:text-ink active:scale-[0.975] cursor-pointer"
+            >
+              <ChevronsUpDown className="h-3.5 w-3.5 text-ink-muted" />
+              <span>{hasExpandedRows ? "Collapse Inspector" : "Expand Top Row"}</span>
+            </button>
+          )}
 
           <select
             aria-label="Filter by Cosmos.AI Policy Verdict"
@@ -346,7 +430,7 @@ export function LedgerCommandGrid() {
         </div>
       </div>
 
-      {/* Inner Crisp White Table Card — Strict 5-Column Fixed Layout (100% Width, 0 Clipping) */}
+      {/* Inner Crisp White Table Card */}
       <div className="overflow-hidden rounded-xl border border-hairline bg-elevated shadow-xs">
         {uiState === "offline" && (
           <div
@@ -355,8 +439,8 @@ export function LedgerCommandGrid() {
           >
             <span className="inline-flex items-center gap-2 font-mono">
               <WifiOff className="h-4 w-4 shrink-0" />
-              AMBER: OFFLINE / REPLAY FALLBACK ACTIVE (R-06) — Operating against signed local
-              Sandbox transcripts.
+              OFFLINE / REPLAY FALLBACK ACTIVE — Operating against signed local Sandbox
+              transcripts.
             </span>
             <button
               type="button"
@@ -376,8 +460,7 @@ export function LedgerCommandGrid() {
             <div className="flex items-center gap-2 font-mono">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span>
-                RFC 7807 Problem Details: HTTP 429 Upstream Sandbox Rate Limit ·
-                trace_id=4bf92f3577b34da6a3ce929d0e0e4736
+                Upstream PayPal Sandbox Rate Limit Detected · Automatic Idempotent Retry Ready
               </span>
             </div>
             <button
@@ -385,13 +468,13 @@ export function LedgerCommandGrid() {
               onClick={() => {
                 setUiState("success");
                 setStatusBanner(
-                  "JunoDB Idempotent Retry Verified: Reused PayPal-Request-Id (idem_ws_99102a_invoice_INV_2026_8841) with zero duplicate side effects."
+                  "JunoDB Idempotent Retry Verified: Reused PayPal-Request-Id with zero duplicate side effects."
                 );
               }}
               className="btn-secondary-dark px-3 py-1 font-mono text-xs cursor-pointer"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              Retry with Same PayPal-Request-Id
+              Retry Safely
             </button>
           </div>
         )}
@@ -404,13 +487,12 @@ export function LedgerCommandGrid() {
             <div className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4 animate-spin text-ink" />
               <span>
-                1/4 Validating APIMatic Schema &rarr; 2/4 Evaluating Cosmos.AI DSL &rarr; 3/4
-                Acquiring JunoDB 2PC Lease...
+                Validating Schema &rarr; Evaluating Policy Firewall &rarr; Acquiring 2PC
+                Idempotency Lock...
               </span>
             </div>
             <div className="h-8 w-full rounded bg-subtle animate-pulse" />
             <div className="h-8 w-full rounded bg-subtle/80 animate-pulse" />
-            <div className="h-8 w-full rounded bg-subtle/60 animate-pulse" />
           </div>
         )}
 
@@ -418,7 +500,7 @@ export function LedgerCommandGrid() {
           <div className="p-12 text-center space-y-3 bg-elevated">
             <p className="text-sm text-ink-secondary">
               No live agent executions in this filter view. Click{" "}
-              <span className="font-mono font-semibold text-ink">[Seed Realistic SMB Ledger]</span>{" "}
+              <span className="font-mono font-semibold text-ink">[Restore Default Ledger]</span>{" "}
               or press{" "}
               <kbd className="rounded border border-hairline bg-surface px-1.5 py-0.5 font-mono text-xs text-ink">
                 Cmd+K
@@ -436,163 +518,192 @@ export function LedgerCommandGrid() {
               className="btn-primary-mint px-4 py-2 text-xs font-semibold cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4" />
-              Seed Realistic SMB Ledger
+              Restore Default Ledger
             </button>
           </div>
         ) : (
           uiState !== "loading" && (
-            <div className={benchmarkMode10k ? "max-h-[600px] overflow-y-auto" : ""}>
-              <table
-                role="treegrid"
-                aria-rowcount={filteredRows.length}
-                aria-colcount={5}
-                aria-label="PayPal Sentinel Agent Tool Executions Ledger"
-                className="w-full table-fixed text-left border-collapse text-xs"
-              >
-                <colgroup>
-                  <col className="w-[30%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[22%]" />
-                </colgroup>
-                <thead className="border-b border-hairline bg-surface/80 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-muted">
-                  <tr>
-                    <th className="py-3 pl-4 pr-2 font-semibold">Execution &amp; MCP Tool</th>
-                    <th className="py-3 px-2 font-semibold">Amount ({activeCurrency})</th>
-                    <th className="py-3 px-2 font-semibold">M-04 GNN Risk</th>
-                    <th className="py-3 px-2 font-semibold">Cosmos.AI Verdict</th>
-                    <th className="py-3 pl-2 pr-4 text-right font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-subtle">
-                  {visibleSlice.map((row, idx) => {
-                    const isExpanded = Boolean(expandedRowIds[row.executionId]);
-                    const showCurrencyGroupHeader =
-                      groupByCurrency &&
-                      (idx === 0 || visibleSlice[idx - 1]?.currencyCode !== row.currencyCode);
+            <>
+              {/* Real AG Grid 32.3.2 Virtualized Canvas Mode (C-2) */}
+              {useNativeAgGridCanvas && (
+                <div
+                  role="treegrid"
+                  aria-label="PayPal Sentinel Agent Tool Executions Ledger"
+                  className="ag-theme-quartz w-full"
+                  style={{ height: 520 }}
+                >
+                  <AgGridReact<AgentToolExecution>
+                    rowData={filteredRows}
+                    columnDefs={agGridColumnDefs}
+                    quickFilterText={quickFilter}
+                    rowHeight={48}
+                    headerHeight={42}
+                    pagination={true}
+                    paginationPageSize={50}
+                    animateRows={true}
+                    onRowClicked={(e) => {
+                      if (!e.data) return;
+                      if (e.data.policyVerdict === "HELD_FOR_L2_PASSKEY") {
+                        openHitlApproval(e.data);
+                      } else {
+                        openApimaticDrawer(e.data);
+                      }
+                    }}
+                  />
+                </div>
+              )}
 
-                    const toggleRow = () =>
-                      setExpandedRowIds((prev) => ({
-                        ...prev,
-                        [row.executionId]: !prev[row.executionId],
-                      }));
+              {/* Expandable 3-Card Master-Detail Inspector Mode */}
+              {!useNativeAgGridCanvas && (
+                <div>
+                  <table
+                    role="treegrid"
+                    aria-rowcount={filteredRows.length}
+                    aria-colcount={5}
+                    aria-label="PayPal Sentinel Agent Tool Executions Ledger"
+                    className="w-full table-fixed text-left border-collapse text-xs"
+                  >
+                    <colgroup>
+                      <col className="w-[30%]" />
+                      <col className="w-[15%]" />
+                      <col className="w-[16%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[22%]" />
+                    </colgroup>
+                    <thead className="border-b border-hairline bg-surface/80 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-muted">
+                      <tr>
+                        <th className="py-3 pl-4 pr-2 font-semibold">Execution &amp; MCP Tool</th>
+                        <th className="py-3 px-2 font-semibold">Amount ({activeCurrency})</th>
+                        <th className="py-3 px-2 font-semibold">Fraud Risk Score</th>
+                        <th className="py-3 px-2 font-semibold">Policy Verdict</th>
+                        <th className="py-3 pl-2 pr-4 text-right font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-subtle">
+                      {visibleSlice.map((row, idx) => {
+                        const isExpanded = Boolean(expandedRowIds[row.executionId]);
+                        const showCurrencyGroupHeader =
+                          groupByCurrency &&
+                          (idx === 0 || visibleSlice[idx - 1]?.currencyCode !== row.currencyCode);
 
-                    return (
-                      <React.Fragment key={row.executionId}>
-                        {showCurrencyGroupHeader && (
-                          <tr className="bg-surface font-mono text-[11px] font-semibold text-ink">
-                            <td colSpan={5} className="px-4 py-2 border-b border-hairline">
-                              ▸ Currency Group: {row.currencyCode ?? "USD"}
-                            </td>
-                          </tr>
-                        )}
-                        <tr
-                          onClick={toggleRow}
-                          className={`group cursor-pointer ${
-                            isExpanded ? "ledger-row-active" : "ledger-row"
-                          }`}
-                        >
-                          {/* Column 1 (30%): Expand Chevron + Operation Name + Tool & Lease Pill */}
-                          <td className="py-3.5 pl-4 pr-2">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <button
-                                type="button"
-                                aria-expanded={isExpanded}
-                                aria-label={`Toggle Master-Detail for ${row.executionId}`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleRow();
-                                }}
-                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 ease-out cursor-pointer ${
-                                  isExpanded
-                                    ? "border-ink bg-accent-dark text-accent-dark-ink shadow-2xs"
-                                    : "border-hairline bg-surface text-ink-muted group-hover:border-border-strong group-hover:bg-elevated group-hover:text-ink group-hover:shadow-2xs"
-                                }`}
-                              >
-                                <ChevronRight
-                                  className={`h-3.5 w-3.5 transition-transform duration-200 ease-out ${
-                                    isExpanded ? "rotate-90" : "group-hover:translate-x-0.5"
-                                  }`}
-                                />
-                              </button>
+                        const toggleRow = () =>
+                          setExpandedRowIds((prev) => ({
+                            ...prev,
+                            [row.executionId]: !prev[row.executionId],
+                          }));
 
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="truncate font-semibold text-ink transition-colors group-hover:text-ink">
-                                    {formatToolTitle(row.toolName)}
-                                  </span>
-                                  <span className="shrink-0 rounded bg-surface px-1.5 py-0.5 font-mono text-[10.5px] text-ink-muted border border-transparent transition-colors group-hover:border-hairline group-hover:bg-elevated">
-                                    {row.executionId}
-                                  </span>
-                                </div>
-                                <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] text-ink-muted">
-                                  <span className="truncate">{row.toolName}</span>
-                                  <span>·</span>
-                                  <span className="shrink-0 text-status-success-text font-medium">
-                                    {row.junodbLeaseStatus === "REPLAYED_FROM_JUNODB"
-                                      ? "Replayed"
-                                      : "2PC OK"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
+                        return (
+                          <React.Fragment key={row.executionId}>
+                            {showCurrencyGroupHeader && (
+                              <tr className="bg-surface font-mono text-[11px] font-semibold text-ink">
+                                <td colSpan={5} className="px-4 py-2 border-b border-hairline">
+                                  ▸ Currency Group: {row.currencyCode ?? "USD"}
+                                </td>
+                              </tr>
+                            )}
+                            <tr
+                              onClick={toggleRow}
+                              className={`group cursor-pointer ${
+                                isExpanded ? "ledger-row-active" : "ledger-row"
+                              }`}
+                            >
+                              <td className="py-3.5 pl-4 pr-2">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <button
+                                    type="button"
+                                    aria-expanded={isExpanded}
+                                    aria-label={`Toggle Master-Detail for ${row.executionId}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleRow();
+                                    }}
+                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-all duration-200 ease-out cursor-pointer ${
+                                      isExpanded
+                                        ? "border-ink bg-accent-dark text-accent-dark-ink shadow-2xs"
+                                        : "border-hairline bg-surface text-ink-muted group-hover:border-border-strong group-hover:bg-elevated group-hover:text-ink group-hover:shadow-2xs"
+                                    }`}
+                                  >
+                                    <ChevronRight
+                                      className={`h-3.5 w-3.5 transition-transform duration-200 ease-out ${
+                                        isExpanded ? "rotate-90" : "group-hover:translate-x-0.5"
+                                      }`}
+                                    />
+                                  </button>
 
-                          {/* Column 2 (15%): Amount */}
-                          <td className="py-3.5 px-2 font-mono tabular-nums">
-                            {row.amountValue ? (
-                              (() => {
-                                const dual = formatDualCurrency(
-                                  row.amountValue,
-                                  activeCurrency,
-                                  activeCurrency === "INR" ? "USD" : "INR"
-                                );
-                                return (
-                                  <div className="min-w-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5">
-                                    <div className="truncate font-semibold text-ink">
-                                      {dual.primary.replace(/\s+[A-Z]+$/, "")}
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="truncate font-semibold text-ink transition-colors group-hover:text-ink">
+                                        {formatToolTitle(row.toolName)}
+                                      </span>
+                                      <span className="shrink-0 rounded bg-surface px-1.5 py-0.5 font-mono text-[10.5px] text-ink-muted border border-transparent transition-colors group-hover:border-hairline group-hover:bg-elevated">
+                                        {row.executionId}
+                                      </span>
                                     </div>
-                                    <div className="truncate text-[10px] text-ink-muted">
-                                      {dual.secondary}
+                                    <div className="mt-0.5 flex items-center gap-1.5 font-mono text-[10.5px] text-ink-muted">
+                                      <span className="truncate">{row.toolName}</span>
+                                      <span>·</span>
+                                      <span className="shrink-0 text-status-success-text font-medium">
+                                        {row.junodbLeaseStatus === "REPLAYED_FROM_JUNODB"
+                                          ? "Replayed"
+                                          : "2PC OK"}
+                                      </span>
                                     </div>
                                   </div>
-                                );
-                              })()
-                            ) : (
-                              <span className="text-ink-faint">—</span>
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-2 font-mono tabular-nums">
+                                {row.amountValue ? (
+                                  (() => {
+                                    const dual = formatDualCurrency(
+                                      row.amountValue,
+                                      activeCurrency,
+                                      activeCurrency === "INR" ? "USD" : "INR"
+                                    );
+                                    return (
+                                      <div className="min-w-0 transition-transform duration-200 ease-out group-hover:translate-x-0.5">
+                                        <div className="truncate font-semibold text-ink">
+                                          {dual.primary.replace(/\s+[A-Z]+$/, "")}
+                                        </div>
+                                        <div className="truncate text-[10px] text-ink-muted">
+                                          {dual.secondary}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()
+                                ) : (
+                                  <span className="text-ink-faint">—</span>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-2">
+                                <GnnRiskSparklineCell row={row} />
+                              </td>
+
+                              <td className="py-3.5 px-2">
+                                <PolicyVerdictCell row={row} />
+                              </td>
+
+                              <td className="py-3.5 pl-2 pr-4 text-right">
+                                <HitlInlineActionCell row={row} />
+                              </td>
+                            </tr>
+
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan={5} className="p-0">
+                                  <DisputeDetailRenderer row={row} />
+                                </td>
+                              </tr>
                             )}
-                          </td>
-
-                          {/* Column 3 (16%): M-04 GNN Risk */}
-                          <td className="py-3.5 px-2">
-                            <GnnRiskSparklineCell row={row} />
-                          </td>
-
-                          {/* Column 4 (17%): Cosmos.AI Verdict */}
-                          <td className="py-3.5 px-2">
-                            <PolicyVerdictCell row={row} />
-                          </td>
-
-                          {/* Column 5 (22%): Right-Aligned Actions */}
-                          <td className="py-3.5 pl-2 pr-4 text-right">
-                            <HitlInlineActionCell row={row} />
-                          </td>
-                        </tr>
-
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan={5} className="p-0">
-                              <DisputeDetailRenderer row={row} />
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
           )
         )}
       </div>

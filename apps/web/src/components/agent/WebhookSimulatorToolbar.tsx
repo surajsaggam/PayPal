@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * PayOps AI (PayPal Sentinel) — Increase.com-Inspired Interactive Rail & Scenario Showcase
- * Clean, human-readable editorial presentation with zero raw coded IDs, base58 strings, or internal ticket jargon.
- * Preserves 100% of pitch walkthrough, webhook simulation, and R-06 circuit-breaker handlers & ARIA contracts.
+ * PayOps AI (PayPal Sentinel) — Autonomous CFO Workflows & Judge Resilience Simulator
+ * Separates real CFO business actions from Judge/Chaos simulation controls (R-4).
  */
 
 import React from "react";
@@ -22,6 +21,7 @@ import {
   Check,
   ShieldCheck,
   ArrowUpRight,
+  FlaskConical,
 } from "lucide-react";
 import {
   MOCK_GUIDED_DEMO_SCENARIOS,
@@ -163,27 +163,20 @@ export function WebhookSimulatorToolbar() {
   };
 
   return (
-    <section aria-label="Autonomous PayPal Rail & Scenario Showcase" className="space-y-6">
-      {/* Editorial Section Intro */}
-      <div className="max-w-2xl">
-        <h2 className="text-2xl sm:text-[28px] editorial-heading">
-          Comprehensive infrastructure to invoice, settle, and defend revenue.{" "}
-          <span className="editorial-subcopy">
-            Automate everyday billing, supplier payouts, and dispute protection with built-in
-            financial safeguards.
-          </span>
-        </h2>
-      </div>
-
-      {/* Bento Showcase Card */}
-      <div className="surface-bento rounded-2xl p-6 sm:p-8">
+    <section aria-label="Autonomous PayPal Rail & Scenario Showcase" className="space-y-4">
+      <div className="surface-bento rounded-2xl p-6 sm:p-8 space-y-6">
         <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
-          {/* Left Column: 2x4 Grid of Clean Feature & Simulation Tiles */}
-          <div className="space-y-5 lg:col-span-6">
+          {/* Left Column: 5 Clean Core Business Workflows */}
+          <div className="space-y-4 lg:col-span-7">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-base font-semibold tracking-tight text-ink">
-                Autonomous workflows on every PayPal rail
-              </h3>
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-ink">
+                  One-Click Autonomous PayPal Workflows
+                </h2>
+                <p className="text-xs text-ink-muted">
+                  Launch end-to-end invoicing, dispute defense, or supplier payouts.
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -206,13 +199,13 @@ export function WebhookSimulatorToolbar() {
               </div>
             </div>
 
-            {/* 8 Clean Rail Tiles (Icon Box + Readable Title + Readable Subtitle + Instant Press Feedback) */}
+            {/* 5 Core CFO Business Workflow Cards */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {/* Tile 1: Smart Invoice + QR */}
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[0])}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/80 p-3.5 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent-mint/40 text-accent-mint-ink shadow-2xs">
                   <QrCode className="h-4 w-4" />
@@ -227,7 +220,7 @@ export function WebhookSimulatorToolbar() {
               <button
                 type="button"
                 onClick={() => void handleBryntumDunningDragShortcut()}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/80 p-3.5 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-info-bg text-status-info-text shadow-2xs">
                   <CalendarClock className="h-4 w-4" />
@@ -242,7 +235,7 @@ export function WebhookSimulatorToolbar() {
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[1])}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/80 p-3.5 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-success-bg text-status-success-text shadow-2xs">
                   <Swords className="h-4 w-4" />
@@ -253,11 +246,11 @@ export function WebhookSimulatorToolbar() {
                 </div>
               </button>
 
-              {/* Tile 4: Security Override Block */}
+              {/* Tile 4: High-Value Refund Gate */}
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[2])}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
+                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/80 p-3.5 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-warning-bg text-status-warning-text shadow-2xs">
                   <ShieldAlert className="h-4 w-4" />
@@ -268,90 +261,29 @@ export function WebhookSimulatorToolbar() {
                 </div>
               </button>
 
-              {/* Tile 5: PYUSD Instant Settlement */}
+              {/* Tile 5: PYUSD Instant Settlement (Spans 2 columns on desktop for symmetry) */}
               <button
                 type="button"
                 onClick={() => void runGuidedScenario(MOCK_GUIDED_DEMO_SCENARIOS[3])}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
+                className="sm:col-span-2 group flex items-center justify-between gap-3.5 rounded-xl border border-hairline/70 bg-elevated/80 p-3.5 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
               >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ink shadow-2xs">
-                  <Coins className="h-4 w-4" />
-                </span>
-                <div>
-                  <div className="text-xs font-semibold text-ink">PYUSD Supplier Settlement</div>
-                  <div className="text-[11px] text-ink-muted tabular-nums">$650 · 1.2s Global Payout</div>
+                <div className="flex items-center gap-3.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ink shadow-2xs">
+                    <Coins className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="text-xs font-semibold text-ink">5. Instant PYUSD Supplier Settlement</div>
+                    <div className="text-[11px] text-ink-muted tabular-nums">$650 · 1.2s Cross-Border Solana Token-2022 Payout</div>
+                  </div>
                 </div>
-              </button>
-
-              {/* Tile 6: Simulate Dispute Claim */}
-              <button
-                type="button"
-                onClick={() => {
-                  void simulatePayPalWebhook({
-                    id: "WH-INR-340-PP-D-4012",
-                    event_type: "CUSTOMER.DISPUTE.CREATED",
-                    create_time: new Date().toISOString(),
-                    resource: { dispute_id: "PP-D-4012", amount: "340.00" },
-                  });
-                  simulateDisputeWebhook("INR_340");
-                }}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-success-bg text-status-success-text shadow-2xs">
-                  <Zap className="h-4 w-4" />
-                </span>
-                <div>
-                  <div className="text-xs font-semibold text-ink">Simulate Dispute ($340)</div>
-                  <div className="text-[11px] text-ink-muted">Delivered Order Claim</div>
-                </div>
-              </button>
-
-              {/* Tile 7: Simulate Override Attempt */}
-              <button
-                type="button"
-                onClick={() => {
-                  void simulatePayPalWebhook({
-                    id: "WH-INJ-2400-PP-D-4018",
-                    event_type: "CUSTOMER.DISPUTE.CREATED",
-                    create_time: new Date().toISOString(),
-                    resource: { dispute_id: "PP-D-4018", amount: "2400.00" },
-                  });
-                  simulateDisputeWebhook("INJECTION_2400");
-                }}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-status-danger-bg text-status-danger-text shadow-2xs">
-                  <ShieldAlert className="h-4 w-4" />
-                </span>
-                <div>
-                  <div className="text-xs font-semibold text-ink">Simulate Override ($2,400)</div>
-                  <div className="text-[11px] text-ink-muted">Suspicious Refund Note</div>
-                </div>
-              </button>
-
-              {/* Tile 8: High-Traffic Backup Mode */}
-              <button
-                type="button"
-                aria-label="Simulate HTTP 429 Upstream Rate-Limit -> Auto-Failover (R-06)"
-                onClick={() => {
-                  void simulateUpstreamHttp429CircuitBreaker("/api/v1/agent/execute");
-                }}
-                className="group flex items-center gap-3.5 rounded-xl border border-hairline/70 bg-elevated/60 p-3 text-left transition-all duration-200 ease-spring hover:-translate-y-[1px] hover:border-border-strong hover:bg-elevated hover:shadow-xs active:scale-[0.98] cursor-pointer"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-subtle text-ink-secondary shadow-2xs">
-                  <WifiOff className="h-4 w-4" />
-                </span>
-                <div>
-                  <div className="text-xs font-semibold text-ink">Test Backup Failover</div>
-                  <div className="text-[11px] text-ink-muted">Zero-Downtime Protection</div>
-                </div>
+                <ArrowUpRight className="h-4 w-4 text-ink-muted group-hover:text-ink transition-colors" />
               </button>
             </div>
           </div>
 
-          {/* Right Column: Clean Editorial Workflow Preview Card + Overlapping Settlement Card */}
-          <div className="relative lg:col-span-6">
-            <div className="rounded-2xl bg-[#11191F] p-6 pb-16 text-slate-200 shadow-elevated space-y-4 ring-1 ring-white/10">
+          {/* Right Column: Live Workflow Protection Preview Card */}
+          <div className="relative lg:col-span-5">
+            <div className="rounded-2xl bg-[#11191F] p-6 pb-14 text-slate-200 shadow-elevated space-y-4 ring-1 ring-white/10">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3 text-xs">
                 <span className="font-medium text-slate-300">
                   Live Workflow Protection Preview
@@ -362,14 +294,14 @@ export function WebhookSimulatorToolbar() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
-                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-1">
                   <div className="text-[11px] text-slate-400">Current Workflow</div>
                   <div className="font-semibold text-white">{readableOp.title}</div>
                   <div className="text-[11px] text-emerald-400">{readableOp.category}</div>
                 </div>
 
-                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4 space-y-1">
+                <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-3.5 space-y-1">
                   <div className="text-[11px] text-slate-400">Policy Verification</div>
                   <div className="font-semibold text-white">{readableVerdict.label}</div>
                   <div className="text-[11px] text-slate-400">
@@ -383,20 +315,19 @@ export function WebhookSimulatorToolbar() {
               </p>
             </div>
 
-            {/* Overlapping Crisp White Financial Card */}
-            <div className="relative -mt-10 ml-6 mr-2 rounded-xl border border-hairline bg-elevated p-4 sm:p-5 shadow-elevated sm:ml-12 transition-transform duration-200 ease-spring hover:-translate-y-[2px]">
+            <div className="relative -mt-9 ml-4 mr-2 rounded-xl border border-hairline bg-elevated p-4 shadow-elevated sm:ml-8 transition-transform duration-200 ease-spring hover:-translate-y-[2px]">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="kpi-stat-value text-2xl">
+                  <div className="kpi-stat-value text-2xl tabular-nums">
                     ${latestExec?.amountValue ?? "1,850.00"}
                   </div>
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-muted">
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-ink-muted">
                     <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-status-success-bg text-status-success-text">
                       <Check className="h-2.5 w-2.5" />
                     </span>
                     <span className="font-medium text-ink">{readableOp.title}</span>
                     <span>·</span>
-                    <span>Single-Charge Lock Active</span>
+                    <span>2PC Idempotent</span>
                   </div>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-pill border border-status-success-border bg-status-success-bg px-3 py-1 text-xs font-medium text-status-success-text shrink-0">
@@ -408,11 +339,67 @@ export function WebhookSimulatorToolbar() {
           </div>
         </div>
 
-        {/* Clean, Human-Readable Walkthrough Status Bar */}
+        {/* Separated Judge & Resilience Chaos Simulator Bar (R-4) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline pt-4 text-xs">
+          <div className="inline-flex items-center gap-2 text-ink-muted font-medium">
+            <FlaskConical className="h-3.5 w-3.5 text-ink-secondary" />
+            <span>Judge &amp; Webhook Simulator:</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                void simulatePayPalWebhook({
+                  id: "WH-INR-340-PP-D-4012",
+                  event_type: "CUSTOMER.DISPUTE.CREATED",
+                  create_time: new Date().toISOString(),
+                  resource: { dispute_id: "PP-D-4012", amount: "340.00" },
+                });
+                simulateDisputeWebhook("INR_340");
+              }}
+              className="btn-outline-subtle rounded-lg px-3 py-1.5 text-xs tabular-nums cursor-pointer"
+            >
+              <Zap className="h-3 w-3 text-status-success-bar" />
+              <span>Incoming Dispute Webhook ($340)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                void simulatePayPalWebhook({
+                  id: "WH-INJ-2400-PP-D-4018",
+                  event_type: "CUSTOMER.DISPUTE.CREATED",
+                  create_time: new Date().toISOString(),
+                  resource: { dispute_id: "PP-D-4018", amount: "2400.00" },
+                });
+                simulateDisputeWebhook("INJECTION_2400");
+              }}
+              className="btn-outline-subtle rounded-lg px-3 py-1.5 text-xs tabular-nums cursor-pointer"
+            >
+              <ShieldAlert className="h-3 w-3 text-status-danger-bar" />
+              <span>Prompt-Injection Refund ($2,400)</span>
+            </button>
+
+            <button
+              type="button"
+              aria-label="Simulate HTTP 429 Upstream Rate-Limit -> Auto-Failover (R-06)"
+              onClick={() => {
+                void simulateUpstreamHttp429CircuitBreaker("/api/v1/agent/execute");
+              }}
+              className="btn-outline-subtle rounded-lg px-3 py-1.5 text-xs cursor-pointer"
+            >
+              <WifiOff className="h-3 w-3 text-ink-muted" />
+              <span>Test Rate-Limit Failover</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Guided Pitch Choreography & Sandbox Resource ID Callout Strip */}
         {(activePitchScenario || circuitBreakerTripped) && (
           <div
             aria-label="Guided Pitch Choreography & Sandbox Resource ID Callout Strip"
-            className="animate-tab-switch mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent-lime-border bg-accent-lime/35 px-4 py-3 text-xs text-ink"
+            className="animate-tab-switch flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent-lime-border bg-accent-lime/35 px-4 py-3 text-xs text-ink"
           >
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="badge-lime px-2.5 py-0.5 font-semibold">

@@ -160,7 +160,7 @@ export default function ReceivablesTimeline() {
         >
           <span className="inline-flex items-center gap-2">
             <WifiOff className="h-4 w-4 shrink-0" />
-            OFFLINE QUEUE ACTIVE (R-06): Timeline drag &amp; resize mutations queued locally with{" "}
+            OFFLINE QUEUE ACTIVE: Timeline drag &amp; resize mutations queued locally with{" "}
             <strong>PENDING_SYNC</strong> ({pendingSyncInvoiceIds.length} queued).
           </span>
           <button
@@ -180,8 +180,8 @@ export default function ReceivablesTimeline() {
         >
           <span className="inline-flex items-center gap-2">
             <AlertCircle className="h-4 w-4 shrink-0" />
-            API-06 Dunning Sync Error: Timeline bars automatically snap back to their last verified
-            Sandbox date.
+            Schedule Sync Error: Timeline bars automatically snap back to their last verified
+            PayPal Sandbox date.
           </span>
           <button
             type="button"
@@ -200,8 +200,8 @@ export default function ReceivablesTimeline() {
         >
           <span className="inline-flex items-center gap-2">
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            Optimistic Timeline Sync: Updating PayPal Invoice v2 conditional rules &amp; reminder
-            schedule via API-06...
+            Optimistic Timeline Sync: Updating PayPal Invoice conditional rules &amp; reminder
+            schedule...
           </span>
           <span className="text-[10px]">PayPal-Request-Id Locked</span>
         </div>
@@ -275,6 +275,20 @@ export default function ReceivablesTimeline() {
               >
                 Extend Window (+1 Slot)
               </button>
+              <label className="inline-flex items-center gap-1 text-[11px] text-ink-muted ml-1">
+                <span>Custom Date:</span>
+                <input
+                  type="date"
+                  aria-label="Custom reminder trigger date picker"
+                  value={selectedInvoice.conditionalRule?.triggerDate ?? "2026-11-12"}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      void handleMilestoneDrop(selectedInvoice, e.target.value);
+                    }
+                  }}
+                  className="rounded-md border border-hairline bg-elevated px-1.5 py-0.5 font-mono text-[11px] text-ink tabular-nums"
+                />
+              </label>
             </div>
           </div>
 

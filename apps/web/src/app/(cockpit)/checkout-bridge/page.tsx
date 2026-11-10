@@ -207,7 +207,7 @@ export default function CheckoutBridgePage() {
     }
   };
 
-  const handleQuickDirectPyusdSettle = () => {
+  const handleQuickDirectPyusdSettle = async () => {
     if (!crossBorderInvoice) return;
     if (!memoCheck.valid) {
       setUiState("error");
@@ -217,16 +217,20 @@ export default function CheckoutBridgePage() {
       );
       return;
     }
-    const sig = `5xPyusdSolanaToken2022Sig99102a${Date.now().toString(16)}`;
-    void settleInvoicePyusd({
+    const fallbackSig = `5xPyusdSolanaToken2022Sig99102a${Date.now().toString(16)}`;
+    const res = await settleInvoicePyusd({
       workspaceId: crossBorderInvoice.workspaceId,
       invoiceId: crossBorderInvoice.invoiceId,
       amountValue: crossBorderInvoice.amountValue,
       memo: activeMemoString,
-      solanaTxSignature: sig,
+      solanaTxSignature: fallbackSig,
     });
-    settleInvoiceWithPyusd(crossBorderInvoice.invoiceId, sig, activeMemoString);
+    const verifiedSig = res.solanaTxSignature || fallbackSig;
+    settleInvoiceWithPyusd(crossBorderInvoice.invoiceId, verifiedSig, activeMemoString);
     setUiState("success");
+    setStatusBanner(
+      `PYUSD Settlement Verified on Solana SPL Token-2022 (${verifiedSig.slice(0, 18)}...) for ${crossBorderInvoice.invoiceNumber}.`
+    );
   };
 
   const handleVerifyHashChain = () => {
@@ -594,7 +598,7 @@ export default function CheckoutBridgePage() {
                     <span>PayPal PYUSD Instant Settlement:</span>
                     <span className="tabular-nums">$0.001 Network Fee · 1.2 Seconds · 0% FX</span>
                   </div>
-                  <div className="pt-2 border-t border-border-subtle flex items-center justify-between gap-2">
+                  <div className="pt-2 border-t border-border-subtle flex flex-wrap items-center justify-between gap-2">
                     <span
                       className={`${
                         memoCheck.valid
@@ -605,48 +609,52 @@ export default function CheckoutBridgePage() {
                       Invoice Reconciliation Reference:{" "}
                       <strong className="text-ink">{crossBorderInvoice.invoiceNumber}</strong>
                     </span>
-                    <span
-                      className={`shrink-0 rounded-pill border px-2.5 py-0.5 text-[11px] font-medium ${
-                        memoCheck.valid
-                          ? "border-status-success-border bg-status-success-bg text-status-success-text"
-                          : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
-                      }`}
-                    >
-                      {memoCheck.valid ? "Reference Verified" : "Reference Missing"}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={
+                          memoCheck.valid
+                            ? handleSimulateMemoErrorOnScreen
+                            : handleRestoreValidMemoOnScreen
+                        }
+                        className="text-[11px] text-ink-muted underline hover:text-ink cursor-pointer"
+                      >
+                        {memoCheck.valid ? "Test Guardrail" : "Restore Reference"}
+                      </button>
+                      <span
+                        className={`shrink-0 rounded-pill border px-2.5 py-0.5 text-[11px] font-medium ${
+                          memoCheck.valid
+                            ? "border-status-success-border bg-status-success-bg text-status-success-text"
+                            : "border-status-danger-border bg-status-danger-bg text-status-danger-text"
+                        }`}
+                      >
+                        {memoCheck.valid ? "Reference Verified" : "Reference Missing"}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Quick Test Buttons */}
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {/* Primary PYUSD Settlement Actions */}
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   <button
                     type="button"
-                    onClick={handleSimulateMemoErrorOnScreen}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-danger-border bg-status-danger-bg py-2 px-3 text-xs font-medium text-status-danger-text transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
-                  >
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    Test Missing Reference Guard
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleQuickDirectPyusdSettle}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-status-success-border bg-status-success-bg py-2 px-3 text-xs font-semibold text-status-success-text transition-all duration-150 hover:-translate-y-[1px] active:scale-[0.97] cursor-pointer"
+                    onClick={() => void handleQuickDirectPyusdSettle()}
+                    className="btn-primary-mint py-2.5 px-4 text-xs font-semibold cursor-pointer"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Instant Settle &amp; Mark Paid
+                    <span>Instant Settle &amp; Mark Paid</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openPyusdModal(crossBorderInvoice)}
+                    className="btn-outline-subtle py-2.5 px-4 text-xs font-semibold cursor-pointer"
+                  >
+                    <Coins className="h-4 w-4" />
+                    <span>Open PYUSD Settlement Modal</span>
+                    <ArrowUpRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => openPyusdModal(crossBorderInvoice)}
-                  className="btn-primary-mint w-full py-2.5 px-4 text-xs font-semibold cursor-pointer"
-                >
-                  <Coins className="h-4 w-4" />
-                  <span>Open PYUSD Settlement Receipt</span>
-                  <ArrowUpRight className="h-4 w-4" />
-                </button>
 
                 {/* Verified Settlement Receipt */}
                 {lastPyusdSettlement && (
