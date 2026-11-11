@@ -78,7 +78,13 @@ async function fetchWithReplayFallback<T>(
   const store = useCockpitStore.getState();
   const transcript = resolveSignedSandboxTranscript(path);
 
-  if (store.apiMode === "mock" || store.apiMode === "replay") {
+  const isRemoteBrowserWithLocalDefault =
+    typeof window !== "undefined" &&
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1" &&
+    (API_BASE_URL.includes("localhost") || API_BASE_URL.includes("127.0.0.1"));
+
+  if (store.apiMode === "mock" || store.apiMode === "replay" || isRemoteBrowserWithLocalDefault) {
     await new Promise((r) => setTimeout(r, REPLAY_CACHE_LATENCY_MS));
     if (store.apiMode === "replay") {
       store.recordReplayTranscriptHit(transcript);

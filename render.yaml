@@ -1,0 +1,53 @@
+# PayPal Sentinel (Team Imperium) — Render Blueprint Infrastructure-as-Code
+# Deploys the Full-Stack PayPal Sentinel Control Plane (Next.js Web + Fastify API)
+
+services:
+  # 1. Core Fastify API + @paypal/agent-toolkit + Spend Firewall + 2PC Idempotency Engine
+  - type: web
+    name: paypal-sentinel-api
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: corepack enable && pnpm install --frozen-lockfile=false && pnpm --filter @payops/shared build && pnpm --filter @payops/api build
+    startCommand: pnpm --filter @payops/api start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: PAYPAL_ENVIRONMENT
+        value: sandbox
+      - key: PAYPAL_API_BASE_URL
+        value: https://api-m.sandbox.paypal.com
+      - key: DEMO_OFFLINE_REPLAY_FALLBACK
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CHANNEL3_API_KEY
+        sync: false
+
+  # 2. Next.js 15 Executive Financial Command Center (apps/web)
+  - type: web
+    name: paypal-sentinel-web
+    runtime: node
+    region: oregon
+    plan: starter
+    buildCommand: corepack enable && pnpm install --frozen-lockfile=false && pnpm --filter @payops/shared build && pnpm --filter @payops/web build
+    startCommand: pnpm --filter @payops/web start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_PAYPAL_ENV
+        value: sandbox
+      - key: NEXT_PUBLIC_DEMO_REPLAY_MODE
+        value: "false"
