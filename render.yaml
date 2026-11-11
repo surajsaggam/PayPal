@@ -8,7 +8,7 @@ services:
     runtime: node
     region: oregon
     plan: starter
-    buildCommand: corepack enable && pnpm install --frozen-lockfile=false && pnpm --filter @payops/shared build && pnpm --filter @payops/api build
+    buildCommand: corepack enable && pnpm install --prod=false --frozen-lockfile=false && pnpm --filter @payops/shared build && pnpm --filter @payops/api build
     startCommand: pnpm --filter @payops/api start
     healthCheckPath: /api/v1/health
     autoDeploy: true
@@ -40,7 +40,7 @@ services:
     runtime: node
     region: oregon
     plan: starter
-    buildCommand: corepack enable && pnpm install --frozen-lockfile=false && pnpm --filter @payops/shared build && pnpm --filter @payops/web build
+    buildCommand: corepack enable && pnpm install --prod=false --frozen-lockfile=false && pnpm --filter @payops/shared build && pnpm --filter @payops/web build
     startCommand: pnpm --filter @payops/web start
     healthCheckPath: /api/health
     autoDeploy: true
