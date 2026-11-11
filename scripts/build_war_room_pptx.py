@@ -1047,7 +1047,7 @@ def build_deck() -> Path:
         5.34,
         5.0,
         0.74,
-        "GitHub Repository: github.com/surajsaggam/PayPal\nTrack: PS-01 Autonomous Agentic Commerce, CFO & Treasury\nIntegrations: PayPal Sandbox · Neon PG 16 · Channel3 · Solana PYUSD",
+        "Live Deployed App: paypal-sentinel-web.onrender.com\nGitHub Repository: github.com/surajsaggam/PayPal\nIntegrations: PayPal Sandbox · Neon PG 16 · Channel3 · Solana PYUSD",
         font_size=10,
         bold=True,
         color=COL_MINT,
